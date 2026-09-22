@@ -1,0 +1,7 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+allowBuilds:
+  esbuild: set this to true or false
+  tree-sitter-c: set this to true or false
+  tree-sitter-cpp: set this to true or false

@@ -1,0 +1,19 @@
+{
+  "name": "@s2c/arduino",
+  "version": "0.1.0",
+  "description": "Evidence-based Arduino sketch static analysis, inference, and synthesis engine",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "web-tree-sitter": "0.27.0",
+    "tree-sitter-cpp": "0.23.4"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

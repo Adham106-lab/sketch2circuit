@@ -1,0 +1,6 @@
+{
+  "name": "sketch2circuit",
+  "description": "Electronics-as-code toolchain and evidence-based Arduino sketch to circuit synthesizer with electrical rules checking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

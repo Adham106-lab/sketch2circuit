@@ -1,0 +1,18 @@
+{
+  "name": "@s2c/cli",
+  "version": "0.1.0",
+  "description": "Command-line interface for sketch2circuit (s2c)",
+  "type": "module",
+  "bin": {
+    "s2c": "./bin/s2c.js"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

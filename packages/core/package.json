@@ -1,0 +1,16 @@
+{
+  "name": "@s2c/core",
+  "version": "0.1.0",
+  "description": "Builder API and JSX runtime for sketch2circuit",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./jsx-runtime": "./src/jsx-runtime.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}
