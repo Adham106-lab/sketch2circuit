@@ -7,11 +7,23 @@ import {
   calculateLedResistor,
   calculateVoltageDivider,
   formatEngineering,
+  type LedResistorResult,
   parseEngineering,
+  type VoltageDividerResult,
 } from "@s2c/units";
 import { Calculator, Sliders, Zap } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
+
+export type CalculationResult<T> =
+  | { success: true; data: T; error: null }
+  | { success: false; data: null; error: string };
+
+export interface ExtendedVoltageDividerResult extends VoltageDividerResult {
+  ratio: number;
+  powerR1: number;
+  powerR2: number;
+}
 
 export const CalculatorsTab: React.FC = () => {
   const [subTab, setSubTab] = useState<"units" | "led" | "divider">("led");
@@ -60,7 +72,7 @@ export const CalculatorsTab: React.FC = () => {
     ir: { vf: 1.2, name: "Infrared (1.2V)" },
   };
 
-  const ledResult = useMemo(() => {
+  const ledResult: CalculationResult<LedResistorResult> = useMemo(() => {
     try {
       return {
         success: true,
@@ -77,7 +89,7 @@ export const CalculatorsTab: React.FC = () => {
   const [divR1, setDivR1] = useState<number>(10000);
   const [divR2, setDivR2] = useState<number>(20000);
 
-  const dividerResult = useMemo(() => {
+  const dividerResult: CalculationResult<ExtendedVoltageDividerResult> = useMemo(() => {
     try {
       const data = calculateVoltageDivider(divVin, divR1, divR2);
       const ratio = divVin !== 0 ? data.vOut / divVin : 0;
@@ -253,11 +265,7 @@ export const CalculatorsTab: React.FC = () => {
                     {ledResult.data.recommendedResistance} Ω
                   </span>
                   <span className="text-xs text-slate-400">
-                    (Exact theoretical:{" "}
-                    {ledResult.data.exactResistance != null
-                      ? ledResult.data.exactResistance.toFixed(1)
-                      : "—"}{" "}
-                    Ω)
+                    (Exact theoretical: {ledResult.data.exactResistance.toFixed(1)} Ω)
                   </span>
                 </div>
 
@@ -265,25 +273,19 @@ export const CalculatorsTab: React.FC = () => {
                   <div>
                     <span className="text-slate-500">Power Dissipation:</span>
                     <p className="font-mono text-slate-200 mt-0.5">
-                      {ledResult.data.resistorPower != null
-                        ? (ledResult.data.resistorPower * 1000).toFixed(1)
-                        : "—"}{" "}
-                      mW
+                      {(ledResult.data.resistorPower * 1000).toFixed(1)} mW
                     </p>
                   </div>
                   <div>
                     <span className="text-slate-500">Actual Current:</span>
                     <p className="font-mono text-emerald-400 mt-0.5">
-                      {ledResult.data.operatingCurrent != null
-                        ? (ledResult.data.operatingCurrent * 1000).toFixed(2)
-                        : "—"}{" "}
-                      mA
+                      {(ledResult.data.operatingCurrent * 1000).toFixed(2)} mA
                     </p>
                   </div>
                   <div>
                     <span className="text-slate-500">Rating:</span>
                     <p className="font-mono text-indigo-300 mt-0.5">
-                      {ledResult.data.recommendedPowerRating || "0.25W"}
+                      {ledResult.data.recommendedPowerRating}
                     </p>
                   </div>
                 </div>
@@ -349,44 +351,31 @@ export const CalculatorsTab: React.FC = () => {
                     Divided Output Voltage (V_out)
                   </span>
                   <span className="text-xs font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-300">
-                    Ratio:{" "}
-                    {dividerResult.data.ratio != null
-                      ? (dividerResult.data.ratio * 100).toFixed(1)
-                      : "—"}
-                    %
+                    Ratio: {(dividerResult.data.ratio * 100).toFixed(1)}%
                   </span>
                 </div>
 
                 <div className="text-3xl font-bold font-mono text-slate-100">
-                  {dividerResult.data.vOut != null ? dividerResult.data.vOut.toFixed(3) : "—"} V
+                  {dividerResult.data.vOut.toFixed(3)} V
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-800/80 text-xs">
                   <div>
                     <span className="text-slate-500">Quiescent Current:</span>
                     <p className="font-mono text-slate-200 mt-0.5">
-                      {dividerResult.data.quiescentCurrent != null
-                        ? (dividerResult.data.quiescentCurrent * 1000).toFixed(2)
-                        : "—"}{" "}
-                      mA
+                      {(dividerResult.data.quiescentCurrent * 1000).toFixed(2)} mA
                     </p>
                   </div>
                   <div>
                     <span className="text-slate-500">Power in R1:</span>
                     <p className="font-mono text-slate-200 mt-0.5">
-                      {dividerResult.data.powerR1 != null
-                        ? (dividerResult.data.powerR1 * 1000).toFixed(2)
-                        : "—"}{" "}
-                      mW
+                      {(dividerResult.data.powerR1 * 1000).toFixed(2)} mW
                     </p>
                   </div>
                   <div>
                     <span className="text-slate-500">Power in R2:</span>
                     <p className="font-mono text-slate-200 mt-0.5">
-                      {dividerResult.data.powerR2 != null
-                        ? (dividerResult.data.powerR2 * 1000).toFixed(2)
-                        : "—"}{" "}
-                      mW
+                      {(dividerResult.data.powerR2 * 1000).toFixed(2)} mW
                     </p>
                   </div>
                 </div>

@@ -235,7 +235,7 @@ export function computeSchematicLayout(
     const y = isExplicit ? (comp.position?.y ?? otherY) : otherY;
 
     const pins = new Map<string, PinPosition>();
-    comp.ports.forEach((p, idx) => {
+    comp.ports.forEach((p: Port, idx: number) => {
       const py = y + 30 + idx * 24;
       const pinPos: PinPosition = {
         portId: p.id,

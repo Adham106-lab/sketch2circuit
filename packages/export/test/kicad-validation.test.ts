@@ -15,7 +15,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 describe("KiCad Netlist S-Expression AST & Golden-File Validation (GAP-01)", () => {
   const testCircuit = createCircuit({
     title: "Blinky Circuit",
-    metadata: { generatedAt: "2026-09-24T00:00:00.000Z" },
   })
     .addPart("ARDUINO_UNO_R3", "U1")
     .addLed("D1", "Red")

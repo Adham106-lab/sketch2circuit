@@ -29,7 +29,7 @@ export function extractFacts(source: string, tree?: Tree): SketchFacts {
   }
 
   // Parse with Tree-sitter if tree is not provided
-  let ast = tree;
+  let ast: Tree | null | undefined = tree;
   if (!ast) {
     const parser = getCachedParser();
     if (parser) {
@@ -95,7 +95,7 @@ export function extractFacts(source: string, tree?: Tree): SketchFacts {
 export async function extractFactsWithTreeSitter(source: string): Promise<SketchFacts> {
   const parser = await getParser();
   const tree = parser.parse(source);
-  return extractFacts(source, tree);
+  return extractFacts(source, tree ?? undefined);
 }
 
 interface WalkerState {

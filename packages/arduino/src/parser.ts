@@ -56,7 +56,11 @@ export function getCachedParser(): Parser | null {
  */
 export async function parseSketchToTree(source: string): Promise<Tree> {
   const parser = await getParser();
-  return parser.parse(source);
+  const tree = parser.parse(source);
+  if (!tree) {
+    throw new Error("Tree-sitter failed to parse Arduino sketch");
+  }
+  return tree;
 }
 
 // Eagerly kick off parser initialization in Node.js environments

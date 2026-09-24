@@ -10,7 +10,8 @@ import { CircuitBuilder } from "./builder.js";
 export type JSXComponentType =
   | string
   | symbol
-  | ((props: Record<string, unknown>) => S2CElement | S2CElement[] | null);
+  // biome-ignore lint/suspicious/noExplicitAny: Standard JSX component signature accepting custom props
+  | ((props: any) => S2CElement | S2CElement[] | null);
 
 export interface S2CElement {
   $$typeof: symbol;

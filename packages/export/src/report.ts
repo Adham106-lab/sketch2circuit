@@ -10,6 +10,7 @@ import { formatWiringTableMarkdown, generateWiringTable } from "./wiring-table.j
 export interface ReportOptions {
   title?: string;
   sourceFile?: string;
+  sketchSource?: string;
   diagnostics?: Diagnostic[];
   peripherals?: Array<{ kind: string; confidence: number; evidence: string[] }>;
   unresolved?: string[];

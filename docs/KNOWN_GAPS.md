@@ -1,18 +1,19 @@
 # Tracked Implementation Gaps & Action Items
 
-This document tracks technical gaps identified during Milestone reviews. Both items have been resolved, comprehensively tested, and verified prior to Milestone 8.
+This document tracks technical gaps identified during Milestone reviews. 
 
 ---
 
 ## GAP-01: KiCad Netlist Exporter Golden-File & S-Expression AST Validation
 
-- **Status**: RESOLVED & TESTED
+- **Status**: OPEN (Documented Limitation — Awaiting Real KiCad Export)
 - **Component**: `@s2c/export` (`packages/export/src/sexpr.ts`, `packages/export/src/kicad.ts`, `packages/export/test/kicad-validation.test.ts`)
 - **Severity**: Quality Assurance / Compliance
-- **Implementation**:
+- **Limitation Note**: Golden KiCad netlist fixture is hand-written per the S-expr spec, not exported from real KiCad, due to no KiCad binary in this sandbox. Needs a real export to fully close.
+- **Implementation State**:
   1. **S-Expression AST Validator**: Implemented a recursive-descent parser (`parseSExpr`) in `@s2c/export` that parses netlist `.net` text into a structured tree of `(tag ...children)`. Strictly validates balanced parentheses, escaped string literals (`\"`, `\\`), and enforces KiCad Version "E" schema (`(export (version "E") (design ...) (components ...) (nets ...))`). Rejects corrupted netlists and flags dangling component references.
-  2. **Golden File Differential Test**: Added reference netlist `packages/export/test/fixtures/kicad_blink_golden.net` generated from a verified KiCad v7/v8 reference schematic of the canonical Arduino Uno Blink circuit. Vitest asserts structural, component designator, value, footprint, and topological net node pin equivalence.
-  3. **Verification**: 5 dedicated tests in `packages/export/test/kicad-validation.test.ts` pass cleanly.
+  2. **Golden File Differential Test**: Added reference netlist `packages/export/test/fixtures/kicad_blink_golden.net` constructed per the KiCad Version "E" S-expression specification. Vitest asserts structural, component designator, value, footprint, and topological net node pin equivalence.
+  3. **Verification**: 5 dedicated tests in `packages/export/test/kicad-validation.test.ts` pass cleanly against the current specification model. Real KiCad 7/8 machine export will be swapped in once provided.
 
 ---
 

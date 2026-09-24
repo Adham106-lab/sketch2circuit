@@ -314,7 +314,7 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
                     <tr key={`bom-${b.item}`} className="hover:bg-slate-800/40 transition">
                       <td className="py-2 px-3 text-slate-400">{b.item}</td>
                       <td className="py-2 px-3 font-bold text-slate-100">{b.quantity}</td>
-                      <td className="py-2 px-3 text-indigo-400">{b.designators.join(", ")}</td>
+                      <td className="py-2 px-3 text-indigo-400">{b.designators}</td>
                       <td className="py-2 px-3 text-amber-300">{b.value || "—"}</td>
                       <td className="py-2 px-3 text-slate-200">{b.partNumber}</td>
                       <td className="py-2 px-3 font-sans text-slate-300">{b.description}</td>

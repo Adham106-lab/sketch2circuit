@@ -38,6 +38,10 @@ export interface RuleDefinition {
   category: RuleCategory;
   /** Default severity when triggered */
   defaultSeverity: "error" | "warning" | "info";
+  /** Optional governing physical formula or specification */
+  formula?: string;
+  /** Optional engineering remediation suggestion */
+  remediation?: string;
   /** Execution function returning diagnostics */
   run: (circuit: Circuit, context: RuleContext) => Diagnostic[];
 }

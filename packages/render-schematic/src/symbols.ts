@@ -3,6 +3,7 @@
  * @s2c/render-schematic — Schematic SVG symbol glyph generators.
  */
 
+import type { Port } from "@s2c/circuit-json";
 import type { PinPosition, PlacedComponent, SchematicTheme } from "./types.js";
 
 export interface SymbolColors {
@@ -102,7 +103,7 @@ export function renderCapacitor(placed: PlacedComponent, colors: SymbolColors): 
   const { x, y, width, height, component } = placed;
   const cx = x + width / 2;
   const cy = y + height / 2;
-  const isPolarized = component.ports.some((p) => p.name === "+" || p.name === "-");
+  const isPolarized = component.ports.some((p: Port) => p.name === "+" || p.name === "-");
   const plateGap = 8;
   const plateHeight = 24;
 

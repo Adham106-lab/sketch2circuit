@@ -6,6 +6,7 @@
 import { type SynthesisResult, synthesizeSketch } from "@s2c/arduino";
 import {
   AlertTriangle,
+  BookOpen,
   Boxes,
   Calculator,
   Code2,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CalculatorsTab } from "./components/CalculatorsTab.js";
+import { DocumentationTab } from "./components/DocumentationTab.js";
 import { ErcDiagnostics } from "./components/ErcDiagnostics.js";
 import { ExportArtifacts } from "./components/ExportArtifacts.js";
 import { PartsCatalogBrowser } from "./components/PartsCatalogBrowser.js";
@@ -27,7 +29,7 @@ import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
 export default function App() {
   // Main Tab Navigation
   const [activeMainTab, setActiveMainTab] = useState<
-    "studio" | "erc" | "export" | "catalog" | "calculators"
+    "studio" | "erc" | "export" | "catalog" | "calculators" | "docs"
   >("studio");
 
   // Studio Sub-view: Schematic vs. Facts/Inference
@@ -63,6 +65,8 @@ export default function App() {
             ruleId: "erc.syntax-error",
             severity: "error",
             message: `Sketch synthesis error: ${(e as Error).message}`,
+            explanation: "Could not parse or synthesize the Arduino sketch syntax.",
+            target: { type: "circuit", id: "circuit" },
           },
         ],
         assumptions: [],
@@ -203,6 +207,20 @@ export default function App() {
           >
             <Calculator className="w-4 h-4" />
             <span>Calculators</span>
+          </button>
+
+          <button
+            id="tab-docs"
+            type="button"
+            onClick={() => setActiveMainTab("docs")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+              activeMainTab === "docs"
+                ? "bg-indigo-600 text-white font-medium shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <BookOpen className="w-4 h-4 text-emerald-400" />
+            <span>Docs &amp; Validation</span>
           </button>
         </nav>
       </header>
@@ -623,6 +641,15 @@ export default function App() {
         {activeMainTab === "calculators" && (
           <div className="flex-1 min-h-[600px]">
             <CalculatorsTab />
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 6: DOCUMENTATION & PHYSICAL VALIDATION (M8)                           */}
+        {/* ========================================================================= */}
+        {activeMainTab === "docs" && (
+          <div className="flex-1 min-h-[600px]">
+            <DocumentationTab />
           </div>
         )}
       </main>

@@ -4,7 +4,7 @@
  * Net-Label-Only architecture per Doc §10.
  */
 
-import type { Circuit } from "@s2c/circuit-json";
+import type { Circuit, Port } from "@s2c/circuit-json";
 import { computeSchematicLayout } from "./layout.js";
 import {
   escapeXml,
@@ -107,7 +107,7 @@ export function renderSchematicSvg(
 
   for (const comp of layout.components) {
     for (const pin of comp.pins.values()) {
-      const portDef = comp.component.ports.find((p) => p.id === pin.portId);
+      const portDef = comp.component.ports.find((p: Port) => p.id === pin.portId);
       const netId = portDef?.netId;
 
       if (!netId) {

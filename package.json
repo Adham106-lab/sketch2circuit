@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "check:deps": "node scripts/check-dependency-majors.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check .",
+    "lint": "tsc --noEmit && biome check .",
     "format": "biome format --write .",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -42,5 +42,9 @@
     "tsx": "^4.21.0",
     "typescript": "5.8.3",
     "vitest": "5.0.1"
-  }
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ]
 }

@@ -623,8 +623,7 @@ Confirmation UI for low-confidence inferences: each peripheral card shows eviden
    assert the exact diagnostics.
 5. **Property tests (fast-check)** — resolving constants never throws; parser tolerates arbitrary garbage; IR always validates.
 6. **Determinism test** — running synthesis twice yields byte-identical IR.
-7. **Real-world validation** — build at least 3 circuits on a breadboard from the tool's wiring table and confirm they work
-   (record this in the README; it is the most convincing proof of quality).
+7. **Real-world physical validation (Human physical action required)** — An engineer must build at least 3 circuits on a physical breadboard following the tool's generated wiring tables and confirm they operate on real hardware (record findings in the README). Note: This step requires a human engineer with physical hardware, multimeters, and test equipment; it cannot be executed or measured in a headless software sandbox.
 8. **CI** — typecheck + lint + tests on every PR; publish playground preview.
 
 Quality metrics to track: inference precision/recall on the corpus (labelled peripherals), % of sketches with zero
