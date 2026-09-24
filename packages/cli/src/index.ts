@@ -3,4 +3,8 @@
  * @s2c/cli — Command line toolchain.
  */
 
-export const CLI_VERSION = "0.1.0";
+export * from "./commands/build.js";
+export * from "./commands/check.js";
+export * from "./commands/explain.js";
+export * from "./commands/sketch.js";
+export * from "./runner.js";

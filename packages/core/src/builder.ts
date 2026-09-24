@@ -1,6 +1,7 @@
 /**
  * @license Apache-2.0
  * @s2c/core — Fluent Programmatic Circuit Builder.
+ * Implements Union-Find Disjoint Set net resolution per specification §8.
  */
 
 import type {
@@ -13,6 +14,7 @@ import type {
   PortKind,
 } from "@s2c/circuit-json";
 import { instantiatePart, type PartDefinition } from "@s2c/parts";
+import { DisjointSet } from "./disjoint-set.js";
 
 export interface ComponentBuilderOptions {
   name?: string;
@@ -31,11 +33,72 @@ export interface ComponentBuilderOptions {
   }>;
 }
 
+/**
+ * Computes Levenshtein distance between two strings for actionable error suggestions.
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const an = a.length;
+  const bn = b.length;
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+  const matrix: number[][] = [];
+  for (let i = 0; i <= bn; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= an; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= bn; i++) {
+    for (let j = 1; j <= an; j++) {
+      if (b.charAt(i - 1).toLowerCase() === a.charAt(j - 1).toLowerCase()) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1,
+        );
+      }
+    }
+  }
+  return matrix[bn][an];
+}
+
+/**
+ * Finds the closest matching string candidate.
+ */
+function findClosestCandidate(query: string, candidates: string[]): string | undefined {
+  let bestCandidate: string | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (const cand of candidates) {
+    const d = levenshteinDistance(query, cand);
+    if (d < bestDistance) {
+      bestDistance = d;
+      bestCandidate = cand;
+    }
+  }
+
+  if (bestCandidate && bestDistance <= Math.max(4, Math.floor(query.length * 0.7))) {
+    return bestCandidate;
+  }
+  return undefined;
+}
+
 export class CircuitBuilder {
   private title?: string;
   private description?: string;
   private components: Map<string, Component> = new Map();
-  private nets: Map<string, Net> = new Map();
+
+  // Disjoint-Set Union for port connectivity tracking
+  private portDsu: DisjointSet<string> = new DisjointSet<string>();
+
+  // Explicit named net definitions (e.g. GND, 5V, VCC)
+  private namedNets: Map<string, { kind: NetKind; voltage?: number }> = new Map();
+  // Mapping from port ID to explicit net name
+  private portExplicitNets: Map<string, string> = new Map();
+
   private autoNetCounter = 1;
 
   constructor(metadata?: { title?: string; description?: string }) {
@@ -55,11 +118,17 @@ export class CircuitBuilder {
       properties?: Record<string, string | number | boolean>;
     },
   ): this {
-    if (this.components.has(id)) {
-      throw new Error(`Component with ID '${id}' is already registered in circuit`);
+    const existing = this.components.get(id);
+    if (existing) {
+      throw new Error(
+        `Duplicate reference designator '${id}': component '${id}' (${existing.name ?? existing.kind}) is already registered in circuit.`,
+      );
     }
     const comp = instantiatePart(part, id, options);
     this.components.set(id, comp);
+    for (const p of comp.ports) {
+      this.portDsu.makeSet(p.id);
+    }
     return this;
   }
 
@@ -67,8 +136,11 @@ export class CircuitBuilder {
    * Adds a custom component with custom ports.
    */
   addComponent(id: string, kind: ComponentKind, options: ComponentBuilderOptions = {}): this {
-    if (this.components.has(id)) {
-      throw new Error(`Component with ID '${id}' is already registered in circuit`);
+    const existing = this.components.get(id);
+    if (existing) {
+      throw new Error(
+        `Duplicate reference designator '${id}': component '${id}' (${existing.name ?? existing.kind}) is already registered in circuit.`,
+      );
     }
 
     const defaultPorts =
@@ -100,6 +172,9 @@ export class CircuitBuilder {
     };
 
     this.components.set(id, comp);
+    for (const p of comp.ports) {
+      this.portDsu.makeSet(p.id);
+    }
     return this;
   }
 
@@ -136,9 +211,20 @@ export class CircuitBuilder {
     });
   }
 
+  addButton(id: string, options?: ComponentBuilderOptions): this {
+    return this.addComponent(id, "button", {
+      ...options,
+      name: options?.name ?? "Pushbutton",
+      ports: [
+        { name: "1", kind: "passive" },
+        { name: "2", kind: "passive" },
+      ],
+    });
+  }
+
   /**
    * Connects two or more port references (e.g. "R1.1", "LED1.A").
-   * Automatically resolves or creates a Net.
+   * Merges their equivalence classes in the Disjoint-Set Union (Union-Find) data structure.
    */
   connect(portA: string, portB: string, ...rest: string[]): this {
     const allPorts = [portA, portB, ...rest];
@@ -149,49 +235,10 @@ export class CircuitBuilder {
       resolvedPortIds.push(portId);
     }
 
-    // Check if any of these ports are already connected to an existing net
-    let targetNet: Net | undefined;
-    const existingNets: Net[] = [];
-
-    for (const portId of resolvedPortIds) {
-      const net = this.findNetForPort(portId);
-      if (net && !existingNets.includes(net)) {
-        existingNets.push(net);
-      }
-    }
-
-    if (existingNets.length === 0) {
-      // Create new net
-      const netId = `N$${this.autoNetCounter++}`;
-      targetNet = {
-        id: netId,
-        kind: "signal",
-        portIds: [...new Set(resolvedPortIds)],
-      };
-      this.nets.set(netId, targetNet);
-    } else {
-      // Merge into the primary existing net
-      targetNet = existingNets[0];
-      for (const portId of resolvedPortIds) {
-        if (!targetNet.portIds.includes(portId)) {
-          targetNet.portIds.push(portId);
-        }
-      }
-      // If multiple nets were bridged, merge all others into targetNet
-      for (let i = 1; i < existingNets.length; i++) {
-        const netToMerge = existingNets[i];
-        for (const p of netToMerge.portIds) {
-          if (!targetNet.portIds.includes(p)) {
-            targetNet.portIds.push(p);
-          }
-        }
-        this.nets.delete(netToMerge.id);
-      }
-    }
-
-    // Update port.netId references on components
-    for (const portId of targetNet.portIds) {
-      this.setPortNetId(portId, targetNet.id);
+    // Union all ports together in the disjoint set
+    const firstPort = resolvedPortIds[0];
+    for (let i = 1; i < resolvedPortIds.length; i++) {
+      this.portDsu.union(firstPort, resolvedPortIds[i]);
     }
 
     return this;
@@ -199,83 +246,184 @@ export class CircuitBuilder {
 
   /**
    * Connects ports to a named Net (e.g. "GND", "5V").
+   * Assigns explicit net attributes and unions the ports into the named net.
    */
   connectNet(netId: string, ports: string[], options?: { kind?: NetKind; voltage?: number }): this {
-    let net = this.nets.get(netId);
-    if (!net) {
-      net = {
-        id: netId,
-        kind: options?.kind ?? (netId.toUpperCase() === "GND" ? "ground" : "signal"),
-        voltage: options?.voltage,
-        portIds: [],
-      };
-      this.nets.set(netId, net);
+    const defaultKind: NetKind =
+      netId.toUpperCase() === "GND"
+        ? "ground"
+        : netId.toUpperCase() === "5V" ||
+            netId.toUpperCase() === "3V3" ||
+            netId.toUpperCase() === "VCC"
+          ? "power"
+          : "signal";
+
+    const defaultVoltage: number | undefined =
+      options?.voltage ??
+      (netId.toUpperCase() === "GND"
+        ? 0.0
+        : netId.toUpperCase() === "5V"
+          ? 5.0
+          : netId.toUpperCase() === "3V3"
+            ? 3.3
+            : undefined);
+
+    if (!this.namedNets.has(netId)) {
+      this.namedNets.set(netId, {
+        kind: options?.kind ?? defaultKind,
+        voltage: defaultVoltage,
+      });
     } else if (options?.voltage !== undefined) {
-      net.voltage = options.voltage;
+      const existingNet = this.namedNets.get(netId);
+      if (existingNet) {
+        existingNet.voltage = options.voltage;
+      }
     }
+
+    const netSentinel = `__NET__:${netId}`;
+    this.portDsu.makeSet(netSentinel);
 
     for (const portRef of ports) {
       const portId = this.resolvePortId(portRef);
-      if (!net.portIds.includes(portId)) {
-        net.portIds.push(portId);
-      }
-      this.setPortNetId(portId, net.id);
+      this.portExplicitNets.set(portId, netId);
+      this.portDsu.union(netSentinel, portId, (rootA, rootB) => {
+        // Sentinel or named net root always takes priority
+        if (rootA.startsWith("__NET__:")) return rootA;
+        if (rootB.startsWith("__NET__:")) return rootB;
+        return rootA;
+      });
     }
 
     return this;
   }
 
+  /**
+   * Resolves a port reference string to a canonical port ID (e.g. "R1.1").
+   * Throws actionable error with closest candidate suggestion if component or port not found.
+   */
   private resolvePortId(portRef: string): string {
     const parts = portRef.split(".");
     if (parts.length === 2) {
       const [compId, pinName] = parts;
       const comp = this.components.get(compId);
       if (!comp) {
-        throw new Error(`Component '${compId}' not found while connecting port '${portRef}'`);
+        const available = Array.from(this.components.keys());
+        const closest = findClosestCandidate(compId, available);
+        const didYouMean = closest ? ` Did you mean '${closest}'?` : "";
+        const compList =
+          available.length > 0
+            ? ` Available components: [${available.join(", ")}].`
+            : " No components registered.";
+        throw new Error(
+          `Component '${compId}' not found while connecting port '${portRef}'.${didYouMean}${compList}`,
+        );
       }
+
       const port = comp.ports.find((p) => p.name === pinName || p.id === portRef);
       if (!port) {
-        throw new Error(`Port '${pinName}' not found on component '${compId}'`);
+        const pinNames = comp.ports.map((p) => p.name);
+        const closest = findClosestCandidate(pinName, pinNames);
+        const didYouMean = closest ? ` Did you mean '${closest}'?` : "";
+        const portList = ` Available ports: [${pinNames.join(", ")}].`;
+        throw new Error(
+          `Port '${pinName}' not found on component '${compId}' (${comp.name ?? comp.kind}).${didYouMean}${portList}`,
+        );
       }
       return port.id;
     }
-    // Direct port ID
+
+    // Direct port ID check
+    const [compId] = portRef.split(".");
+    const comp = this.components.get(compId);
+    if (!comp) {
+      const available = Array.from(this.components.keys());
+      const closest = findClosestCandidate(compId, available);
+      const didYouMean = closest ? ` Did you mean '${closest}'?` : "";
+      throw new Error(
+        `Component '${compId}' not found while connecting port '${portRef}'.${didYouMean}`,
+      );
+    }
     return portRef;
   }
 
-  private findNetForPort(portId: string): Net | undefined {
-    for (const net of this.nets.values()) {
-      if (net.portIds.includes(portId)) {
-        return net;
-      }
-    }
-    return undefined;
-  }
-
-  private setPortNetId(portId: string, netId: string): void {
-    const [compId] = portId.split(".");
-    const comp = this.components.get(compId);
-    if (comp) {
-      const p = comp.ports.find((pt) => pt.id === portId);
-      if (p) {
-        p.netId = netId;
-      }
-    }
-  }
-
   /**
-   * Produces the canonical Circuit JSON IR object.
+   * Produces the canonical Circuit JSON IR object using Disjoint-Set Union classes.
    */
   build(): Circuit {
+    const equivalenceClasses = this.portDsu.getEquivalenceClasses();
+    const resolvedNets: Net[] = [];
+
+    for (const members of equivalenceClasses.values()) {
+      // Filter out sentinel IDs from the actual member ports
+      const realPorts = members.filter((m) => !m.startsWith("__NET__:"));
+      if (realPorts.length === 0) {
+        continue;
+      }
+
+      // Check if any member has an explicit named net attached
+      const explicitNetNames = new Set<string>();
+      for (const m of members) {
+        if (m.startsWith("__NET__:")) {
+          explicitNetNames.add(m.replace("__NET__:", ""));
+        }
+        const mapped = this.portExplicitNets.get(m);
+        if (mapped) {
+          explicitNetNames.add(mapped);
+        }
+      }
+
+      let netId: string;
+      let netKind: NetKind = "signal";
+      let voltage: number | undefined;
+
+      if (explicitNetNames.size > 0) {
+        // Priority named net
+        netId = Array.from(explicitNetNames)[0];
+        const netDef = this.namedNets.get(netId);
+        if (netDef) {
+          netKind = netDef.kind;
+          voltage = netDef.voltage;
+        } else if (netId.toUpperCase() === "GND") {
+          netKind = "ground";
+          voltage = 0.0;
+        }
+      } else {
+        // Only create auto net if 2 or more ports are connected together
+        if (realPorts.length < 2) {
+          continue;
+        }
+        netId = `N$${this.autoNetCounter++}`;
+      }
+
+      // Update component port netId references
+      for (const portId of realPorts) {
+        const [compId] = portId.split(".");
+        const comp = this.components.get(compId);
+        if (comp) {
+          const p = comp.ports.find((pt) => pt.id === portId);
+          if (p) {
+            p.netId = netId;
+          }
+        }
+      }
+
+      resolvedNets.push({
+        id: netId,
+        kind: netKind,
+        voltage,
+        portIds: realPorts,
+      });
+    }
+
     return {
-      version: "0.1.0",
+      schemaVersion: "0.1.0",
+      name: this.title || "Untitled Circuit",
       metadata: {
-        title: this.title,
         description: this.description,
-        createdAt: new Date().toISOString(),
+        generatedAt: new Date().toISOString(),
       },
       components: Array.from(this.components.values()),
-      nets: Array.from(this.nets.values()),
+      nets: resolvedNets,
     };
   }
 }

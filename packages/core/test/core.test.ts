@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { CircuitBuilder, CORE_VERSION, createCircuit, jsx, renderCircuit } from "../src/index.js";
+import {
+  CircuitBuilder,
+  CORE_VERSION,
+  createCircuit,
+  DisjointSet,
+  jsx,
+  renderCircuit,
+} from "../src/index.js";
 
 describe("@s2c/core CircuitBuilder API", () => {
   it("exports package version constant", () => {
@@ -31,16 +38,81 @@ describe("@s2c/core CircuitBuilder API", () => {
     expect(gndNet?.portIds).toContain("U1.GND");
   });
 
-  it("throws clear error when duplicate component ID is registered", () => {
+  it("handles duplicate reference designator collision with actionable error", () => {
     const builder = new CircuitBuilder();
     builder.addResistor("R1", "10kΩ");
-    expect(() => builder.addResistor("R1", "20kΩ")).toThrowError(/already registered/);
+
+    expect(() => builder.addResistor("R1", "20kΩ")).toThrowError(
+      /Duplicate reference designator 'R1': component 'R1' \(resistor\) is already registered in circuit\./i,
+    );
   });
 
-  it("throws clear error when invalid port is connected", () => {
+  it("provides actionable error when connecting to a nonexistent component with suggested-closest-match", () => {
     const builder = new CircuitBuilder();
+    builder.addPart("ARDUINO_UNO_R3", "U1");
     builder.addResistor("R1", "10kΩ");
-    expect(() => builder.connect("R1.INVALID", "R1.1")).toThrowError(/Port 'INVALID' not found/);
+
+    // Typo: U2 instead of U1, or R2 instead of R1
+    expect(() => builder.connect("U2.D9", "R1.1")).toThrowError(
+      /Component 'U2' not found while connecting port 'U2\.D9'\. Did you mean 'U1'\? Available components: \[U1, R1\]\./i,
+    );
+  });
+
+  it("provides actionable error when connecting to a nonexistent pin with suggested-closest-match", () => {
+    const builder = new CircuitBuilder();
+    builder.addPart("ARDUINO_UNO_R3", "U1");
+    builder.addResistor("R1", "10kΩ");
+
+    // Typo: D99 instead of D9 on Uno
+    expect(() => builder.connect("U1.D99", "R1.1")).toThrowError(
+      /Port 'D99' not found on component 'U1' \(Arduino Uno R3\)\. Did you mean 'D9'\? Available ports: \[/i,
+    );
+  });
+
+  it("merges nets using proper Union-Find Disjoint Set and preserves named nets", () => {
+    const builder = new CircuitBuilder();
+    builder.addResistor("R1", "1kΩ");
+    builder.addResistor("R2", "1kΩ");
+    builder.addResistor("R3", "1kΩ");
+
+    // Connect R1.1 to R2.1, then R2.1 to R3.1 via transitive unions
+    builder.connect("R1.1", "R2.1");
+    builder.connect("R2.1", "R3.1");
+
+    // Attach GND to R3.1
+    builder.connectNet("GND", ["R3.1"]);
+
+    const circuit = builder.build();
+
+    // R1.1, R2.1, and R3.1 must all be merged into the canonical GND net
+    const gndNet = circuit.nets.find((n) => n.id === "GND");
+    expect(gndNet).toBeDefined();
+    expect(gndNet?.portIds).toEqual(expect.arrayContaining(["R1.1", "R2.1", "R3.1"]));
+
+    const r1 = circuit.components.find((c) => c.id === "R1");
+    expect(r1?.ports.find((p) => p.name === "1")?.netId).toBe("GND");
+  });
+});
+
+describe("@s2c/core DisjointSet unit tests", () => {
+  it("implements union-find with path compression and equivalence classes", () => {
+    const dsu = new DisjointSet<string>();
+    dsu.makeSet("A");
+    dsu.makeSet("B");
+    dsu.makeSet("C");
+    dsu.makeSet("D");
+
+    dsu.union("A", "B");
+    dsu.union("B", "C");
+
+    expect(dsu.find("A")).toBe(dsu.find("C"));
+    expect(dsu.find("A")).not.toBe(dsu.find("D"));
+
+    // Union with priority
+    dsu.union("C", "D", (root1, root2) => (root1 === "D" ? root1 : root2));
+    const classes = dsu.getEquivalenceClasses();
+    expect(classes.size).toBe(1);
+    expect(Array.from(classes.values())[0]).toHaveLength(4);
   });
 });
 

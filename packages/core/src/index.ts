@@ -4,6 +4,7 @@
  */
 
 export * from "./builder.js";
+export * from "./disjoint-set.js";
 export * from "./jsx-runtime.js";
 
 export const CORE_VERSION = "0.1.0";

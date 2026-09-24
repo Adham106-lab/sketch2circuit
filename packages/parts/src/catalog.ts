@@ -12,7 +12,7 @@ export interface PartDefinition {
   partNumber: string;
   description: string;
   defaultFootprint?: string;
-  verified: true;
+  verified: boolean;
   datasheetUrl?: string;
   defaultProperties?: Record<string, string | number | boolean>;
   ports: Array<{
@@ -211,9 +211,28 @@ export const ARDUINO_UNO_R3: PartDefinition = {
     { name: "GND", kind: "ground", voltageRange: [0, 0] },
     { name: "GND.2", kind: "ground", voltageRange: [0, 0] },
     { name: "GND.3", kind: "ground", voltageRange: [0, 0] },
+    { name: "POWER.GND.1", kind: "ground", voltageRange: [0, 0] },
+    { name: "POWER.GND.2", kind: "ground", voltageRange: [0, 0] },
+    { name: "DIGITAL.GND", kind: "ground", voltageRange: [0, 0] },
     { name: "VIN", kind: "power", voltageRange: [7, 12] },
     { name: "RESET", kind: "input", pinCapabilities: ["RESET"], voltageRange: [0, 5] },
     { name: "AREF", kind: "input", voltageRange: [0, 5] },
+    {
+      name: "SDA",
+      pinNumber: "SDA",
+      kind: "bidirectional",
+      pinCapabilities: ["I2C_SDA"],
+      voltageRange: [0, 5],
+      currentLimit: 0.04,
+    },
+    {
+      name: "SCL",
+      pinNumber: "SCL",
+      kind: "bidirectional",
+      pinCapabilities: ["I2C_SCL"],
+      voltageRange: [0, 5],
+      currentLimit: 0.04,
+    },
   ],
 };
 
@@ -225,6 +244,7 @@ export const ARDUINO_NANO: PartDefinition = {
   description: "Compact breadboard-friendly ATmega328P microcontroller board (5V logic)",
   defaultFootprint: "module:arduino-nano",
   verified: true,
+  datasheetUrl: "https://docs.arduino.cc/resources/datasheets/A000005-datasheet.pdf",
   defaultProperties: { operatingVoltage: 5.0, clockSpeedHz: 16000000 },
   ports: [
     {
@@ -405,6 +425,8 @@ export const ESP32_WROOM_32: PartDefinition = {
   description: "32-bit dual-core Wi-Fi/Bluetooth MCU development board (3.3V logic)",
   defaultFootprint: "module:esp32-devkit",
   verified: true,
+  datasheetUrl:
+    "https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf",
   defaultProperties: { operatingVoltage: 3.3, clockSpeedHz: 240000000 },
   ports: [
     {
@@ -485,6 +507,7 @@ export const HC_SR04: PartDefinition = {
   description: "Ultrasonic sonar ranging sensor (2cm to 400cm)",
   defaultFootprint: "module:hc-sr04",
   verified: true,
+  datasheetUrl: "https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf",
   defaultProperties: { supplyVoltage: 5.0, activeCurrentA: 0.015 },
   ports: [
     { name: "VCC", kind: "power", voltageRange: [4.5, 5.5] },
@@ -502,6 +525,7 @@ export const SG90_SERVO: PartDefinition = {
   description: "Analog 180 degree positional hobby servo motor",
   defaultFootprint: "header:3-pin-0.1in",
   verified: true,
+  datasheetUrl: "https://www.towerpro.com.tw/product/sg90-7/",
   defaultProperties: { supplyVoltage: 5.0, stallCurrentA: 0.65 },
   ports: [
     { name: "PWM", kind: "input", pinCapabilities: ["PWM"], voltageRange: [0, 5] },
@@ -517,7 +541,7 @@ export const POTENTIOMETER: PartDefinition = {
   partNumber: "B10K-ROTARY",
   description: "3-terminal linear rotary potentiometer",
   defaultFootprint: "pot:3-pin-rotary",
-  verified: true,
+  verified: false,
   defaultProperties: { resistanceOhms: 10000, taper: "linear" },
   ports: [
     { name: "1", kind: "passive" },
@@ -533,7 +557,7 @@ export const RESISTOR_GENERIC: PartDefinition = {
   partNumber: "RES-AXIAL",
   description: "Standard 2-lead passive resistor",
   defaultFootprint: "resistor:axial-0.3in",
-  verified: true,
+  verified: false,
   ports: [
     { name: "1", kind: "passive" },
     { name: "2", kind: "passive" },
@@ -547,7 +571,7 @@ export const LED_GENERIC: PartDefinition = {
   partNumber: "LED-5MM",
   description: "Standard 2-pin light emitting diode",
   defaultFootprint: "led:5mm",
-  verified: true,
+  verified: false,
   defaultProperties: { forwardVoltage: 2.0, maxCurrentAmps: 0.02 },
   ports: [
     { name: "A", kind: "passive", description: "Anode (+)" },
@@ -562,7 +586,7 @@ export const PUSHBUTTON: PartDefinition = {
   partNumber: "TACT-6MM",
   description: "4-pin SPST tactile push switch (paired contacts)",
   defaultFootprint: "button:tact-6mm",
-  verified: true,
+  verified: false,
   ports: [
     { name: "1", kind: "passive" },
     { name: "2", kind: "passive" },
@@ -576,7 +600,7 @@ export const CAPACITOR_CERAMIC: PartDefinition = {
   partNumber: "CAP-CERAMIC",
   description: "Non-polarized 2-lead ceramic disc capacitor",
   defaultFootprint: "capacitor:radial-0.1in",
-  verified: true,
+  verified: false,
   ports: [
     { name: "1", kind: "passive" },
     { name: "2", kind: "passive" },
@@ -590,7 +614,7 @@ export const CAPACITOR_ELECTROLYTIC: PartDefinition = {
   partNumber: "CAP-ELECTRO",
   description: "Polarized radial aluminum electrolytic capacitor",
   defaultFootprint: "capacitor:radial-can",
-  verified: true,
+  verified: false,
   ports: [
     { name: "+", kind: "passive", description: "Positive" },
     { name: "-", kind: "passive", description: "Negative" },
@@ -605,6 +629,7 @@ export const DIODE_1N4007: PartDefinition = {
   description: "1A 1000V general purpose silicon rectifier diode",
   defaultFootprint: "diode:do-41",
   verified: true,
+  datasheetUrl: "https://www.onsemi.com/pdf/datasheet/1n4001-d.pdf",
   defaultProperties: { forwardVoltage: 1.1, maxContinuousCurrent: 1.0 },
   ports: [
     { name: "A", kind: "passive", description: "Anode" },
@@ -620,6 +645,7 @@ export const TRANSISTOR_2N2222: PartDefinition = {
   description: "NPN silicon switching transistor (TO-92, 40V 800mA)",
   defaultFootprint: "transistor:to-92",
   verified: true,
+  datasheetUrl: "https://www.onsemi.com/pdf/datasheet/p2n2222a-d.pdf",
   defaultProperties: { vceMax: 40, icMax: 0.8, hfe: 100 },
   ports: [
     { name: "E", pinNumber: 1, kind: "passive", description: "Emitter" },
@@ -635,7 +661,7 @@ export const BUZZER_PIEZO: PartDefinition = {
   partNumber: "PIEZO-12MM",
   description: "Passive electromagnetic/piezo transducer",
   defaultFootprint: "buzzer:12mm",
-  verified: true,
+  verified: false,
   ports: [
     { name: "+", kind: "passive" },
     { name: "-", kind: "passive" },
@@ -663,6 +689,86 @@ export const PARTS_CATALOG: Record<string, PartDefinition> = {
 };
 
 /**
+ * Computes Levenshtein distance between two strings for typo tolerance.
+ */
+export function levenshteinDistance(a: string, b: string): number {
+  const an = a.length;
+  const bn = b.length;
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+  const matrix: number[][] = [];
+  for (let i = 0; i <= bn; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= an; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= bn; i++) {
+    for (let j = 1; j <= an; j++) {
+      if (b.charAt(i - 1).toLowerCase() === a.charAt(j - 1).toLowerCase()) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1, // insertion
+          matrix[i - 1][j] + 1, // deletion
+        );
+      }
+    }
+  }
+  return matrix[bn][an];
+}
+
+/**
+ * Finds the closest matching part definition for a given query string.
+ */
+export function findClosestPart(query: string): PartDefinition | undefined {
+  const parts = Object.values(PARTS_CATALOG);
+  let bestPart: PartDefinition | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (const part of parts) {
+    const dId = levenshteinDistance(query, part.id);
+    const dPartNum = levenshteinDistance(query, part.partNumber);
+    const dName = levenshteinDistance(query, part.name);
+    const minD = Math.min(dId, dPartNum, dName);
+
+    if (minD < bestDistance) {
+      bestDistance = minD;
+      bestPart = part;
+    }
+  }
+
+  // Suggest if distance is reasonable (<= max(4, query.length / 2))
+  if (bestPart && bestDistance <= Math.max(5, Math.floor(query.length * 0.7))) {
+    return bestPart;
+  }
+  return undefined;
+}
+
+/**
+ * Look up a part by ID or partNumber, providing suggestion if not found.
+ */
+export function lookupPartWithSuggestion(query: string): {
+  part?: PartDefinition;
+  suggestion?: string;
+  availablePartIds: string[];
+} {
+  const part = getPartDefinition(query);
+  const availablePartIds = Object.keys(PARTS_CATALOG);
+  if (part) {
+    return { part, availablePartIds };
+  }
+  const closest = findClosestPart(query);
+  return {
+    part: undefined,
+    suggestion: closest ? closest.id : undefined,
+    availablePartIds,
+  };
+}
+
+/**
  * Creates a Circuit IR Component instance from a verified catalog part.
  */
 export function instantiatePart(
@@ -674,9 +780,15 @@ export function instantiatePart(
     properties?: Record<string, string | number | boolean>;
   },
 ): Component {
-  const def = typeof partOrId === "string" ? PARTS_CATALOG[partOrId] : partOrId;
+  const def = typeof partOrId === "string" ? getPartDefinition(partOrId) : partOrId;
   if (!def) {
-    throw new Error(`Part definition not found in catalog: ${partOrId}`);
+    const queryStr = String(partOrId);
+    const closest = findClosestPart(queryStr);
+    const didYouMean = closest ? ` Did you mean '${closest.id}'?` : "";
+    const catalogList = Object.keys(PARTS_CATALOG).join(", ");
+    throw new Error(
+      `Part '${queryStr}' not found in catalog.${didYouMean} Available catalog parts: [${catalogList}].`,
+    );
   }
 
   const ports: Port[] = def.ports.map((p) => ({
@@ -702,7 +814,7 @@ export function instantiatePart(
       ...(options?.properties ?? {}),
     },
     ports,
-    verified: true,
+    verified: def.verified,
   };
 }
 
@@ -716,6 +828,7 @@ export function getPartDefinition(query: string): PartDefinition | undefined {
   return Object.values(PARTS_CATALOG).find(
     (p) =>
       p.partNumber.toLowerCase() === query.toLowerCase() ||
-      p.name.toLowerCase() === query.toLowerCase(),
+      p.name.toLowerCase() === query.toLowerCase() ||
+      p.id.toLowerCase() === query.toLowerCase(),
   );
 }

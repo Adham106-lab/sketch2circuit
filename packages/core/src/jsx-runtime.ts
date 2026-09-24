@@ -4,11 +4,12 @@
  */
 
 import type { Circuit, ComponentKind, NetKind } from "@s2c/circuit-json";
-import { PARTS_CATALOG, getPartDefinition } from "@s2c/parts";
+import { getPartDefinition, PARTS_CATALOG } from "@s2c/parts";
 import { CircuitBuilder } from "./builder.js";
 
 export type JSXComponentType =
   | string
+  | symbol
   | ((props: Record<string, unknown>) => S2CElement | S2CElement[] | null);
 
 export interface S2CElement {

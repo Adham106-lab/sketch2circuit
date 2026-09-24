@@ -11,5 +11,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@s2c/circuit-json": "workspace:*",
+    "@s2c/core": "workspace:*"
   }
 }

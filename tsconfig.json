@@ -34,6 +34,21 @@
       ],
       "@s2c/core/jsx-runtime": [
         "./packages/core/src/jsx-runtime.ts"
+      ],
+      "@s2c/render-schematic": [
+        "./packages/render-schematic/src/index.ts"
+      ],
+      "@s2c/rules": [
+        "./packages/rules/src/index.ts"
+      ],
+      "@s2c/arduino": [
+        "./packages/arduino/src/index.ts"
+      ],
+      "@s2c/export": [
+        "./packages/export/src/index.ts"
+      ],
+      "@s2c/cli": [
+        "./packages/cli/src/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,

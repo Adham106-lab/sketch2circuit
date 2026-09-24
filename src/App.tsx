@@ -1,288 +1,120 @@
-import { type Circuit, getCircuitJsonSchema, safeParseCircuit } from "@s2c/circuit-json";
+/**
+ * @license Apache-2.0
+ * sketch2circuit — Interactive Browser Playground & Synthesis IDE (Milestone 7).
+ */
+
+import { type SynthesisResult, synthesizeSketch } from "@s2c/arduino";
 import {
-  calculateLedResistor,
-  calculateVoltageDivider,
-  formatEngineering,
-  parseEngineering,
-} from "@s2c/units";
-import {
-  Activity,
-  AlertCircle,
+  AlertTriangle,
+  Boxes,
   Calculator,
-  Check,
-  CheckCircle2,
-  Copy,
+  Code2,
   Cpu,
-  FileCode,
+  Eye,
   Layers,
-  Sliders,
-  Zap,
+  Share2,
+  ShieldAlert,
+  Sparkles,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-
-const PRESET_CIRCUITS: Record<string, { name: string; description: string; data: Circuit }> = {
-  led_circuit: {
-    name: "Arduino D13 LED Circuit",
-    description:
-      "Standard current-limiting circuit connecting Arduino digital pin 13 to an LED and GND via 220Ω resistor.",
-    data: {
-      schemaVersion: "0.1.0",
-      name: "Arduino D13 LED Circuit",
-      components: [
-        {
-          id: "U1",
-          kind: "mcu",
-          partNumber: "ATMEGA328P-PU",
-          ports: [
-            {
-              id: "U1.D13",
-              name: "D13",
-              kind: "output",
-              pinCapabilities: ["GPIO", "PWM"],
-              voltageRange: [0, 5],
-              currentLimit: 0.04,
-            },
-            { id: "U1.GND", name: "GND", kind: "ground", voltageRange: [0, 0] },
-          ],
-        },
-        {
-          id: "R1",
-          kind: "resistor",
-          value: "220Ω",
-          ports: [
-            { id: "R1.1", name: "1", kind: "passive" },
-            { id: "R1.2", name: "2", kind: "passive" },
-          ],
-        },
-        {
-          id: "D1",
-          kind: "led",
-          ports: [
-            { id: "D1.A", name: "A", kind: "passive" },
-            { id: "D1.K", name: "K", kind: "passive" },
-          ],
-        },
-      ],
-      nets: [
-        { id: "NET_D13", kind: "signal", portIds: ["U1.D13", "R1.1"] },
-        { id: "NET_R_LED", kind: "signal", portIds: ["R1.2", "D1.A"] },
-        { id: "GND", kind: "ground", portIds: ["D1.K", "U1.GND"] },
-      ],
-      assumptions: [
-        {
-          id: "asm_1",
-          category: "peripheral-type",
-          description: "Standard red LED forward voltage is approximately 1.8V to 2.0V",
-          confidence: 0.95,
-          evidence: ["Standard red indicator LED specification"],
-        },
-      ],
-    },
-  },
-  voltage_divider: {
-    name: "Analog Voltage Divider",
-    description: "5V to 3.33V resistor voltage divider (10kΩ and 20kΩ) for ADC attenuation.",
-    data: {
-      schemaVersion: "0.1.0",
-      name: "Analog Voltage Divider",
-      components: [
-        {
-          id: "R1",
-          kind: "resistor",
-          value: "10kΩ",
-          ports: [
-            { id: "R1.1", name: "1", kind: "passive" },
-            { id: "R1.2", name: "2", kind: "passive" },
-          ],
-        },
-        {
-          id: "R2",
-          kind: "resistor",
-          value: "20kΩ",
-          ports: [
-            { id: "R2.1", name: "1", kind: "passive" },
-            { id: "R2.2", name: "2", kind: "passive" },
-          ],
-        },
-      ],
-      nets: [
-        { id: "VCC_5V", kind: "power", portIds: ["R1.1"] },
-        { id: "DIV_OUT", kind: "signal", portIds: ["R1.2", "R2.1"] },
-        { id: "GND", kind: "ground", portIds: ["R2.2"] },
-      ],
-    },
-  },
-  broken_circuit: {
-    name: "Broken Referential Integrity (Test)",
-    description:
-      "Invalid circuit containing duplicate component IDs and dangling port references to demonstrate rule verification.",
-    data: {
-      schemaVersion: "0.1.0",
-      name: "Broken Referential Integrity Test",
-      components: [
-        {
-          id: "R1",
-          kind: "resistor",
-          value: "100Ω",
-          ports: [{ id: "R1.1", name: "1", kind: "passive" }],
-        },
-        {
-          id: "R1",
-          kind: "resistor",
-          value: "220Ω",
-          ports: [{ id: "R1.1", name: "1", kind: "passive" }],
-        },
-      ],
-      nets: [{ id: "NET_ERR", kind: "signal", portIds: ["R1.1", "U1.NON_EXISTENT_PORT"] }],
-    },
-  },
-};
+import { CalculatorsTab } from "./components/CalculatorsTab.js";
+import { ErcDiagnostics } from "./components/ErcDiagnostics.js";
+import { ExportArtifacts } from "./components/ExportArtifacts.js";
+import { PartsCatalogBrowser } from "./components/PartsCatalogBrowser.js";
+import { SchematicViewer } from "./components/SchematicViewer.js";
+import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"circuit" | "units" | "led" | "divider" | "schema">(
-    "circuit",
+  // Main Tab Navigation
+  const [activeMainTab, setActiveMainTab] = useState<
+    "studio" | "erc" | "export" | "catalog" | "calculators"
+  >("studio");
+
+  // Studio Sub-view: Schematic vs. Facts/Inference
+  const [studioRightView, setStudioRightView] = useState<"schematic" | "facts" | "pingraph">(
+    "schematic",
   );
 
-  // Tab 1: Circuit Validator State
-  const [selectedPreset, setSelectedPreset] = useState<string>("led_circuit");
-  const [circuitJsonText, setCircuitJsonText] = useState<string>(() =>
-    JSON.stringify(PRESET_CIRCUITS.led_circuit?.data, null, 2),
-  );
-  const [copiedSchema, setCopiedSchema] = useState(false);
+  // Synthesizer State
+  const [selectedSketchId, setSelectedSketchId] = useState<string>("blink");
+  const [sketchSource, setSketchSource] = useState<string>(SAMPLE_SKETCHES[0].code);
+  const [targetBoard, setTargetBoard] = useState<string>("ARDUINO_UNO_R3");
 
-  // Tab 2: Engineering Units State
-  const [engInput, setEngInput] = useState("4k7");
-  const [rNotationToggle, setRNotationToggle] = useState(true);
-  const [engUnitType, setEngUnitType] = useState("Ω");
-
-  // Tab 3: LED Calculator State
-  const [ledVSource, setLedVSource] = useState<number>(5.0);
-  const [ledVForward, setLedVForward] = useState<number>(2.0);
-  const [ledCurrentMa, setLedCurrentMa] = useState<number>(15);
-  const [ledSeries, setLedSeries] = useState<"E12" | "E24" | "E96">("E24");
-
-  // Tab 4: Voltage Divider State
-  const [divVin, setDivVin] = useState<number>(5.0);
-  const [divR1, setDivR1] = useState<number>(10000);
-  const [divR2, setDivR2] = useState<number>(20000);
-
-  // Parse Circuit JSON live
-  const validationResult = useMemo(() => {
+  // Run Synthesis reactively
+  const synthesis: SynthesisResult = useMemo(() => {
     try {
-      const parsedRaw = JSON.parse(circuitJsonText);
-      const res = safeParseCircuit(parsedRaw);
-      if (!res.success) {
-        return {
-          valid: false,
-          errors: "errors" in res ? res.errors : ["Validation error"],
-          circuit: null,
-        };
-      }
-      return { valid: true, errors: [], circuit: res.data };
-    } catch (e: unknown) {
-      return {
-        valid: false,
-        errors: [(e as Error).message || "Invalid JSON syntax"],
-        circuit: null,
-      };
-    }
-  }, [circuitJsonText]);
-
-  // Engineering parse live
-  const parsedEngineering = useMemo(() => {
-    try {
-      const val = parseEngineering(engInput);
-      const formatted = formatEngineering(val, {
-        unit: engUnitType,
-        rNotation: rNotationToggle,
-        precision: 2,
+      return synthesizeSketch(sketchSource, {
+        boardId: targetBoard,
+        timestamp: "2026-09-24T00:00:00.000Z",
       });
-      const formattedStandard = formatEngineering(val, {
-        unit: engUnitType,
-        rNotation: false,
-        precision: 3,
-      });
-      return { success: true, value: val, formatted, formattedStandard, error: null };
     } catch (e: unknown) {
+      // In case of syntax error during typing, provide a graceful fallback with diagnostic
       return {
-        success: false,
-        value: null,
-        formatted: "",
-        formattedStandard: "",
-        error: (e as Error).message,
-      };
-    }
-  }, [engInput, engUnitType, rNotationToggle]);
-
-  // LED Resistor calculation live
-  const ledResult = useMemo(() => {
-    try {
-      return {
-        success: true,
-        data: calculateLedResistor(ledVSource, ledVForward, ledCurrentMa / 1000, ledSeries),
-        error: null,
-      };
-    } catch (e: unknown) {
-      return { success: false, data: null, error: (e as Error).message };
-    }
-  }, [ledVSource, ledVForward, ledCurrentMa, ledSeries]);
-
-  // Voltage Divider calculation live
-  const dividerResult = useMemo(() => {
-    try {
-      const data = calculateVoltageDivider(divVin, divR1, divR2);
-      const ratio = divVin !== 0 ? data.vOut / divVin : 0;
-      const powerR1 = data.quiescentCurrent * data.quiescentCurrent * divR1;
-      const powerR2 = data.quiescentCurrent * data.quiescentCurrent * divR2;
-      return {
-        success: true,
-        data: {
-          ...data,
-          ratio,
-          powerR1,
-          powerR2,
+        circuit: {
+          schemaVersion: "0.1.0",
+          name: "Syntax Error",
+          components: [],
+          nets: [],
         },
-        error: null,
+        peripherals: [],
+        pinGraph: new Map(),
+        diagnostics: [
+          {
+            ruleId: "erc.syntax-error",
+            severity: "error",
+            message: `Sketch synthesis error: ${(e as Error).message}`,
+          },
+        ],
+        assumptions: [],
+        unresolved: [`Error: ${(e as Error).message}`],
+        unresolvedItems: [],
       };
-    } catch (e: unknown) {
-      return { success: false, data: null, error: (e as Error).message };
     }
-  }, [divVin, divR1, divR2]);
+  }, [sketchSource, targetBoard]);
 
-  const jsonSchema = useMemo(() => {
-    return JSON.stringify(getCircuitJsonSchema(), null, 2);
-  }, []);
-
-  const handleCopySchema = () => {
-    navigator.clipboard.writeText(jsonSchema);
-    setCopiedSchema(true);
-    setTimeout(() => setCopiedSchema(false), 2000);
+  // Handle Preset Selection
+  const handleSelectPreset = (id: string) => {
+    setSelectedSketchId(id);
+    const found = SAMPLE_SKETCHES.find((s) => s.id === id);
+    if (found) {
+      setSketchSource(found.code);
+    }
   };
+
+  // Add Annotation Helper
+  const handleInsertAnnotation = (ann: string) => {
+    setSketchSource((prev) => `${ann}\n${prev}`);
+  };
+
+  const currentSketchMeta = SAMPLE_SKETCHES.find((s) => s.id === selectedSketchId);
+
+  const errorCount = synthesis.diagnostics.filter((d) => d.severity === "error").length;
+  const warningCount = synthesis.diagnostics.filter((d) => d.severity === "warning").length;
 
   return (
     <div
       id="workbench-root"
-      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans"
+      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white"
     >
-      {/* Top Header */}
+      {/* Top Application Header */}
       <header
         id="workbench-header"
-        className="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 flex flex-wrap items-center justify-between gap-4"
+        className="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40"
       >
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
-            <Cpu className="w-6 h-6" />
+            <Cpu className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-white">sketch2circuit</h1>
-              <span className="text-xs px-2 py-0.5 rounded-full font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+              <h1 className="text-lg font-bold tracking-tight text-white">sketch2circuit</h1>
+              <span className="text-[11px] px-2 py-0.5 rounded-full font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                v0.1.0 Online
+                Evidence-Based Synthesizer
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Electronics-as-Code Synthesizer &amp; Circuit IR Toolchain
+            <p className="text-xs text-slate-400 hidden sm:block">
+              Electronics-as-Code Compiler &amp; 18-Rule Electrical Verification
             </p>
           </div>
         </div>
@@ -290,233 +122,462 @@ export default function App() {
         {/* Global Navigation Tabs */}
         <nav
           id="workbench-nav"
-          className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-sm"
+          className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs"
         >
           <button
-            id="tab-circuit"
+            id="tab-studio"
             type="button"
-            onClick={() => setActiveTab("circuit")}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition ${
-              activeTab === "circuit"
+            onClick={() => setActiveMainTab("studio")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+              activeMainTab === "studio"
                 ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            <Activity className="w-4 h-4" />
-            Circuit IR
+            <Code2 className="w-4 h-4" />
+            <span>Sketch Studio</span>
           </button>
+
           <button
-            id="tab-units"
+            id="tab-erc"
             type="button"
-            onClick={() => setActiveTab("units")}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition ${
-              activeTab === "units"
+            onClick={() => setActiveMainTab("erc")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+              activeMainTab === "erc"
                 ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            <Sliders className="w-4 h-4" />
-            Units &amp; Notation
+            <ShieldAlert className="w-4 h-4" />
+            <span>ERC Diagnostics</span>
+            {(errorCount > 0 || warningCount > 0) && (
+              <span
+                className={`ml-0.5 px-1.5 py-0.2 rounded-full font-mono text-[10px] ${
+                  errorCount > 0
+                    ? "bg-rose-500 text-white"
+                    : "bg-amber-500 text-slate-950 font-bold"
+                }`}
+              >
+                {errorCount || warningCount}
+              </span>
+            )}
           </button>
+
           <button
-            id="tab-led"
+            id="tab-export"
             type="button"
-            onClick={() => setActiveTab("led")}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition ${
-              activeTab === "led"
+            onClick={() => setActiveMainTab("export")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+              activeMainTab === "export"
                 ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            <Zap className="w-4 h-4" />
-            LED Resistor
+            <Share2 className="w-4 h-4" />
+            <span>Export Artifacts</span>
           </button>
+
           <button
-            id="tab-divider"
+            id="tab-catalog"
             type="button"
-            onClick={() => setActiveTab("divider")}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition ${
-              activeTab === "divider"
+            onClick={() => setActiveMainTab("catalog")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+              activeMainTab === "catalog"
                 ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Boxes className="w-4 h-4" />
+            <span>Parts Catalog</span>
+          </button>
+
+          <button
+            id="tab-calculators"
+            type="button"
+            onClick={() => setActiveMainTab("calculators")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+              activeMainTab === "calculators"
+                ? "bg-indigo-600 text-white font-medium shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
             <Calculator className="w-4 h-4" />
-            Voltage Divider
-          </button>
-          <button
-            id="tab-schema"
-            type="button"
-            onClick={() => setActiveTab("schema")}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-2 transition ${
-              activeTab === "schema"
-                ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-300 hover:text-white hover:bg-slate-700/50"
-            }`}
-          >
-            <FileCode className="w-4 h-4" />
-            Draft-07 Schema
+            <span>Calculators</span>
           </button>
         </nav>
       </header>
 
-      {/* Main Workspace Body */}
-      <main id="workbench-main" className="flex-1 p-6 max-w-7xl w-full mx-auto">
-        {/* TAB 1: Circuit IR Live Inspector & Validator */}
-        {activeTab === "circuit" && (
-          <div id="panel-circuit-ir" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Circuit IR Editor</h2>
-                  <p className="text-xs text-slate-400">
-                    Live Zod schema validation &amp; referential integrity enforcement
-                  </p>
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 lg:p-6 max-w-[1700px] w-full mx-auto flex flex-col">
+        {/* ========================================================================= */}
+        {/* TAB 1: ARDUINO SKETCH STUDIO & LIVE SYNTHESIZER                           */}
+        {/* ========================================================================= */}
+        {activeMainTab === "studio" && (
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[600px]">
+            {/* LEFT COLUMN: Arduino Sketch Code Editor */}
+            <div className="lg:col-span-5 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+              {/* Preset Selector & Board Target */}
+              <div className="p-3.5 bg-slate-950/80 border-b border-slate-800 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex-1">
+                    <label
+                      htmlFor="corpus-preset-select"
+                      className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-1"
+                    >
+                      Corpus Preset Sketch:
+                    </label>
+                    <select
+                      id="corpus-preset-select"
+                      value={selectedSketchId}
+                      onChange={(e) => handleSelectPreset(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium focus:outline-none focus:border-indigo-500"
+                    >
+                      {SAMPLE_SKETCHES.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.category})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="mcu-target-select"
+                      className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-1"
+                    >
+                      MCU Target:
+                    </label>
+                    <select
+                      id="mcu-target-select"
+                      value={targetBoard}
+                      onChange={(e) => setTargetBoard(e.target.value)}
+                      className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="ARDUINO_UNO_R3">Arduino Uno R3</option>
+                      <option value="ARDUINO_NANO">Arduino Nano V3</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">Presets:</span>
-                  <select
-                    id="preset-selector"
-                    value={selectedPreset}
-                    onChange={(e) => {
-                      const key = e.target.value;
-                      setSelectedPreset(key);
-                      const targetPreset = PRESET_CIRCUITS[key];
-                      if (targetPreset) {
-                        setCircuitJsonText(JSON.stringify(targetPreset.data, null, 2));
-                      }
-                    }}
-                    className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+
+                {currentSketchMeta && (
+                  <p className="text-xs text-slate-400 leading-relaxed bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+                    {currentSketchMeta.description}
+                  </p>
+                )}
+
+                {/* Quick Annotation Injectors */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="text-[10px] font-mono text-slate-500 uppercase">
+                    Insert Annotation:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertAnnotation("// @s2c: led(color=blue) on D9")}
+                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono text-[10px] transition"
                   >
-                    <option value="led_circuit">Arduino D13 LED</option>
-                    <option value="voltage_divider">Voltage Divider</option>
-                    <option value="broken_circuit">Integrity Violations (Test)</option>
-                  </select>
+                    + @s2c: led on D9
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertAnnotation("// @s2c: button on D2")}
+                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono text-[10px] transition"
+                  >
+                    + @s2c: button on D2
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertAnnotation("// @s2c: ignore on D0")}
+                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 font-mono text-[10px] transition"
+                  >
+                    + @s2c: ignore D0
+                  </button>
                 </div>
               </div>
 
-              <div className="relative rounded-xl border border-slate-800 bg-slate-900/90 overflow-hidden shadow-inner flex flex-col flex-1 min-h-[420px]">
+              {/* Code Editor Area */}
+              <div className="flex-1 relative flex flex-col min-h-[350px]">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-950 border-b border-slate-800 text-[11px] font-mono text-slate-400">
+                  <span>sketch.ino (C++ / Arduino)</span>
+                  <span className="text-slate-500">Tree-sitter C++ AST active</span>
+                </div>
                 <textarea
-                  id="circuit-json-editor"
-                  value={circuitJsonText}
-                  onChange={(e) => setCircuitJsonText(e.target.value)}
-                  className="w-full flex-1 p-4 bg-transparent font-mono text-xs text-slate-200 resize-none focus:outline-none leading-relaxed"
+                  value={sketchSource}
+                  onChange={(e) => setSketchSource(e.target.value)}
+                  className="flex-1 w-full bg-slate-950/90 text-slate-100 font-mono text-xs p-4 leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   spellCheck={false}
                 />
               </div>
-            </div>
 
-            {/* Validation & Component Topology View */}
-            <div className="lg:col-span-6 flex flex-col gap-4">
-              {/* Status Header */}
-              <div
-                id="validation-status-card"
-                className={`p-4 rounded-xl border flex items-start gap-3.5 transition ${
-                  validationResult.valid
-                    ? "bg-emerald-950/30 border-emerald-700/50 text-emerald-300"
-                    : "bg-rose-950/30 border-rose-700/50 text-rose-300"
-                }`}
-              >
-                {validationResult.valid ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <h3 className="font-semibold text-sm">
-                    {validationResult.valid
-                      ? "Circuit IR Validated: Structural & Referential Integrity Passed"
-                      : "Integrity or Schema Violations Found"}
-                  </h3>
-                  <p className="text-xs opacity-80 mt-0.5">
-                    {validationResult.valid
-                      ? `Successfully validated ${validationResult.circuit?.components.length} components and ${validationResult.circuit?.nets.length} interconnected nets.`
-                      : `${validationResult.errors.length} issue(s) require attention.`}
-                  </p>
+              {/* Editor Footer / Synthesis Status */}
+              <div className="p-3 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="font-mono text-slate-300">
+                    {synthesis.peripherals.length} peripherals inferred
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {synthesis.unresolved.length > 0 && (
+                    <span className="text-amber-400 font-mono text-[11px] flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {synthesis.unresolved.length} Unresolved
+                    </span>
+                  )}
+                  <span className="text-slate-500 font-mono text-[11px]">
+                    Auto-synthesizing live
+                  </span>
                 </div>
               </div>
+            </div>
 
-              {/* Error List if any */}
-              {!validationResult.valid && (
-                <div
-                  id="validation-errors"
-                  className="bg-slate-900/80 border border-rose-900/40 rounded-xl p-4"
+            {/* RIGHT COLUMN: Interactive Schematic & Synthesis Inspector */}
+            <div className="lg:col-span-7 flex flex-col space-y-4">
+              {/* Sub-view switcher */}
+              <div className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-xl border border-slate-800 text-xs">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setStudioRightView("schematic")}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+                      studioRightView === "schematic"
+                        ? "bg-indigo-600 text-white font-medium"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Live Schematic</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStudioRightView("facts")}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+                      studioRightView === "facts"
+                        ? "bg-indigo-600 text-white font-medium"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Inferred Peripherals ({synthesis.peripherals.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStudioRightView("pingraph")}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+                      studioRightView === "pingraph"
+                        ? "bg-indigo-600 text-white font-medium"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Pin Graph &amp; Unresolved</span>
+                  </button>
+                </div>
+
+                {/* Quick ERC badge link */}
+                <button
+                  type="button"
+                  onClick={() => setActiveMainTab("erc")}
+                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[11px] font-mono border transition ${
+                    errorCount > 0
+                      ? "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                      : warningCount > 0
+                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+                        : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                  }`}
                 >
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-rose-400 mb-2">
-                    Validation Diagnostics
-                  </h4>
-                  <ul className="space-y-1.5 text-xs text-rose-200 font-mono">
-                    {validationResult.errors.map((err, idx) => (
-                      <li
-                        key={`err-${idx}`}
-                        className="flex items-start gap-2 bg-rose-950/40 px-2.5 py-1.5 rounded border border-rose-900/30"
-                      >
-                        <span className="text-rose-500 font-bold shrink-0">•</span>
-                        <span>{err}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <span>
+                    ERC: {errorCount} Err, {warningCount} Warn
+                  </span>
+                </button>
+              </div>
+
+              {/* View 1: Vector Schematic */}
+              {studioRightView === "schematic" && (
+                <div className="flex-1 min-h-[500px]">
+                  <SchematicViewer
+                    circuit={synthesis.circuit}
+                    sketchName={currentSketchMeta?.name || "ArduinoSketch"}
+                  />
                 </div>
               )}
 
-              {/* Topology Summary */}
-              {validationResult.valid && validationResult.circuit && (
-                <div id="circuit-topology-view" className="flex flex-col gap-4">
-                  <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                      Components ({validationResult.circuit.components.length})
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {validationResult.circuit.components.map((comp) => (
+              {/* View 2: Inferred Peripherals with Evidence & Confidence */}
+              {studioRightView === "facts" && (
+                <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-y-auto space-y-4 shadow-2xl">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span>Evidence-Based Peripheral Inference (Doc §12.4a)</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Every peripheral component is synthesized with an audit trail showing
+                      confidence scoring and code evidence.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {synthesis.peripherals.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic p-6 text-center">
+                        No peripherals inferred from current sketch. Add pin operations or @s2c
+                        annotations.
+                      </p>
+                    ) : (
+                      synthesis.peripherals.map((p) => (
                         <div
-                          key={comp.id}
-                          className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 flex flex-col gap-1.5"
+                          key={p.id}
+                          className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2.5"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-xs font-bold text-indigo-300">
-                              {comp.id}
-                            </span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-                              {comp.kind}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-bold text-indigo-400">
+                                {p.id}
+                              </span>
+                              <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono capitalize">
+                                {p.kind}
+                              </span>
+                            </div>
+
+                            {/* Confidence Score Meter */}
+                            <div className="flex items-center gap-2">
+                              <div className="w-20 bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    p.confidence >= 0.9
+                                      ? "bg-emerald-400"
+                                      : p.confidence >= 0.7
+                                        ? "bg-amber-400"
+                                        : "bg-rose-400"
+                                  }`}
+                                  style={{ width: `${p.confidence * 100}%` }}
+                                />
+                              </div>
+                              <span className="font-mono text-xs text-slate-200">
+                                {Math.round(p.confidence * 100)}%
+                              </span>
+                            </div>
                           </div>
-                          {comp.value && (
-                            <span className="text-xs text-emerald-400 font-mono">
-                              Val: {comp.value}
+
+                          {/* Connected Pins */}
+                          <div className="flex gap-2 text-xs font-mono">
+                            <span className="text-slate-500">Connected Pins:</span>
+                            {Object.entries(p.pins).map(([role, pin]) => (
+                              <span
+                                key={role}
+                                className="px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-amber-300"
+                              >
+                                {role}: {pin}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Evidence list */}
+                          <div className="space-y-1 text-xs">
+                            <span className="text-slate-500 font-semibold block text-[11px]">
+                              Evidence from Sketch:
                             </span>
+                            {p.evidence.map((ev, i) => (
+                              <p
+                                key={i}
+                                className="text-slate-300 font-mono text-[11px] bg-slate-900/60 p-1.5 rounded border border-slate-800/80"
+                              >
+                                • {ev}
+                              </p>
+                            ))}
+                          </div>
+
+                          {/* Assumptions */}
+                          {p.assumptions.length > 0 && (
+                            <div className="text-xs bg-slate-900/40 p-2 rounded border border-slate-800 text-slate-400">
+                              <strong className="text-slate-300 text-[11px]">
+                                Hardware Assumptions:
+                              </strong>{" "}
+                              {p.assumptions.join("; ")}
+                            </div>
                           )}
-                          <div className="text-[11px] text-slate-400">
-                            Ports: {comp.ports.map((p) => p.name).join(", ")}
-                          </div>
                         </div>
-                      ))}
-                    </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* View 3: Pin Usage Graph & Unresolved Items */}
+              {studioRightView === "pingraph" && (
+                <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-y-auto space-y-5 shadow-2xl">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-sky-400" />
+                      <span>Pin Usage Graph (Doc §12.3)</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Tracks pinMode configurations, operations (digitalWrite, analogRead, tone),
+                      and dynamic expression resolution.
+                    </p>
                   </div>
 
-                  <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-amber-400" />
-                      Nets &amp; Connectivity ({validationResult.circuit.nets.length})
+                  {/* Pin Graph Table */}
+                  <div className="overflow-x-auto border border-slate-800 rounded-xl">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="bg-slate-950 text-slate-300 uppercase font-mono text-[10px] tracking-wider border-b border-slate-800">
+                        <tr>
+                          <th className="py-2.5 px-3">Pin</th>
+                          <th className="py-2.5 px-3">Configured Modes</th>
+                          <th className="py-2.5 px-3">Operations</th>
+                          <th className="py-2.5 px-3">Variable Identifiers</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
+                        {Array.from(synthesis.pinGraph.values()).map((p) => (
+                          <tr key={p.pin} className="hover:bg-slate-800/40 transition">
+                            <td className="py-2 px-3 font-bold text-indigo-400">{p.pin}</td>
+                            <td className="py-2 px-3 text-emerald-400">
+                              {Array.from(p.modes).join(", ") || "—"}
+                            </td>
+                            <td className="py-2 px-3 text-amber-300">
+                              {Array.from(p.ops).join(", ") || "—"}
+                            </td>
+                            <td className="py-2 px-3 text-slate-400">
+                              {p.nameHints.join(", ") || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Unresolved items panel */}
+                  <div className="p-4 bg-slate-950 rounded-xl border border-amber-500/30 space-y-2">
+                    <h4 className="text-xs font-semibold text-amber-400 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>Unresolved Dynamic Pin Expressions (Doc §12.8)</span>
                     </h4>
-                    <div className="space-y-2">
-                      {validationResult.circuit.nets.map((net) => (
-                        <div
-                          key={net.id}
-                          className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between gap-4 text-xs font-mono"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-amber-400 font-bold">{net.id}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                              {net.kind}
-                            </span>
+                    {synthesis.unresolvedItems.length === 0 ? (
+                      <p className="text-xs text-slate-400">
+                        All pin references in the sketch are statically resolved constants or
+                        macros. No dynamic runtime indexes detected.
+                      </p>
+                    ) : (
+                      <div className="space-y-2 pt-1">
+                        {synthesis.unresolvedItems.map((u, i) => (
+                          <div
+                            key={i}
+                            className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 text-xs font-mono space-y-1"
+                          >
+                            <div className="text-rose-400 font-bold">
+                              Expression: {u.expression}
+                            </div>
+                            <div className="text-slate-300 text-[11px] font-sans">{u.reason}</div>
+                            <div className="text-slate-500 text-[10px]">
+                              Rule: System strictly refuses to guess dynamic pins at compile time.
+                            </div>
                           </div>
-                          <div className="text-slate-300 text-[11px] flex items-center gap-1">
-                            {net.portIds.join(" ⇄ ")}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -524,424 +585,60 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: Engineering Units & R-Notation */}
-        {activeTab === "units" && (
-          <div id="panel-units" className="max-w-3xl mx-auto flex flex-col gap-6">
-            <div>
-              <h2 className="text-lg font-semibold text-white">
-                Engineering Units &amp; R-Notation
-              </h2>
-              <p className="text-xs text-slate-400">
-                Bidirectional parsing and formatting supporting SI prefixes and IEC component
-                R-notation.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 flex flex-col gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 flex flex-col gap-1.5">
-                  <label htmlFor="eng-input-field" className="text-xs font-medium text-slate-300">
-                    Input String
-                  </label>
-                  <input
-                    id="eng-input-field"
-                    type="text"
-                    value={engInput}
-                    onChange={(e) => setEngInput(e.target.value)}
-                    placeholder="e.g. 4k7, 100nF, 22pF, 0R1"
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="eng-unit-selector" className="text-xs font-medium text-slate-300">
-                    Unit Type
-                  </label>
-                  <select
-                    id="eng-unit-selector"
-                    value={engUnitType}
-                    onChange={(e) => setEngUnitType(e.target.value)}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="Ω">Resistance (Ω)</option>
-                    <option value="F">Capacitance (F)</option>
-                    <option value="H">Inductance (H)</option>
-                    <option value="V">Voltage (V)</option>
-                    <option value="A">Current (A)</option>
-                    <option value="Hz">Frequency (Hz)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Quick Preset Buttons & Options */}
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-slate-400">Quick tests:</span>
-                  {["4k7", "2R2", "100nF", "22pF", "10M", "0R47", "330"].map((sample) => (
-                    <button
-                      key={sample}
-                      type="button"
-                      onClick={() => setEngInput(sample)}
-                      className="text-xs font-mono px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700"
-                    >
-                      {sample}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rNotationToggle}
-                    onChange={(e) => setRNotationToggle(e.target.checked)}
-                    className="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0"
-                  />
-                  <span>R-Notation Mode</span>
-                </label>
-              </div>
-
-              {/* Conversion Output Panel */}
-              <div className="pt-4 border-t border-slate-800">
-                {parsedEngineering.success ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Numeric Value</div>
-                      <div className="text-lg font-mono font-bold text-white mt-1">
-                        {parsedEngineering.value}
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">Base SI float</div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Standard SI Format</div>
-                      <div className="text-lg font-mono font-bold text-emerald-400 mt-1">
-                        {parsedEngineering.formattedStandard}
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
-                        Standard Prefix + Unit
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">R-Notation Format</div>
-                      <div className="text-lg font-mono font-bold text-amber-400 mt-1">
-                        {parsedEngineering.formatted}
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
-                        Embedded Decimal Prefix
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-800/40 text-rose-300 text-xs">
-                    Parse Error: {parsedEngineering.error}
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* ========================================================================= */}
+        {/* TAB 2: ELECTRICAL RULES CHECK (ERC) DIAGNOSTICS                            */}
+        {/* ========================================================================= */}
+        {activeMainTab === "erc" && (
+          <div className="flex-1 min-h-[600px]">
+            <ErcDiagnostics diagnostics={synthesis.diagnostics} />
           </div>
         )}
 
-        {/* TAB 3: LED Resistor Calculator */}
-        {activeTab === "led" && (
-          <div id="panel-led" className="max-w-3xl mx-auto flex flex-col gap-6">
-            <div>
-              <h2 className="text-lg font-semibold text-white">LED Current-Limiting Resistor</h2>
-              <p className="text-xs text-slate-400">
-                Calculates required resistance, snaps to standard E-series (IEC 60063), and
-                evaluates power dissipation.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 flex flex-col gap-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="led-vsource" className="text-xs font-medium text-slate-300">
-                    Supply Voltage (V)
-                  </label>
-                  <input
-                    id="led-vsource"
-                    type="number"
-                    step="0.1"
-                    value={ledVSource}
-                    onChange={(e) => setLedVSource(Number(e.target.value))}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="led-vforward" className="text-xs font-medium text-slate-300">
-                    Forward Drop VF (V)
-                  </label>
-                  <input
-                    id="led-vforward"
-                    type="number"
-                    step="0.1"
-                    value={ledVForward}
-                    onChange={(e) => setLedVForward(Number(e.target.value))}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="led-current" className="text-xs font-medium text-slate-300">
-                    Target Current (mA)
-                  </label>
-                  <input
-                    id="led-current"
-                    type="number"
-                    step="1"
-                    value={ledCurrentMa}
-                    onChange={(e) => setLedCurrentMa(Number(e.target.value))}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="led-series" className="text-xs font-medium text-slate-300">
-                    E-Series Snapping
-                  </label>
-                  <select
-                    id="led-series"
-                    value={ledSeries}
-                    onChange={(e) => setLedSeries(e.target.value as "E12" | "E24" | "E96")}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="E12">E12 (10% Tolerance)</option>
-                    <option value="E24">E24 (5% Tolerance)</option>
-                    <option value="E96">E96 (1% Precision)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Quick LED Color Presets */}
-              <div className="flex items-center gap-2 flex-wrap text-xs">
-                <span className="text-slate-400">LED presets:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLedVForward(1.8);
-                    setLedCurrentMa(15);
-                  }}
-                  className="px-2.5 py-1 rounded bg-rose-950/60 text-rose-300 border border-rose-800/40"
-                >
-                  Red (1.8V @ 15mA)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLedVForward(2.1);
-                    setLedCurrentMa(20);
-                  }}
-                  className="px-2.5 py-1 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/40"
-                >
-                  Green (2.1V @ 20mA)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLedVForward(3.2);
-                    setLedCurrentMa(20);
-                  }}
-                  className="px-2.5 py-1 rounded bg-sky-950/60 text-sky-300 border border-sky-800/40"
-                >
-                  Blue/White (3.2V @ 20mA)
-                </button>
-              </div>
-
-              {/* Results */}
-              <div className="pt-4 border-t border-slate-800">
-                {ledResult.success && ledResult.data ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Standard Resistor</div>
-                      <div className="text-xl font-mono font-bold text-indigo-400 mt-1">
-                        {ledResult.data.recommendedResistance} Ω
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
-                        Exact: {ledResult.data.exactResistance.toFixed(1)} Ω
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Actual Current</div>
-                      <div className="text-xl font-mono font-bold text-emerald-400 mt-1">
-                        {(ledResult.data.operatingCurrent * 1000).toFixed(2)} mA
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
-                        Target: {ledCurrentMa} mA
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Power Dissipation</div>
-                      <div className="text-xl font-mono font-bold text-amber-400 mt-1">
-                        {(ledResult.data.resistorPower * 1000).toFixed(1)} mW
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">P = I² × R</div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Recommended Rating</div>
-                      <div className="text-xl font-mono font-bold text-purple-400 mt-1">
-                        {ledResult.data.recommendedPowerRating}
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
-                        Safe margin included
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-800/40 text-rose-300 text-xs">
-                    {ledResult.error}
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* ========================================================================= */}
+        {/* TAB 3: MULTI-FORMAT ARTIFACT EXPORTS                                      */}
+        {/* ========================================================================= */}
+        {activeMainTab === "export" && (
+          <div className="flex-1 min-h-[600px]">
+            <ExportArtifacts
+              circuit={synthesis.circuit}
+              diagnostics={synthesis.diagnostics}
+              sketchName={currentSketchMeta?.name || "SynthesizedCircuit"}
+              sourceCode={sketchSource}
+            />
           </div>
         )}
 
-        {/* TAB 4: Voltage Divider Calculator */}
-        {activeTab === "divider" && (
-          <div id="panel-divider" className="max-w-3xl mx-auto flex flex-col gap-6">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Voltage Divider Calculator</h2>
-              <p className="text-xs text-slate-400">
-                Calculates output voltage, quiescent current, and resistor power dissipation.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 flex flex-col gap-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="div-vin" className="text-xs font-medium text-slate-300">
-                    Input Voltage Vin (V)
-                  </label>
-                  <input
-                    id="div-vin"
-                    type="number"
-                    step="0.1"
-                    value={divVin}
-                    onChange={(e) => setDivVin(Number(e.target.value))}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="div-r1" className="text-xs font-medium text-slate-300">
-                    Top Resistor R1 (Ω)
-                  </label>
-                  <input
-                    id="div-r1"
-                    type="number"
-                    step="100"
-                    value={divR1}
-                    onChange={(e) => setDivR1(Number(e.target.value))}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="div-r2" className="text-xs font-medium text-slate-300">
-                    Bottom Resistor R2 (Ω)
-                  </label>
-                  <input
-                    id="div-r2"
-                    type="number"
-                    step="100"
-                    value={divR2}
-                    onChange={(e) => setDivR2(Number(e.target.value))}
-                    className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              {/* Results */}
-              <div className="pt-4 border-t border-slate-800">
-                {dividerResult.success && dividerResult.data ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Output Voltage Vout</div>
-                      <div className="text-xl font-mono font-bold text-emerald-400 mt-1">
-                        {dividerResult.data.vOut.toFixed(3)} V
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
-                        Ratio: {(dividerResult.data.ratio * 100).toFixed(1)}%
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Divider Current</div>
-                      <div className="text-xl font-mono font-bold text-indigo-400 mt-1">
-                        {(dividerResult.data.quiescentCurrent * 1000).toFixed(3)} mA
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
-                        I = Vin / (R1 + R2)
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                      <div className="text-xs text-slate-400">Power Dissipation</div>
-                      <div className="text-sm font-mono text-slate-200 mt-1 space-y-0.5">
-                        <div>R1: {(dividerResult.data.powerR1 * 1000).toFixed(2)} mW</div>
-                        <div>R2: {(dividerResult.data.powerR2 * 1000).toFixed(2)} mW</div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-800/40 text-rose-300 text-xs">
-                    {dividerResult.error}
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* ========================================================================= */}
+        {/* TAB 4: PARTS CATALOG EXPLORER                                             */}
+        {/* ========================================================================= */}
+        {activeMainTab === "catalog" && (
+          <div className="flex-1 min-h-[600px]">
+            <PartsCatalogBrowser />
           </div>
         )}
 
-        {/* TAB 5: JSON Schema Export */}
-        {activeTab === "schema" && (
-          <div id="panel-schema" className="max-w-4xl mx-auto flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-white">
-                  Circuit IR JSON Schema (Draft-07)
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Self-contained Draft-07 specification schema for electronics-as-code
-                  interoperability.
-                </p>
-              </div>
-              <button
-                id="copy-schema-btn"
-                type="button"
-                onClick={handleCopySchema}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center gap-1.5 transition"
-              >
-                {copiedSchema ? (
-                  <Check className="w-3.5 h-3.5" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
-                {copiedSchema ? "Copied!" : "Copy Schema JSON"}
-              </button>
-            </div>
-
-            <div className="rounded-xl border border-slate-800 bg-slate-900/90 overflow-hidden shadow-inner p-4 max-h-[500px] overflow-y-auto font-mono text-xs text-slate-300">
-              <pre>{jsonSchema}</pre>
-            </div>
+        {/* ========================================================================= */}
+        {/* TAB 5: ENGINEERING CALCULATORS                                            */}
+        {/* ========================================================================= */}
+        {activeMainTab === "calculators" && (
+          <div className="flex-1 min-h-[600px]">
+            <CalculatorsTab />
           </div>
         )}
       </main>
 
       {/* Footer */}
-      <footer
-        id="workbench-footer"
-        className="border-t border-slate-800/80 bg-slate-900/40 px-6 py-3 text-xs text-slate-500 flex items-center justify-between"
-      >
-        <div>sketch2circuit • Milestone 1 Core Tools</div>
-        <div className="flex items-center gap-4">
-          <span>@s2c/circuit-json v0.1.0</span>
-          <span>@s2c/units v0.1.0</span>
+      <footer className="border-t border-slate-800 px-6 py-3 bg-slate-950 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="font-semibold text-slate-400">sketch2circuit v0.1.0</span>
+          <span>·</span>
+          <span>Doc §12 Arduino Synthesis Pipeline</span>
+          <span>·</span>
+          <span>Doc §10 Net-Label Schematic Renderer</span>
+          <span>·</span>
+          <span>18-Rule Electrical Check Engine</span>
         </div>
+        <div className="font-mono text-[11px]">Deterministic Pipeline · Output IR Schema 0.1.0</div>
       </footer>
     </div>
   );

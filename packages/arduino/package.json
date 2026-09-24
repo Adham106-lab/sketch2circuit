@@ -9,6 +9,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@s2c/circuit-json": "workspace:*",
+    "@s2c/core": "workspace:*",
+    "@s2c/parts": "workspace:*",
+    "@s2c/rules": "workspace:*",
+    "@s2c/units": "workspace:*",
     "web-tree-sitter": "0.27.0",
     "tree-sitter-cpp": "0.23.4"
   },
