@@ -339,6 +339,7 @@ function extractFallbackFacts(source: string, state: WalkerState): void {
       "analogWrite",
       "analogRead",
       "tone",
+      "noTone",
       "pulseIn",
       "attachInterrupt",
     ];

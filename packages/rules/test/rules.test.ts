@@ -124,6 +124,32 @@ describe("@s2c/rules Electrical Rules Check (ERC) Complete 18-Rule Engine (Doc Â
       const diags = runErc(circuit, { enabledRules: ["erc.power-short"] });
       expect(diags).toHaveLength(0);
     });
+
+    it("POSITIVE: does NOT flag false collision between SG90 servo VCC (4.8-6.0V rating) and 5V power net", () => {
+      const circuit = createCircuit({ title: "Servo on 5V" })
+        .addPart("ARDUINO_UNO_R3", "U1")
+        .addPart("SG90_SERVO", "SERVO1")
+        .connectNet("5V", ["U1.5V", "SERVO1.VCC"])
+        .connectNet("GND", ["U1.GND", "SERVO1.GND"])
+        .build();
+
+      const diags = runErc(circuit, { enabledRules: ["erc.power-short"] });
+      expect(diags).toHaveLength(0);
+    });
+
+    it("NEGATIVE: detects direct collision between distinct supply rails (5V and 3.3V)", () => {
+      const circuit = createCircuit({ title: "Rail Collision" })
+        .addPart("ARDUINO_UNO_R3", "U1")
+        .connectNet("COLLIDING_RAILS", ["U1.5V", "U1.3V3"])
+        .build();
+
+      const diags = runErc(circuit, { enabledRules: ["erc.power-short"] });
+      expect(diags).toHaveLength(1);
+      expect(diags[0].ruleId).toBe("erc.power-short");
+      expect(diags[0].message).toContain(
+        "Direct collision between distinct power rails (5V and 3.3V)",
+      );
+    });
   });
 
   // -------------------------------------------------------------

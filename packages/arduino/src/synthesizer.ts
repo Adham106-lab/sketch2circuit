@@ -92,6 +92,20 @@ export function synthesizeSketch(
   // 8. Run Electrical Rules Check (ERC) validation across full 18-rule catalog
   const diagnostics = runErc(circuit);
 
+  // Check for bare motor peripherals driving GPIO directly without driver or flyback
+  for (const p of sortedPeripherals) {
+    if (p.properties?.isBareMotor) {
+      diagnostics.push({
+        ruleId: "erc.inductive-load-no-flyback",
+        severity: "warning",
+        message: `Bare DC motor '${p.id}' on pin '${p.pins.pin}' has no transistor driver or flyback diode.`,
+        explanation: `DC motors exceed MCU GPIO current limits (40mA max) and generate destructive inductive kickback spikes (V = -L * di/dt) that destroy microcontroller I/O pins.`,
+        target: { type: "component", id: boardRef },
+        suggestion: `Use a transistor or MOSFET driver stage (e.g. 2N2222 or TIP120) with a 1N4007 clamp diode and separate motor power supply.`,
+      });
+    }
+  }
+
   return {
     circuit,
     peripherals: sortedPeripherals,

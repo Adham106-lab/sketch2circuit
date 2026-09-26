@@ -85,8 +85,10 @@ export type PeripheralKind =
   | "piezo"
   | "hc-sr04"
   | "potentiometer"
+  | "photoresistor"
   | "i2c-device"
   | "relay"
+  | "motor"
   | "generic";
 
 export interface InferredPeripheral {

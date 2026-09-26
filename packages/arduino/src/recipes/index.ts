@@ -21,8 +21,16 @@ export function applyRecipes(
   let rCounter = 1;
   let potCounter = 1;
   let servoCounter = 1;
+  let cServoCounter = 1;
   let sonarCounter = 1;
   let piezoCounter = 1;
+  let ldrCounter = 1;
+  let sensorCounter = 1;
+  let motorCounter = 1;
+  let relayCounter = 1;
+  let i2cCounter = 1;
+  let devCounter = 1;
+  let hasAddedI2cPullups = false;
 
   for (const p of peripherals) {
     switch (p.kind) {
@@ -73,11 +81,16 @@ export function applyRecipes(
       case "servo": {
         const pinId = p.pins.pin;
         const servoRef = `SERVO${servoCounter++}`;
+        const bulkCapRef = `C_SERVO${cServoCounter++}`;
         builder
           .addPart("SG90_SERVO", servoRef)
           .connect(`${boardRef}.${pinId}`, `${servoRef}.PWM`)
           .connectNet("5V", [`${boardRef}.5V`, `${servoRef}.VCC`])
-          .connectNet("GND", [`${boardRef}.GND`, `${servoRef}.GND`]);
+          .connectNet("GND", [`${boardRef}.GND`, `${servoRef}.GND`])
+          // Doc §12.5: 100–470 µF bulk capacitor across servo power supply terminals
+          .addPart("CAPACITOR_ELECTROLYTIC", bulkCapRef, { value: "100µF" })
+          .connectNet("5V", [`${boardRef}.5V`, `${bulkCapRef}.+`])
+          .connectNet("GND", [`${boardRef}.GND`, `${bulkCapRef}.-`]);
         break;
       }
 
@@ -115,6 +128,146 @@ export function applyRecipes(
           .connect(`${boardRef}.${pinId}`, `${resRef}.1`)
           .connect(`${resRef}.2`, `${piezoRef}.+`)
           .connectNet("GND", [`${piezoRef}.-`, `${boardRef}.GND`]);
+        break;
+      }
+
+      case "photoresistor": {
+        const pinId = p.pins.pin;
+        const ldrRef = `LDR${ldrCounter++}`;
+        const resRef = `R${rCounter++}`;
+
+        // Voltage divider per Doc §12.5: 5V -> LDR.1, LDR.2 -> Pin & 10kΩ Resistor.1, Resistor.2 -> GND
+        builder
+          .addPart("PHOTORESISTOR_LDR", ldrRef)
+          .addResistor(resRef, "10kΩ")
+          .connectNet("5V", [`${boardRef}.5V`, `${ldrRef}.1`])
+          .connect(`${boardRef}.${pinId}`, `${ldrRef}.2`, `${resRef}.1`)
+          .connectNet("GND", [`${resRef}.2`, `${boardRef}.GND`]);
+        break;
+      }
+
+      case "motor": {
+        const pinId = p.pins.pin;
+        const motorRef = `M${motorCounter++}`;
+        builder
+          .addPart("MOTOR_DC_GENERIC", motorRef)
+          .connect(`${boardRef}.${pinId}`, `${motorRef}.+`)
+          .connectNet("GND", [`${motorRef}.-`, `${boardRef}.GND`]);
+        break;
+      }
+
+      case "relay": {
+        const pinId = p.pins.pin;
+        const relayRef = `RELAY${relayCounter++}`;
+        builder
+          .addPart("RELAY_MODULE_5V", relayRef)
+          .connect(`${boardRef}.${pinId}`, `${relayRef}.IN`)
+          .connectNet("5V", [`${boardRef}.5V`, `${relayRef}.VCC`])
+          .connectNet("GND", [`${boardRef}.GND`, `${relayRef}.GND`]);
+        break;
+      }
+
+      case "i2c-device": {
+        const i2cRef = `I2C${i2cCounter++}`;
+        builder
+          .addPart("I2C_GENERIC_DEVICE", i2cRef)
+          .connectNet("5V", [`${boardRef}.5V`, `${i2cRef}.VCC`])
+          .connectNet("GND", [`${boardRef}.GND`, `${i2cRef}.GND`])
+          .connect(`${boardRef}.SDA`, `${i2cRef}.SDA`)
+          .connect(`${boardRef}.SCL`, `${i2cRef}.SCL`);
+
+        // Doc §12.5: Add 4.7kΩ pull-up resistors on SDA/SCL to VCC once per bus
+        if (options.includeI2cPullups !== false && !hasAddedI2cPullups) {
+          hasAddedI2cPullups = true;
+          const rSda = `R${rCounter++}`;
+          const rScl = `R${rCounter++}`;
+          builder
+            .addResistor(rSda, "4.7kΩ")
+            .addResistor(rScl, "4.7kΩ")
+            .connectNet("5V", [`${boardRef}.5V`, `${rSda}.1`, `${rScl}.1`])
+            .connect(`${boardRef}.SDA`, `${rSda}.2`)
+            .connect(`${boardRef}.SCL`, `${rScl}.2`);
+        }
+        break;
+      }
+
+      case "generic": {
+        const pinId = p.pins.pin;
+
+        // 1. Bare DC motor / inductive actuator
+        const isMotor =
+          p.properties?.isBareMotor || p.id.startsWith("MOTOR") || /motor|pump|fan/i.test(p.id);
+
+        if (isMotor && pinId) {
+          const motorRef = `M${motorCounter++}`;
+          builder
+            .addPart("MOTOR_DC_GENERIC", motorRef)
+            .connect(`${boardRef}.${pinId}`, `${motorRef}.+`)
+            .connectNet("GND", [`${motorRef}.-`, `${boardRef}.GND`]);
+          break;
+        }
+
+        // 2. LDR / Photoresistor
+        const isLdr =
+          p.id.startsWith("LDR") ||
+          p.properties?.subtype === "photoresistor" ||
+          p.properties?.sensorType === "ldr" ||
+          /ldr|photo|light/i.test(p.id);
+
+        if (isLdr && pinId) {
+          const ldrRef = `LDR${ldrCounter++}`;
+          const resRef = `R${rCounter++}`;
+
+          // Voltage divider per Doc §12.5: 5V -> LDR.1, LDR.2 -> Pin & 10kΩ Resistor.1, Resistor.2 -> GND
+          builder
+            .addPart("PHOTORESISTOR_LDR", ldrRef)
+            .addResistor(resRef, "10kΩ")
+            .connectNet("5V", [`${boardRef}.5V`, `${ldrRef}.1`])
+            .connect(`${boardRef}.${pinId}`, `${ldrRef}.2`, `${resRef}.1`)
+            .connectNet("GND", [`${resRef}.2`, `${boardRef}.GND`]);
+          break;
+        }
+
+        // 3. Generic analog sensor / thermistor on analog pin (e.g. A0-A5, ADC)
+        const isAnalogPin = pinId && (pinId.startsWith("A") || pinId.startsWith("ADC"));
+        if (isAnalogPin) {
+          const sensorRef = `SENSOR${sensorCounter++}`;
+          const resRef = `R${rCounter++}`;
+
+          builder
+            .addComponent(sensorRef, "sensor", {
+              name: p.id.startsWith("TEMP")
+                ? "Analog Temperature Sensor / NTC"
+                : "Generic Analog Sensor",
+              partNumber: p.id.startsWith("TEMP") ? "NTC-10K" : "GENERIC-ANALOG-SENSOR",
+              ports: [
+                { name: "1", kind: "passive" },
+                { name: "2", kind: "passive" },
+              ],
+            })
+            .addResistor(resRef, "10kΩ")
+            .connectNet("5V", [`${boardRef}.5V`, `${sensorRef}.1`])
+            .connect(`${boardRef}.${pinId}`, `${sensorRef}.2`, `${resRef}.1`)
+            .connectNet("GND", [`${resRef}.2`, `${boardRef}.GND`]);
+          break;
+        }
+
+        // 4. Any other generic peripheral with a pin: ensure component + wiring are added
+        if (pinId) {
+          const genRef = `DEV${devCounter++}`;
+          builder
+            .addComponent(genRef, "generic", {
+              name: p.id,
+              partNumber: "GENERIC-PERIPHERAL",
+              ports: [
+                { name: "1", kind: "passive" },
+                { name: "2", kind: "passive" },
+              ],
+            })
+            .connect(`${boardRef}.${pinId}`, `${genRef}.1`)
+            .connectNet("GND", [`${genRef}.2`, `${boardRef}.GND`]);
+          break;
+        }
         break;
       }
     }

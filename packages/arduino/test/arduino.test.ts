@@ -468,4 +468,313 @@ describe("@s2c/arduino Sketch Synthesizer Pipeline (Doc §12)", () => {
       expect(sonarComp?.partNumber).toBe("HC-SR04");
     });
   });
+
+  // -------------------------------------------------------------
+  // Regression Tests: Issue Resolution
+  // -------------------------------------------------------------
+  describe("Regression: Servo attach with named constant pin (const int X_PIN = N)", () => {
+    it("resolves const int SERVO_PIN = 9 and wires port U1.D9 rather than DSERVO_PIN", () => {
+      const sketch = `
+        #include <Servo.h>
+        const int SERVO_PIN = 9;
+        Servo testServo;
+
+        void setup() {
+          testServo.attach(SERVO_PIN);
+        }
+
+        void loop() {
+          testServo.write(90);
+        }
+      `;
+
+      const result = synthesizeSketch(sketch);
+      const servo = result.peripherals.find((p) => p.kind === "servo");
+      expect(servo).toBeDefined();
+      expect(servo?.pins.pin).toBe("D9");
+      expect(servo?.confidence).toBe(0.95);
+
+      // Verify connection in circuit nets
+      const pwmNet = result.circuit.nets.find(
+        (n) => n.portIds.includes("U1.D9") && n.portIds.includes("SERVO1.PWM"),
+      );
+      expect(pwmNet).toBeDefined();
+    });
+
+    it("identifies bare DC motor driven by analogWrite and flags inductive warning", () => {
+      const sketch = `
+        const int MOTOR_PIN = 3;
+        void setup() {
+          pinMode(MOTOR_PIN, OUTPUT);
+        }
+        void loop() {
+          analogWrite(MOTOR_PIN, 180);
+        }
+      `;
+
+      const result = synthesizeSketch(sketch);
+      const motor = result.peripherals.find((p) => p.id === "MOTOR_D3");
+      expect(motor).toBeDefined();
+      expect(motor?.confidence).toBe(0.85);
+      expect(motor?.properties?.isBareMotor).toBe(true);
+
+      const flybackDiag = result.diagnostics.find(
+        (d) => d.ruleId === "erc.inductive-load-no-flyback",
+      );
+      expect(flybackDiag).toBeDefined();
+      expect(flybackDiag?.severity).toBe("warning");
+    });
+
+    it("synthesizes full real-world multi-peripheral stress test cleanly", () => {
+      const fs = require("node:fs");
+      const path = require("node:path");
+      const fixturePath = path.resolve(
+        __dirname,
+        "../../../fixtures/sketches/multi_peripheral_stress_test.ino",
+      );
+      const sketch = fs.readFileSync(fixturePath, "utf-8");
+
+      const result = synthesizeSketch(sketch);
+      expect(result.peripherals.length).toBe(9);
+
+      const kinds = result.peripherals.map((p) => p.kind);
+      expect(kinds).toContain("button");
+      expect(kinds).toContain("led");
+      expect(kinds).toContain("servo");
+      expect(kinds).toContain("piezo");
+      expect(kinds).toContain("potentiometer");
+      expect(kinds).toContain("generic");
+
+      // Verify Servo port resolution to D9
+      const servo = result.peripherals.find((p) => p.kind === "servo");
+      expect(servo?.pins.pin).toBe("D9");
+      expect(result.circuit.nets.some((n) => n.portIds.includes("U1.D9"))).toBe(true);
+
+      // Verify bare motor warning
+      const motorDiag = result.diagnostics.find(
+        (d) => d.ruleId === "erc.inductive-load-no-flyback",
+      );
+      expect(motorDiag).toBeDefined();
+
+      // Verify servo power warning
+      const servoDiag = result.diagnostics.find((d) => d.ruleId === "erc.servo-power");
+      expect(servoDiag).toBeDefined();
+
+      // Verify no power-short error on 5V net
+      const powerShortDiag = result.diagnostics.find((d) => d.ruleId === "erc.power-short");
+      expect(powerShortDiag).toBeUndefined();
+
+      // Verify buzzer is on D7 with 100Ω resistor
+      const buzzer = result.peripherals.find((p) => p.kind === "piezo");
+      expect(buzzer?.pins.pin).toBe("D7");
+
+      // Verify LDR on A1 is synthesized as a real component with 10kΩ divider
+      const ldr = result.peripherals.find((p) => p.id === "LDR_A1");
+      expect(ldr).toBeDefined();
+      const ldrComp = result.circuit.components.find((c) => c.id === "LDR1");
+      expect(ldrComp).toBeDefined();
+      expect(ldrComp?.kind).toBe("sensor");
+      const ldrDividerNet = result.circuit.nets.find((n) => n.portIds.includes("U1.A1"));
+      expect(ldrDividerNet).toBeDefined();
+      expect(ldrDividerNet?.portIds).toContain("LDR1.2");
+
+      // Verify Motor on D6 is synthesized as a real component with wiring
+      const motorComp = result.circuit.components.find((c) => c.id === "M1");
+      expect(motorComp).toBeDefined();
+      expect(motorComp?.name).toBe("Generic DC Motor");
+      const motorNet = result.circuit.nets.find((n) => n.portIds.includes("U1.D6"));
+      expect(motorNet).toBeDefined();
+      expect(motorNet?.portIds).toContain("M1.+");
+
+      // Verify Servo bulk capacitor across power terminals (Doc §12.5)
+      const servoBulkCap = result.circuit.components.find((c) => c.id === "C_SERVO1");
+      expect(servoBulkCap).toBeDefined();
+      expect(servoBulkCap?.value).toBe("100µF");
+      const fiveVoltNet = result.circuit.nets.find((n) => n.id === "5V");
+      expect(fiveVoltNet?.portIds).toContain("C_SERVO1.+");
+      const gndNet = result.circuit.nets.find((n) => n.id === "GND");
+      expect(gndNet?.portIds).toContain("C_SERVO1.-");
+    });
+
+    it("synthesizes pin driven only by tone()/noTone() as a piezo buzzer with 100Ω resistor, never an LED", () => {
+      const sketch = `
+        const int BUZZER_PIN = 7;
+        void setup() {
+          pinMode(BUZZER_PIN, OUTPUT);
+        }
+        void loop() {
+          tone(BUZZER_PIN, 440);
+          delay(250);
+          noTone(BUZZER_PIN);
+          delay(250);
+        }
+      `;
+
+      const result = synthesizeSketch(sketch);
+      const buzzer = result.peripherals.find((p) => p.pins.pin === "D7");
+      expect(buzzer).toBeDefined();
+      expect(buzzer?.kind).toBe("piezo");
+      expect(buzzer?.confidence).toBe(0.85);
+
+      // Ensure no LED component exists for D7
+      const leds = result.peripherals.filter((p) => p.kind === "led");
+      expect(leds).toHaveLength(0);
+
+      // Verify buzzer component and 100Ω resistor
+      const buzzerComp = result.circuit.components.find((c) => c.kind === "buzzer");
+      expect(buzzerComp).toBeDefined();
+      const resComp = result.circuit.components.find((c) => c.kind === "resistor");
+      expect(resComp?.value).toBe("100Ω");
+    });
+
+    it("synthesizes pin driven ONLY by noTone() as a piezo buzzer, never an LED", () => {
+      const sketch = `
+        const int BUZZER_PIN = 7;
+        void setup() {
+          pinMode(BUZZER_PIN, OUTPUT);
+        }
+        void loop() {
+          noTone(BUZZER_PIN);
+        }
+      `;
+
+      const result = synthesizeSketch(sketch);
+      const buzzer = result.peripherals.find((p) => p.pins.pin === "D7");
+      expect(buzzer).toBeDefined();
+      expect(buzzer?.kind).toBe("piezo");
+
+      // Ensure no LED was created
+      const leds = result.peripherals.filter((p) => p.kind === "led");
+      expect(leds).toHaveLength(0);
+    });
+
+    it("generic analog peripheral must synthesize an actual component, not just an inference-table entry", () => {
+      // 1. Photoresistor / LDR analog peripheral
+      const ldrSketch = `
+        const int ldrSensor = A1;
+        void loop() { int val = analogRead(ldrSensor); }
+      `;
+      const ldrResult = synthesizeSketch(ldrSketch);
+      expect(ldrResult.peripherals).toHaveLength(1);
+      expect(ldrResult.peripherals[0].id).toBe("LDR_A1");
+      // Component MUST exist in circuit, not just peripheral inference table
+      const ldrComp = ldrResult.circuit.components.find((c) => c.id === "LDR1");
+      expect(ldrComp).toBeDefined();
+      expect(ldrComp?.kind).toBe("sensor");
+      // Series resistor must exist in circuit
+      const ldrRes = ldrResult.circuit.components.find(
+        (c) => c.kind === "resistor" && c.value === "10kΩ",
+      );
+      expect(ldrRes).toBeDefined();
+      // Midpoint wiring must connect MCU A1 pin, LDR terminal 2, and Resistor terminal 1
+      const midpointNet = ldrResult.circuit.nets.find((n) => n.portIds.includes("U1.A1"));
+      expect(midpointNet).toBeDefined();
+      expect(midpointNet?.portIds).toContain("LDR1.2");
+      expect(midpointNet?.portIds).toContain(`${ldrRes?.id}.1`);
+
+      // 2. Generic analog sensor without LDR identifier hint (e.g. thermistor or generic analog ADC)
+      const genericAnalogSketch = `
+        const int tempSensor = A2;
+        void loop() { int val = analogRead(tempSensor); }
+      `;
+      const genericResult = synthesizeSketch(genericAnalogSketch);
+      expect(genericResult.peripherals).toHaveLength(1);
+      const genericComp = genericResult.circuit.components.find((c) => c.kind === "sensor");
+      expect(genericComp).toBeDefined();
+      const genericRes = genericResult.circuit.components.find(
+        (c) => c.kind === "resistor" && c.value === "10kΩ",
+      );
+      expect(genericRes).toBeDefined();
+      const genericNet = genericResult.circuit.nets.find((n) => n.portIds.includes("U1.A2"));
+      expect(genericNet).toBeDefined();
+    });
+
+    it("synthesizes relay module with component and wiring on digital output pin", () => {
+      const relaySketch = `
+        const int RELAY_PIN = 8;
+        void setup() {
+          pinMode(RELAY_PIN, OUTPUT);
+        }
+        void loop() {
+          digitalWrite(RELAY_PIN, HIGH);
+          delay(1000);
+          digitalWrite(RELAY_PIN, LOW);
+          delay(1000);
+        }
+      `;
+      const result = synthesizeSketch(relaySketch);
+      expect(result.peripherals).toHaveLength(1);
+      const relayPeripheral = result.peripherals[0];
+      expect(relayPeripheral.kind).toBe("relay");
+      expect(relayPeripheral.pins.pin).toBe("D8");
+      expect(relayPeripheral.confidence).toBe(0.8);
+
+      // Verify Relay component exists in circuit
+      const relayComp = result.circuit.components.find((c) => c.kind === "relay");
+      expect(relayComp).toBeDefined();
+      expect(relayComp?.id).toBe("RELAY1");
+      expect(relayComp?.partNumber).toBe("SRD-05VDC-SL-C-MOD");
+
+      // Verify IN control signal wired to MCU pin D8
+      const inNet = result.circuit.nets.find(
+        (n) => n.portIds.includes("RELAY1.IN") && n.portIds.includes("U1.D8"),
+      );
+      expect(inNet).toBeDefined();
+
+      // Verify VCC and GND power rails wired
+      const fiveVoltNet = result.circuit.nets.find((n) => n.id === "5V");
+      expect(fiveVoltNet?.portIds).toContain("RELAY1.VCC");
+      const gndNet = result.circuit.nets.find((n) => n.id === "GND");
+      expect(gndNet?.portIds).toContain("RELAY1.GND");
+    });
+
+    it("synthesizes I2C breakout module with bus wiring and 4.7kΩ pull-up resistors on Wire.begin()", () => {
+      const i2cSketch = `
+        #include <Wire.h>
+        void setup() {
+          Wire.begin();
+        }
+        void loop() {
+          Wire.beginTransmission(0x68);
+          Wire.write(0x3B);
+          Wire.endTransmission();
+        }
+      `;
+      const result = synthesizeSketch(i2cSketch);
+      expect(result.peripherals).toHaveLength(1);
+      const i2cPeripheral = result.peripherals[0];
+      expect(i2cPeripheral.kind).toBe("i2c-device");
+      expect(i2cPeripheral.confidence).toBe(0.85);
+
+      // Verify I2C Module component exists in circuit
+      const i2cComp = result.circuit.components.find(
+        (c) => c.kind === "module" && c.id.startsWith("I2C"),
+      );
+      expect(i2cComp).toBeDefined();
+      expect(i2cComp?.partNumber).toBe("I2C-MODULE-GENERIC");
+
+      // Verify 4.7kΩ bus pull-up resistors per Doc §12.5
+      const pullupResistors = result.circuit.components.filter(
+        (c) => c.kind === "resistor" && c.value === "4.7kΩ",
+      );
+      expect(pullupResistors).toHaveLength(2);
+
+      // Verify SDA and SCL bus nets connecting MCU, Module, and Pull-up resistors
+      const sdaNet = result.circuit.nets.find(
+        (n) => n.portIds.includes("U1.SDA") && n.portIds.includes(`${i2cComp?.id}.SDA`),
+      );
+      expect(sdaNet).toBeDefined();
+
+      const sclNet = result.circuit.nets.find(
+        (n) => n.portIds.includes("U1.SCL") && n.portIds.includes(`${i2cComp?.id}.SCL`),
+      );
+      expect(sclNet).toBeDefined();
+
+      // Verify VCC and GND connections
+      const fiveVoltNet = result.circuit.nets.find((n) => n.id === "5V");
+      expect(fiveVoltNet?.portIds).toContain(`${i2cComp?.id}.VCC`);
+      const gndNet = result.circuit.nets.find((n) => n.id === "GND");
+      expect(gndNet?.portIds).toContain(`${i2cComp?.id}.GND`);
+    });
+  });
 });

@@ -18,6 +18,7 @@ export const servoPowerRule: RuleDefinition = {
 
     // Find servo components
     const servos = circuit.components.filter((c) => {
+      if (c.kind === "capacitor" || c.kind === "resistor") return false;
       const idUpper = c.id.toUpperCase();
       const nameUpper = (c.name || "").toUpperCase();
       const partUpper = (c.partNumber || "").toUpperCase();

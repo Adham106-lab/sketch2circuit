@@ -668,6 +668,79 @@ export const BUZZER_PIEZO: PartDefinition = {
   ],
 };
 
+export const PHOTORESISTOR: PartDefinition = {
+  id: "PHOTORESISTOR_LDR",
+  name: "Photoresistor (LDR)",
+  kind: "sensor",
+  partNumber: "LDR-GL5528",
+  description: "Light Dependent Resistor (CdS photoresistor)",
+  defaultFootprint: "sensor:ldr-5mm",
+  verified: false,
+  datasheetUrl: "https://cdn.sparkfun.com/datasheets/Sensors/LightImaging/SEN-09088.pdf",
+  defaultProperties: {
+    darkResistance: "1MΩ",
+    lightResistance: "10kΩ-20kΩ",
+  },
+  ports: [
+    { name: "1", kind: "passive" },
+    { name: "2", kind: "passive" },
+  ],
+};
+
+export const MOTOR_DC: PartDefinition = {
+  id: "MOTOR_DC_GENERIC",
+  name: "Generic DC Motor",
+  kind: "generic",
+  partNumber: "DC-MOTOR-GENERIC",
+  description: "Standard DC brushed hobby motor (inductive actuator)",
+  defaultFootprint: "motor:dc-hobby",
+  verified: false,
+  datasheetUrl: "https://www.adafruit.com/product/711",
+  defaultProperties: { operatingVoltage: 5.0, currentA: 0.25 },
+  ports: [
+    { name: "+", kind: "passive", description: "Positive terminal (+)" },
+    { name: "-", kind: "passive", description: "Negative terminal (-)" },
+  ],
+};
+
+export const RELAY_MODULE: PartDefinition = {
+  id: "RELAY_MODULE_5V",
+  name: "5V Relay Module",
+  kind: "relay",
+  partNumber: "SRD-05VDC-SL-C-MOD",
+  description: "5V opto-isolated single-channel relay module with flyback diode",
+  defaultFootprint: "module:relay-1ch",
+  verified: false,
+  datasheetUrl:
+    "https://components101.com/switches/5v-single-channel-relay-module-pinout-features-datasheet",
+  defaultProperties: { coilVoltage: 5.0 },
+  ports: [
+    { name: "VCC", kind: "power", voltageRange: [4.5, 5.5] },
+    { name: "IN", kind: "input", voltageRange: [0, 5] },
+    { name: "GND", kind: "ground", voltageRange: [0, 0] },
+    { name: "NO", kind: "passive", description: "Normally Open contact" },
+    { name: "COM", kind: "passive", description: "Common contact" },
+    { name: "NC", kind: "passive", description: "Normally Closed contact" },
+  ],
+};
+
+export const I2C_GENERIC_DEVICE: PartDefinition = {
+  id: "I2C_GENERIC_DEVICE",
+  name: "Generic I2C Breakout Module",
+  kind: "module",
+  partNumber: "I2C-MODULE-GENERIC",
+  description: "Generic 4-pin I2C peripheral breakout module",
+  defaultFootprint: "module:i2c-4pin",
+  verified: false,
+  datasheetUrl: "https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
+  ports: [
+    { name: "VCC", kind: "power", voltageRange: [3.3, 5.0] },
+    { name: "GND", kind: "ground", voltageRange: [0, 0] },
+    { name: "SDA", kind: "bidirectional", pinCapabilities: ["I2C_SDA"] },
+    { name: "SCL", kind: "input", pinCapabilities: ["I2C_SCL"] },
+  ],
+};
+
 /**
  * Registry of all verified parts in the standard catalog.
  */
@@ -686,6 +759,17 @@ export const PARTS_CATALOG: Record<string, PartDefinition> = {
   [DIODE_1N4007.id]: DIODE_1N4007,
   [TRANSISTOR_2N2222.id]: TRANSISTOR_2N2222,
   [BUZZER_PIEZO.id]: BUZZER_PIEZO,
+  [PHOTORESISTOR.id]: PHOTORESISTOR,
+  PHOTORESISTOR: PHOTORESISTOR,
+  LDR: PHOTORESISTOR,
+  [MOTOR_DC.id]: MOTOR_DC,
+  MOTOR_DC: MOTOR_DC,
+  MOTOR: MOTOR_DC,
+  [RELAY_MODULE.id]: RELAY_MODULE,
+  RELAY_MODULE: RELAY_MODULE,
+  RELAY: RELAY_MODULE,
+  [I2C_GENERIC_DEVICE.id]: I2C_GENERIC_DEVICE,
+  I2C_DEVICE: I2C_GENERIC_DEVICE,
 };
 
 /**

@@ -511,6 +511,7 @@ Each rule = *evidence pattern → peripheral + confidence*. Rules are data + sma
 | `#include <SD.h>` / `SPI` + CS pin | SD card SPI module | 0.85 | 3.3 V logic on many bare modules; warn. |
 | `#include <Stepper.h>` | Stepper + driver | 0.8 | Needs driver (ULN2003 / A4988); external motor supply. |
 | output pin, name `/relay/i` | Relay module (or transistor + relay + flyback diode) | 0.8 | Coil current ≫ pin limit. |
+| `analogWrite(p, …)` (PWM) or output, name `/motor\|pump\|fan/i` | Bare DC motor (warn: needs transistor driver + flyback diode) | 0.85 | Warn: direct GPIO motor drive exceeds pin current limits & risks inductive kickback damage. |
 | `analogRead(p)`, name `/pot\|knob\|volume/i` | Potentiometer (10 kΩ) | 0.85 | Wiper → pin, ends → 5V/GND. |
 | `analogRead(p)`, name `/ldr\|light/i` | LDR + 10 kΩ divider | 0.8 | |
 | `analogRead(p)`, name `/temp\|therm/i` | NTC thermistor + 10 kΩ divider | 0.6 | Or LM35/TMP36 — low confidence, ask. |

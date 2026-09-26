@@ -106,7 +106,7 @@ export function buildPinUsageGraph(
       } else {
         recordUnresolved(rawPin, "analogRead", call.range);
       }
-    } else if (call.name === "tone") {
+    } else if (call.name === "tone" || call.name === "noTone") {
       const [rawPin] = call.args;
       const resolved = resolvePin(rawPin, facts);
       if (resolved) {
@@ -114,7 +114,7 @@ export function buildPinUsageGraph(
         pinUse.ops.add("tone");
         pinUse.ranges.push(call.range);
       } else {
-        recordUnresolved(rawPin, "tone", call.range);
+        recordUnresolved(rawPin, call.name, call.range);
       }
     } else if (call.name === "pulseIn") {
       const [rawPin] = call.args;

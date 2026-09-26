@@ -6,6 +6,47 @@
 import type { Circuit, Diagnostic, Port } from "@s2c/circuit-json";
 import type { RuleContext, RuleDefinition } from "../types.js";
 
+/**
+ * Resolves the supplied power rail voltage of a source port, or null if the port is a power consumer/load.
+ */
+function getSourceRailVoltage(port: Port, context: RuleContext): number | null {
+  const comp = context.portToComponent.get(port.id);
+  if (!comp) return null;
+
+  // MCU supply rails
+  if (comp.kind === "mcu") {
+    const name = port.name.toUpperCase();
+    if (name === "5V") return 5.0;
+    if (name === "3V3" || name === "3.3V") return 3.3;
+    if (name === "12V") return 12.0;
+    if (
+      port.voltageRange &&
+      port.voltageRange[0] === port.voltageRange[1] &&
+      port.voltageRange[0] > 0
+    ) {
+      return port.voltageRange[0];
+    }
+    return null;
+  }
+
+  // External connectors or IC regulators supplying power rails
+  if (comp.kind === "connector" || comp.kind === "ic") {
+    if (comp.properties?.voltage) {
+      const v = Number(comp.properties.voltage);
+      if (!Number.isNaN(v)) return v;
+    }
+    if (
+      port.voltageRange &&
+      port.voltageRange[0] === port.voltageRange[1] &&
+      port.voltageRange[0] > 0
+    ) {
+      return port.voltageRange[0];
+    }
+  }
+
+  return null;
+}
+
 export const powerShortRule: RuleDefinition = {
   id: "erc.power-short",
   name: "Power Supply Short Circuit Detection",
@@ -24,6 +65,9 @@ export const powerShortRule: RuleDefinition = {
       let groundPortDef: Port | null = null;
 
       const powerVoltages = new Set<number>();
+      if (net.voltage !== undefined) {
+        powerVoltages.add(net.voltage);
+      }
 
       for (const p of ports) {
         const upper = p.name.toUpperCase();
@@ -37,7 +81,11 @@ export const powerShortRule: RuleDefinition = {
         ) {
           hasPowerPort = true;
           powerPortDef = p;
-          if (p.voltageRange) powerVoltages.add(p.voltageRange[1]);
+          // Only compare actual source rail voltages from supplies/MCUs, never tolerance ranges of consumers
+          const sourceV = getSourceRailVoltage(p, context);
+          if (sourceV !== null) {
+            powerVoltages.add(sourceV);
+          }
         } else if (p.kind === "ground" || upper === "GND" || upper === "VSS" || upper === "0V") {
           hasGroundPort = true;
           groundPortDef = p;

@@ -3,6 +3,7 @@
  * @s2c/arduino — Sub-steps 6 & 7: Peripheral Inference Engine (Doc §12.4a & §12.6).
  */
 
+import { resolvePin } from "./resolve.js";
 import type { InferredPeripheral, PinUse, SketchFacts } from "./types.js";
 
 /**
@@ -37,6 +38,16 @@ export function inferPeripherals(
         id: `${ann.type.toUpperCase()}_${ann.pin}`,
         kind: mapPeripheralKind(ann.type),
         pins: { pin: ann.pin },
+        confidence: 1.0,
+        evidence: [`User annotation: @s2c: ${ann.raw}`],
+        assumptions: [],
+        properties: ann.params,
+      });
+    } else if (ann.type === "i2c") {
+      list.push({
+        id: `I2C_${(ann.params.device || "DEVICE").toUpperCase()}`,
+        kind: "i2c-device",
+        pins: { sda: "SDA", scl: "SCL" },
         confidence: 1.0,
         evidence: [`User annotation: @s2c: ${ann.raw}`],
         assumptions: [],
@@ -87,24 +98,45 @@ export function inferPeripherals(
   for (const call of facts.calls) {
     if (call.name === "attach" && call.target) {
       const pinArg = call.args[0];
-      const pinStr = typeof pinArg === "number" ? `D${pinArg}` : String(pinArg).toUpperCase();
-      const pinId = pinStr.startsWith("D") || pinStr.startsWith("A") ? pinStr : `D${pinStr}`;
+      const resolved = resolvePin(pinArg, facts);
+      const pinId = resolved
+        ? resolved.pinId
+        : typeof pinArg === "number"
+          ? `D${pinArg}`
+          : String(pinArg).toUpperCase();
+      const canonicalPinId = pinId.startsWith("D") || pinId.startsWith("A") ? pinId : `D${pinId}`;
 
-      if (!claimedPins.has(pinId)) {
-        claimedPins.add(pinId);
+      if (!claimedPins.has(canonicalPinId)) {
+        claimedPins.add(canonicalPinId);
         list.push({
-          id: `SERVO_${call.target.toUpperCase()}_${pinId}`,
+          id: `SERVO_${call.target.toUpperCase()}_${canonicalPinId}`,
           kind: "servo",
-          pins: { pin: pinId },
+          pins: { pin: canonicalPinId },
           confidence: 0.95,
           evidence: [
-            `#include <Servo.h> and ${call.target}.attach(${pinArg}) invocation on pin ${pinId}`,
+            `#include <Servo.h> and ${call.target}.attach(${pinArg}) invocation on pin ${canonicalPinId}`,
           ],
           assumptions: ["Assumed standard TowerPro SG90 9g positional servo motor"],
           properties: { stallCurrentA: 0.65 },
         });
       }
     }
+  }
+
+  // Check for I2C bus usage (Wire.begin() or #include <Wire.h>)
+  if (facts.wireEnabled || facts.includes.some((inc) => /Wire\.h/i.test(inc))) {
+    list.push({
+      id: "I2C_BUS_DEVICE",
+      kind: "i2c-device",
+      pins: { sda: "SDA", scl: "SCL" },
+      confidence: 0.85,
+      evidence: [
+        facts.wireEnabled
+          ? "Wire.begin() invocation enabling hardware I2C bus"
+          : "#include <Wire.h> included for I2C communication",
+      ],
+      assumptions: ["Assumed 5V I2C peripheral breakout module with 4.7kΩ bus pull-up resistors"],
+    });
   }
 
   // -------------------------------------------------------------
@@ -115,10 +147,13 @@ export function inferPeripherals(
 
     const hints = pinUse.nameHints.join(" ").toLowerCase();
 
-    // 1. Piezo Buzzer / Speaker: tone() or analogWrite with buzzer/piezo
+    // 1. Piezo Buzzer / Speaker: tone(), noTone(), or buzzer/piezo name hint with PWM/digital output
     if (
       pinUse.ops.has("tone") ||
-      (pinUse.ops.has("analogWrite") && /buzzer|piezo|sound|beep|speaker/i.test(hints))
+      (/buzzer|piezo|sound|beep|speaker/i.test(hints) &&
+        (pinUse.ops.has("analogWrite") ||
+          pinUse.modes.has("OUTPUT") ||
+          pinUse.ops.has("digitalWrite")))
     ) {
       claimedPins.add(pinUse.pin);
       list.push({
@@ -126,7 +161,11 @@ export function inferPeripherals(
         kind: "piezo",
         pins: { pin: pinUse.pin },
         confidence: pinUse.ops.has("tone") ? 0.85 : 0.8,
-        evidence: [`tone() or PWM frequency generator on pin ${pinUse.pin}`],
+        evidence: [
+          pinUse.ops.has("tone")
+            ? `tone()/noTone() frequency generator on pin ${pinUse.pin}`
+            : `Buzzer/piezo output with identifier '${hints}' on pin ${pinUse.pin}`,
+        ],
         assumptions: ["Assumed passive piezo transducer with 100Ω current limiting resistor"],
       });
       continue;
@@ -146,6 +185,30 @@ export function inferPeripherals(
       continue;
     }
 
+    // 2b. Bare DC Motor / Inductive Actuator: analogWrite or digital output with motor/pump/fan hint
+    if (
+      (pinUse.ops.has("analogWrite") ||
+        pinUse.modes.has("OUTPUT") ||
+        pinUse.ops.has("digitalWrite")) &&
+      /motor|pump|fan/i.test(hints)
+    ) {
+      claimedPins.add(pinUse.pin);
+      list.push({
+        id: `MOTOR_${pinUse.pin}`,
+        kind: "generic",
+        pins: { pin: pinUse.pin },
+        confidence: 0.85,
+        evidence: [
+          `PWM analogWrite() or digital output driving motor on pin ${pinUse.pin} with identifier '${hints}'`,
+        ],
+        assumptions: [
+          `WARNING: Direct GPIO drive for DC motor detected on ${pinUse.pin}. DC motors draw 100mA–1A+ (exceeding ATmega328P 40mA absolute max) and produce inductive back-EMF spikes (V = -L * di/dt) that destroy microcontroller I/O pins. A switching transistor/MOSFET driver (e.g. 2N2222/TIP120) and antiparallel flyback clamp diode (1N4007) are required.`,
+        ],
+        properties: { isBareMotor: true },
+      });
+      continue;
+    }
+
     // 3. Potentiometer / Analog Sensor: analogRead
     if (pinUse.ops.has("analogRead")) {
       claimedPins.add(pinUse.pin);
@@ -156,11 +219,12 @@ export function inferPeripherals(
       if (isLdr) {
         list.push({
           id: `LDR_${pinUse.pin}`,
-          kind: "generic",
+          kind: "photoresistor",
           pins: { pin: pinUse.pin },
           confidence: 0.8,
           evidence: [`analogRead() ADC with LDR light sensor identifier hint '${hints}'`],
           assumptions: ["Assumed photoresistor with 10kΩ pull-up/down voltage divider"],
+          properties: { sensorType: "ldr", subtype: "photoresistor" },
         });
       } else if (isTemp) {
         list.push({
@@ -289,5 +353,8 @@ function mapPeripheralKind(type: string): InferredPeripheral["kind"] {
   if (lower.includes("sonar") || lower.includes("sr04")) return "hc-sr04";
   if (lower === "pot" || lower === "potentiometer") return "potentiometer";
   if (lower === "relay") return "relay";
+  if (lower === "ldr" || lower === "photoresistor") return "photoresistor";
+  if (lower === "motor" || lower.includes("motor")) return "motor";
+  if (lower.includes("i2c")) return "i2c-device";
   return "generic";
 }
