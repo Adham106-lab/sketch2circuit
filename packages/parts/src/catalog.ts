@@ -12,6 +12,8 @@ export interface PartDefinition {
   partNumber: string;
   description: string;
   defaultFootprint?: string;
+  footprintId?: string;
+  pinMap?: Record<string, string>;
   verified: boolean;
   datasheetUrl?: string;
   defaultProperties?: Record<string, string | number | boolean>;
@@ -34,6 +36,42 @@ export const ARDUINO_UNO_R3: PartDefinition = {
   partNumber: "A000066",
   description: "ATmega328P based 8-bit AVR microcontroller development board (5V logic)",
   defaultFootprint: "module:arduino-uno-r3",
+  footprintId: "module:arduino-uno-r3",
+  pinMap: {
+    D0: "D0",
+    D1: "D1",
+    D2: "D2",
+    D3: "D3",
+    D4: "D4",
+    D5: "D5",
+    D6: "D6",
+    D7: "D7",
+    D8: "D8",
+    D9: "D9",
+    D10: "D10",
+    D11: "D11",
+    D12: "D12",
+    D13: "D13",
+    A0: "A0",
+    A1: "A1",
+    A2: "A2",
+    A3: "A3",
+    A4: "A4",
+    A5: "A5",
+    "5V": "5V",
+    "3V3": "3V3",
+    GND: "GND.1",
+    "GND.2": "GND.2",
+    "GND.3": "GND.1",
+    "POWER.GND.1": "GND.1",
+    "POWER.GND.2": "GND.2",
+    "DIGITAL.GND": "GND",
+    VIN: "VIN",
+    RESET: "RESET",
+    AREF: "AREF",
+    SDA: "SDA",
+    SCL: "SCL",
+  },
   verified: true,
   datasheetUrl: "https://docs.arduino.cc/resources/datasheets/A000066-datasheet.pdf",
   defaultProperties: {
@@ -243,6 +281,36 @@ export const ARDUINO_NANO: PartDefinition = {
   partNumber: "A000005",
   description: "Compact breadboard-friendly ATmega328P microcontroller board (5V logic)",
   defaultFootprint: "module:arduino-nano",
+  footprintId: "module:arduino-nano",
+  pinMap: {
+    D0: "1",
+    D1: "2",
+    RESET: "3",
+    GND: "4",
+    D2: "5",
+    D3: "6",
+    D4: "7",
+    D5: "8",
+    D6: "9",
+    D7: "10",
+    D8: "11",
+    D9: "12",
+    D10: "13",
+    D11: "14",
+    D12: "15",
+    D13: "16",
+    "3V3": "17",
+    A0: "18",
+    A1: "19",
+    A2: "20",
+    A3: "21",
+    A4: "22",
+    A5: "23",
+    A6: "24",
+    A7: "25",
+    "5V": "26",
+    VIN: "27",
+  },
   verified: true,
   datasheetUrl: "https://docs.arduino.cc/resources/datasheets/A000005-datasheet.pdf",
   defaultProperties: { operatingVoltage: 5.0, clockSpeedHz: 16000000 },
@@ -424,6 +492,20 @@ export const ESP32_WROOM_32: PartDefinition = {
   partNumber: "ESP32-DEVKITV1",
   description: "32-bit dual-core Wi-Fi/Bluetooth MCU development board (3.3V logic)",
   defaultFootprint: "module:esp32-devkit",
+  footprintId: "module:esp32-devkit",
+  pinMap: {
+    GPIO2: "1",
+    GPIO4: "2",
+    GPIO5: "3",
+    GPIO18: "4",
+    GPIO19: "5",
+    GPIO21: "6",
+    GPIO22: "7",
+    GPIO23: "8",
+    "3V3": "9",
+    GND: "10",
+    VIN: "11",
+  },
   verified: true,
   datasheetUrl:
     "https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf",
@@ -506,6 +588,13 @@ export const HC_SR04: PartDefinition = {
   partNumber: "HC-SR04",
   description: "Ultrasonic sonar ranging sensor (2cm to 400cm)",
   defaultFootprint: "module:hc-sr04",
+  footprintId: "module:hc-sr04",
+  pinMap: {
+    VCC: "VCC",
+    TRIG: "TRIG",
+    ECHO: "ECHO",
+    GND: "GND",
+  },
   verified: true,
   datasheetUrl: "https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf",
   defaultProperties: { supplyVoltage: 5.0, activeCurrentA: 0.015 },
@@ -522,8 +611,15 @@ export const SG90_SERVO: PartDefinition = {
   name: "TowerPro SG90 Micro Servo 9g",
   kind: "module",
   partNumber: "SG90",
-  description: "Analog 180 degree positional hobby servo motor",
+  description:
+    "Analog 180 degree positional hobby servo motor (Header Pinout: Pad 1 = PWM [Signal 'S', orange], Pad 2 = VCC [Power '+', red], Pad 3 = GND [Ground '-', brown]; check connector polarity before powering)",
   defaultFootprint: "header:3-pin-0.1in",
+  footprintId: "header:3-pin-0.1in",
+  pinMap: {
+    PWM: "1",
+    VCC: "2",
+    GND: "3",
+  },
   verified: true,
   datasheetUrl: "https://www.towerpro.com.tw/product/sg90-7/",
   defaultProperties: { supplyVoltage: 5.0, stallCurrentA: 0.65 },
@@ -541,6 +637,12 @@ export const POTENTIOMETER: PartDefinition = {
   partNumber: "B10K-ROTARY",
   description: "3-terminal linear rotary potentiometer",
   defaultFootprint: "pot:3-pin-rotary",
+  footprintId: "pot:3-pin-rotary",
+  pinMap: {
+    "1": "1",
+    "2": "2",
+    "3": "3",
+  },
   verified: false,
   defaultProperties: { resistanceOhms: 10000, taper: "linear" },
   ports: [
@@ -557,6 +659,11 @@ export const RESISTOR_GENERIC: PartDefinition = {
   partNumber: "RES-AXIAL",
   description: "Standard 2-lead passive resistor",
   defaultFootprint: "resistor:axial-0.3in",
+  footprintId: "resistor:axial-0.3in",
+  pinMap: {
+    "1": "1",
+    "2": "2",
+  },
   verified: false,
   ports: [
     { name: "1", kind: "passive" },
@@ -571,6 +678,11 @@ export const LED_GENERIC: PartDefinition = {
   partNumber: "LED-5MM",
   description: "Standard 2-pin light emitting diode",
   defaultFootprint: "led:5mm",
+  footprintId: "led:5mm",
+  pinMap: {
+    A: "2",
+    K: "1",
+  },
   verified: false,
   defaultProperties: { forwardVoltage: 2.0, maxCurrentAmps: 0.02 },
   ports: [
@@ -586,6 +698,11 @@ export const PUSHBUTTON: PartDefinition = {
   partNumber: "TACT-6MM",
   description: "4-pin SPST tactile push switch (paired contacts)",
   defaultFootprint: "button:tact-6mm",
+  footprintId: "button:tact-6mm",
+  pinMap: {
+    "1": "1",
+    "2": "2",
+  },
   verified: false,
   ports: [
     { name: "1", kind: "passive" },
@@ -600,6 +717,11 @@ export const CAPACITOR_CERAMIC: PartDefinition = {
   partNumber: "CAP-CERAMIC",
   description: "Non-polarized 2-lead ceramic disc capacitor",
   defaultFootprint: "capacitor:radial-0.1in",
+  footprintId: "capacitor:radial-0.1in",
+  pinMap: {
+    "1": "1",
+    "2": "2",
+  },
   verified: false,
   ports: [
     { name: "1", kind: "passive" },
@@ -614,6 +736,11 @@ export const CAPACITOR_ELECTROLYTIC: PartDefinition = {
   partNumber: "CAP-ELECTRO",
   description: "Polarized radial aluminum electrolytic capacitor",
   defaultFootprint: "capacitor:radial-can",
+  footprintId: "capacitor:radial-can",
+  pinMap: {
+    "+": "+",
+    "-": "-",
+  },
   verified: false,
   ports: [
     { name: "+", kind: "passive", description: "Positive" },
@@ -628,6 +755,11 @@ export const DIODE_1N4007: PartDefinition = {
   partNumber: "1N4007",
   description: "1A 1000V general purpose silicon rectifier diode",
   defaultFootprint: "diode:do-41",
+  footprintId: "diode:do-41",
+  pinMap: {
+    A: "2",
+    K: "1",
+  },
   verified: true,
   datasheetUrl: "https://www.onsemi.com/pdf/datasheet/1n4001-d.pdf",
   defaultProperties: { forwardVoltage: 1.1, maxContinuousCurrent: 1.0 },
@@ -644,6 +776,12 @@ export const TRANSISTOR_2N2222: PartDefinition = {
   partNumber: "2N2222",
   description: "NPN silicon switching transistor (TO-92, 40V 800mA)",
   defaultFootprint: "transistor:to-92",
+  footprintId: "transistor:to-92",
+  pinMap: {
+    E: "1",
+    B: "2",
+    C: "3",
+  },
   verified: true,
   datasheetUrl: "https://www.onsemi.com/pdf/datasheet/p2n2222a-d.pdf",
   defaultProperties: { vceMax: 40, icMax: 0.8, hfe: 100 },
@@ -661,6 +799,11 @@ export const BUZZER_PIEZO: PartDefinition = {
   partNumber: "PIEZO-12MM",
   description: "Passive electromagnetic/piezo transducer",
   defaultFootprint: "buzzer:12mm",
+  footprintId: "buzzer:12mm",
+  pinMap: {
+    "+": "+",
+    "-": "-",
+  },
   verified: false,
   ports: [
     { name: "+", kind: "passive" },
@@ -675,6 +818,11 @@ export const PHOTORESISTOR: PartDefinition = {
   partNumber: "LDR-GL5528",
   description: "Light Dependent Resistor (CdS photoresistor)",
   defaultFootprint: "sensor:ldr-5mm",
+  footprintId: "sensor:ldr-5mm",
+  pinMap: {
+    "1": "1",
+    "2": "2",
+  },
   verified: false,
   datasheetUrl: "https://cdn.sparkfun.com/datasheets/Sensors/LightImaging/SEN-09088.pdf",
   defaultProperties: {
@@ -694,6 +842,11 @@ export const MOTOR_DC: PartDefinition = {
   partNumber: "DC-MOTOR-GENERIC",
   description: "Standard DC brushed hobby motor (inductive actuator)",
   defaultFootprint: "motor:dc-hobby",
+  footprintId: "motor:dc-hobby",
+  pinMap: {
+    "+": "1",
+    "-": "2",
+  },
   verified: false,
   datasheetUrl: "https://www.adafruit.com/product/711",
   defaultProperties: { operatingVoltage: 5.0, currentA: 0.25 },
@@ -710,6 +863,15 @@ export const RELAY_MODULE: PartDefinition = {
   partNumber: "SRD-05VDC-SL-C-MOD",
   description: "5V opto-isolated single-channel relay module with flyback diode",
   defaultFootprint: "module:relay-1ch",
+  footprintId: "module:relay-1ch",
+  pinMap: {
+    VCC: "VCC",
+    IN: "IN",
+    GND: "GND",
+    NO: "NO",
+    COM: "COM",
+    NC: "NC",
+  },
   verified: false,
   datasheetUrl:
     "https://components101.com/switches/5v-single-channel-relay-module-pinout-features-datasheet",
@@ -731,6 +893,13 @@ export const I2C_GENERIC_DEVICE: PartDefinition = {
   partNumber: "I2C-MODULE-GENERIC",
   description: "Generic 4-pin I2C peripheral breakout module",
   defaultFootprint: "module:i2c-4pin",
+  footprintId: "module:i2c-4pin",
+  pinMap: {
+    VCC: "VCC",
+    GND: "GND",
+    SDA: "SDA",
+    SCL: "SCL",
+  },
   verified: false,
   datasheetUrl: "https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
   ports: [
@@ -760,16 +929,37 @@ export const PARTS_CATALOG: Record<string, PartDefinition> = {
   [TRANSISTOR_2N2222.id]: TRANSISTOR_2N2222,
   [BUZZER_PIEZO.id]: BUZZER_PIEZO,
   [PHOTORESISTOR.id]: PHOTORESISTOR,
-  PHOTORESISTOR: PHOTORESISTOR,
-  LDR: PHOTORESISTOR,
   [MOTOR_DC.id]: MOTOR_DC,
-  MOTOR_DC: MOTOR_DC,
-  MOTOR: MOTOR_DC,
   [RELAY_MODULE.id]: RELAY_MODULE,
-  RELAY_MODULE: RELAY_MODULE,
-  RELAY: RELAY_MODULE,
   [I2C_GENERIC_DEVICE.id]: I2C_GENERIC_DEVICE,
-  I2C_DEVICE: I2C_GENERIC_DEVICE,
+};
+
+/**
+ * Aliases for common part queries to canonical part IDs.
+ */
+export const PART_ALIASES: Record<string, string> = {
+  PHOTORESISTOR: PHOTORESISTOR.id,
+  LDR: PHOTORESISTOR.id,
+  MOTOR_DC: MOTOR_DC.id,
+  MOTOR: MOTOR_DC.id,
+  RELAY_MODULE: RELAY_MODULE.id,
+  RELAY: RELAY_MODULE.id,
+  I2C_DEVICE: I2C_GENERIC_DEVICE.id,
+  POTENTIOMETER: POTENTIOMETER.id,
+  POT: POTENTIOMETER.id,
+  SERVO: SG90_SERVO.id,
+  SG90: SG90_SERVO.id,
+  HC_SR04: HC_SR04.id,
+  SONAR: HC_SR04.id,
+  ULTRASONIC: HC_SR04.id,
+  BUZZER: BUZZER_PIEZO.id,
+  PIEZO: BUZZER_PIEZO.id,
+  SPEAKER: BUZZER_PIEZO.id,
+  BUTTON: PUSHBUTTON.id,
+  PUSHBUTTON: PUSHBUTTON.id,
+  TACT: PUSHBUTTON.id,
+  CERAMIC_CAPACITOR: CAPACITOR_CERAMIC.id,
+  CAP_CERAMIC: CAPACITOR_CERAMIC.id,
 };
 
 /**
@@ -840,7 +1030,7 @@ export function lookupPartWithSuggestion(query: string): {
   availablePartIds: string[];
 } {
   const part = getPartDefinition(query);
-  const availablePartIds = Object.keys(PARTS_CATALOG);
+  const availablePartIds = [...Object.keys(PARTS_CATALOG), ...Object.keys(PART_ALIASES)];
   if (part) {
     return { part, availablePartIds };
   }
@@ -908,6 +1098,10 @@ export function instantiatePart(
 export function getPartDefinition(query: string): PartDefinition | undefined {
   if (PARTS_CATALOG[query]) {
     return PARTS_CATALOG[query];
+  }
+  const aliasId = PART_ALIASES[query] || PART_ALIASES[query.toUpperCase()];
+  if (aliasId && PARTS_CATALOG[aliasId]) {
+    return PARTS_CATALOG[aliasId];
   }
   return Object.values(PARTS_CATALOG).find(
     (p) =>

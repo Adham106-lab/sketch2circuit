@@ -24,6 +24,8 @@ export default defineConfig({
       "@s2c/export": path.resolve(rootDir, "packages/export/src"),
       "@s2c/arduino": path.resolve(rootDir, "packages/arduino/src"),
       "@s2c/cli": path.resolve(rootDir, "packages/cli/src"),
+      "@s2c/pcb-json": path.resolve(rootDir, "packages/pcb-json/src"),
+      "@s2c/footprints": path.resolve(rootDir, "packages/footprints/src"),
     },
   },
 });

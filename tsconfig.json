@@ -50,6 +50,15 @@
       ],
       "@s2c/cli": [
         "./packages/cli/src/index.ts"
+      ],
+      "@s2c/pcb-json": [
+        "./packages/pcb-json/src/index.ts"
+      ],
+      "@s2c/footprints": [
+        "./packages/footprints/src/index.ts"
+      ],
+      "@s2c/pcb-layout": [
+        "./packages/pcb-layout/src/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,

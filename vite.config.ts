@@ -19,6 +19,9 @@ export default defineConfig(() => {
         "@s2c/render-schematic": path.resolve(rootDir, "packages/render-schematic/src/index.ts"),
         "@s2c/arduino": path.resolve(rootDir, "packages/arduino/src/index.ts"),
         "@s2c/export": path.resolve(rootDir, "packages/export/src/index.ts"),
+        "@s2c/pcb-json": path.resolve(rootDir, "packages/pcb-json/src/index.ts"),
+        "@s2c/footprints": path.resolve(rootDir, "packages/footprints/src/index.ts"),
+        "@s2c/pcb-layout": path.resolve(rootDir, "packages/pcb-layout/src/index.ts"),
       },
     },
     server: {

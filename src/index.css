@@ -1,1 +1,241 @@
 @import "tailwindcss";
+
+:root {
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Monospace for entire app */
+body, button, input, select, textarea, table, th, td, code, pre, span, p, h1, h2, h3, h4, h5, h6, div, nav, header, main, footer {
+  font-family: var(--font-mono);
+}
+
+/* ========================================================================= */
+/* THEME: LIGHT ("Drafting Sheet")                                          */
+/* Warm cream paper (#F7F4EC), warm near-black ink (#1A1A17),               */
+/* faint grid (#D9D4C4), copper-red (#B5432A), muted green (#3D6B4F)        */
+/* ========================================================================= */
+[data-theme="light"],
+.theme-light {
+  --bg-app: #F7F4EC;
+  --bg-panel: #FAF8F2;
+  --bg-subpanel: #EFECE2;
+  --bg-sunken: #E5E1D4;
+  --bg-hover: #ECE8DC;
+
+  --border-app: #D9D4C4;
+  --border-strong: #1A1A17;
+  --border-subtle: #E2DDD0;
+
+  --text-main: #1A1A17;
+  --text-muted: #5C584F;
+  --text-subtle: #858074;
+
+  --accent-copper: #B5432A;
+  --accent-copper-bg: rgba(181, 67, 42, 0.08);
+  --accent-copper-border: rgba(181, 67, 42, 0.45);
+
+  --accent-valid: #3D6B4F;
+  --accent-valid-bg: rgba(61, 107, 79, 0.08);
+  --accent-valid-border: rgba(61, 107, 79, 0.45);
+
+  --tab-active-bg: #FAF8F2;
+  --tab-active-text: #1A1A17;
+  --tab-active-border: #1A1A17;
+  --tab-inactive-bg: #E8E4D8;
+  --tab-inactive-text: #6B675E;
+  --tab-inactive-border: #D9D4C4;
+
+  --canvas-grid-dot: #D9D4C4;
+  --canvas-grid-line: rgba(217, 212, 196, 0.8);
+  --canvas-bg: #FAF8F2;
+
+  --code-bg: #EFECE2;
+  --code-text: #1A1A17;
+
+  --selection-bg: #E2DDD0;
+  --selection-text: #1A1A17;
+}
+
+/* ========================================================================= */
+/* THEME: DARK ("Oscilloscope")                                             */
+/* True black (#0A0A0A), phosphor green (#4ADE80),                          */
+/* muted green (#3C6B4B), copper-red (#B5432A) for errors/warnings         */
+/* ========================================================================= */
+[data-theme="dark"],
+.theme-dark {
+  --bg-app: #0A0A0A;
+  --bg-panel: #111111;
+  --bg-subpanel: #0E0E0E;
+  --bg-sunken: #050505;
+  --bg-hover: #181818;
+
+  --border-app: #1F3824;
+  --border-strong: #4ADE80;
+  --border-subtle: #16291B;
+
+  --text-main: #4ADE80;
+  --text-muted: #3C6B4B;
+  --text-subtle: #244830;
+
+  --accent-copper: #B5432A;
+  --accent-copper-bg: rgba(181, 67, 42, 0.16);
+  --accent-copper-border: rgba(181, 67, 42, 0.55);
+
+  --accent-valid: #4ADE80;
+  --accent-valid-bg: rgba(74, 222, 128, 0.1);
+  --accent-valid-border: rgba(74, 222, 128, 0.35);
+
+  --tab-active-bg: #111111;
+  --tab-active-text: #4ADE80;
+  --tab-active-border: #4ADE80;
+  --tab-inactive-bg: #070707;
+  --tab-inactive-text: #3C6B4B;
+  --tab-inactive-border: #1F3824;
+
+  --canvas-grid-dot: rgba(74, 222, 128, 0.25);
+  --canvas-grid-line: rgba(74, 222, 128, 0.12);
+  --canvas-bg: #070707;
+
+  --code-bg: #050505;
+  --code-text: #4ADE80;
+
+  --selection-bg: #1F3824;
+  --selection-text: #4ADE80;
+}
+
+/* Background canvas grid pattern */
+.canvas-grid-pattern {
+  background-color: var(--canvas-bg);
+  background-image: radial-gradient(var(--canvas-grid-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Folder tab styling */
+.folder-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  border-top: 1px solid var(--tab-inactive-border);
+  border-left: 1px solid var(--tab-inactive-border);
+  border-right: 1px solid var(--tab-inactive-border);
+  border-bottom: 1px solid var(--border-app);
+  background-color: var(--tab-inactive-bg);
+  color: var(--tab-inactive-text);
+  margin-bottom: -1px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 2px 2px 0 0;
+  transition: background-color 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+
+.folder-tab:hover {
+  color: var(--text-main);
+  background-color: var(--bg-hover);
+}
+
+.folder-tab.active {
+  background-color: var(--tab-active-bg);
+  color: var(--tab-active-text);
+  border-top: 2px solid var(--tab-active-border);
+  border-left: 1px solid var(--border-app);
+  border-right: 1px solid var(--border-app);
+  border-bottom: 1px solid var(--tab-active-bg);
+  z-index: 10;
+  font-weight: 600;
+}
+
+/* Engineering buttons */
+.eng-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid var(--border-app);
+  background-color: var(--bg-subpanel);
+  color: var(--text-main);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+.eng-btn:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+.eng-btn.primary {
+  border-color: var(--border-strong);
+  background-color: var(--border-strong);
+  color: var(--bg-app);
+  font-weight: 600;
+}
+
+/* ========================================================================= */
+/* ERC DIAGNOSTICS TAB: SHARP RECTANGULAR CARDS & PHYSICAL RATING BLOCKS    */
+/* ========================================================================= */
+.erc-card {
+  border-radius: 0px !important;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border-app);
+  background-color: var(--bg-panel);
+  transition: border-color 100ms ease;
+}
+
+.erc-card.has-hazard {
+  border-left-width: 4px;
+  border-left-color: #B5432A;
+  border-top-color: var(--border-app);
+  border-right-color: var(--border-app);
+  border-bottom-color: var(--border-app);
+}
+
+.erc-warning-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 0px !important;
+  border: 1px solid #B5432A;
+  background-color: rgba(181, 67, 42, 0.12);
+  color: #B5432A;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+}
+
+.erc-remediation-block {
+  border-radius: 0px !important;
+  border: 1px solid #3D6B4F;
+  background-color: rgba(61, 107, 79, 0.09);
+  padding: 10px 12px;
+}
+
+.theme-dark .erc-remediation-block {
+  background-color: rgba(61, 107, 79, 0.16);
+}
+
+.erc-remediation-title {
+  color: #3D6B4F;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.theme-dark .erc-remediation-title {
+  color: #4ADE80;
+}
+
+.erc-formula-box {
+  border-radius: 0px !important;
+  border: 1px solid var(--border-app);
+  background-color: var(--bg-sunken);
+  font-family: var(--font-mono);
+  padding: 8px 12px;
+}
+

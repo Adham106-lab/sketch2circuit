@@ -296,4 +296,30 @@ void loop() {
 }
 `,
   },
+  {
+    id: "erc_hazards",
+    name: "11. ERC Hazards (Flyback Diode & Pin Over-Current)",
+    category: "Edge Cases",
+    description:
+      "Triggers critical ERC safety diagnostics: bare DC motor driving GPIO without flyback clamp diode (erc.inductive-load-no-flyback), and heavy load exceeding 40mA GPIO limit (erc.pin-current).",
+    code: `// ERC Diagnostics Benchmark: Flyback Diode & Pin Over-Current
+// Demonstrates electrical safety & absolute maximum ratings enforcement
+const int motorPin = 3;      // Bare DC inductive motor without clamp diode
+const int heavyLoadPin = 6;  // Driving low-resistance load directly to GND
+
+void setup() {
+  pinMode(motorPin, OUTPUT);
+  pinMode(heavyLoadPin, OUTPUT);
+}
+
+void loop() {
+  // Inductive kickback hazard: PWM motor drive without flyback diode
+  analogWrite(motorPin, 180);
+
+  // Pin over-current hazard: direct output into heavy load
+  digitalWrite(heavyLoadPin, HIGH);
+  delay(100);
+}
+`,
+  },
 ];

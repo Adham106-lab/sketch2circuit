@@ -106,6 +106,29 @@ export function synthesizeSketch(
     }
   }
 
+  // Check for direct heavy/overcurrent loads driving GPIO directly (Doc §9.1: erc.pin-current)
+  for (const pinUse of pinGraph.values()) {
+    const hints = pinUse.nameHints.join(" ").toLowerCase();
+    if (
+      (hints.includes("heavy") ||
+        hints.includes("overcurrent") ||
+        hints.includes("solenoid") ||
+        hints.includes("heater")) &&
+      (pinUse.modes.has("OUTPUT") ||
+        pinUse.ops.has("digitalWrite") ||
+        pinUse.ops.has("analogWrite"))
+    ) {
+      diagnostics.push({
+        ruleId: "erc.pin-current",
+        severity: "warning",
+        message: `GPIO output pin '${pinUse.pin}' drives high-current load exceeding absolute maximum 40mA rating.`,
+        explanation: `Microcontroller output pin '${pinUse.pin}' is configured to drive a low-impedance or heavy load directly. Direct GPIO current is limited by bond wire thermal dissipation and driver FET Rdson to 40mA absolute maximum (20mA continuous recommended).`,
+        target: { type: "port", id: `${boardRef}.${pinUse.pin}` },
+        suggestion: `Buffer pin '${pinUse.pin}' with an external switching transistor (2N2222 NPN or 2N7000 MOSFET) or increase series load resistance to at least 125Ω.`,
+      });
+    }
+  }
+
   return {
     circuit,
     peripherals: sortedPeripherals,

@@ -12,13 +12,16 @@ import { useMemo, useState } from "react";
 interface SchematicViewerProps {
   circuit: Circuit;
   sketchName?: string;
+  theme?: "dark" | "light";
 }
 
 export const SchematicViewer: React.FC<SchematicViewerProps> = ({
   circuit,
   sketchName = "synthesized_circuit",
+  theme: controlledTheme,
 }) => {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [internalTheme, setInternalTheme] = useState<"dark" | "light">("dark");
+  const theme = controlledTheme ?? internalTheme;
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
 
@@ -27,13 +30,13 @@ export const SchematicViewer: React.FC<SchematicViewerProps> = ({
       return renderSchematicSvg(circuit, {
         theme,
         showGrid,
-        showTitleBlock: true,
+        showTitleBlock: false, // We render the authentic CAD sheet title block in HTML below
         showNetLabels: true,
         showPinNumbers: true,
       });
     } catch (e: unknown) {
       return {
-        svg: `<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg"><text x="20" y="50" fill="red">Render Error: ${
+        svg: `<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg"><text x="20" y="50" fill="var(--accent-copper)">Render Error: ${
           (e as Error).message
         }</text></svg>`,
         width: 400,
@@ -56,33 +59,74 @@ export const SchematicViewer: React.FC<SchematicViewerProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+    <div
+      className="flex flex-col h-full border rounded-[2px] overflow-hidden"
+      style={{
+        backgroundColor: "var(--bg-panel)",
+        borderColor: "var(--border-app)",
+        color: "var(--text-main)",
+      }}
+    >
       {/* Schematic Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-slate-950/80 border-b border-slate-800 text-xs">
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 border-b text-xs"
+        style={{
+          backgroundColor: "var(--bg-subpanel)",
+          borderColor: "var(--border-app)",
+        }}
+      >
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-200">Schematic Canvas</span>
-          <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono text-[11px]">
-            {circuit.components.length} parts · {circuit.nets.length} nets
+          <span
+            className="font-bold tracking-tight uppercase text-[11px]"
+            style={{ color: "var(--text-main)" }}
+          >
+            SCHEMATIC CANVAS
           </span>
-          <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono text-[11px]">
-            Net-Label Mode (v1)
+          <span
+            className="px-1.5 py-0.5 text-[10px] border rounded-[1px]"
+            style={{
+              borderColor: "var(--border-app)",
+              backgroundColor: "var(--bg-sunken)",
+              color: "var(--text-muted)",
+            }}
+          >
+            {circuit.components.length} PARTS · {circuit.nets.length} NETS
+          </span>
+          <span
+            className="px-1.5 py-0.5 text-[10px] border rounded-[1px]"
+            style={{
+              borderColor: "var(--border-strong)",
+              color: "var(--text-main)",
+            }}
+          >
+            DOC §10 NET-LABEL
           </span>
         </div>
 
         <div className="flex items-center gap-1.5">
           {/* Zoom controls */}
-          <div className="flex items-center bg-slate-900 rounded-lg border border-slate-800 p-0.5">
+          <div
+            className="flex items-center border rounded-[2px] p-0.5"
+            style={{
+              borderColor: "var(--border-app)",
+              backgroundColor: "var(--bg-sunken)",
+            }}
+          >
             <button
               type="button"
               onClick={() =>
                 setZoomLevel((z) => Math.max(0.4, Number(((z ?? 1) - 0.15).toFixed(2))))
               }
-              className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
+              className="p-1 hover:opacity-80 transition"
+              style={{ color: "var(--text-muted)" }}
               title="Zoom Out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="px-2 font-mono text-[11px] text-slate-300 min-w-12 text-center">
+            <span
+              className="px-2 text-[10px] min-w-12 text-center"
+              style={{ color: "var(--text-main)" }}
+            >
               {Math.round((zoomLevel ?? 1) * 100)}%
             </span>
             <button
@@ -90,7 +134,8 @@ export const SchematicViewer: React.FC<SchematicViewerProps> = ({
               onClick={() =>
                 setZoomLevel((z) => Math.min(2.5, Number(((z ?? 1) + 0.15).toFixed(2))))
               }
-              className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
+              className="p-1 hover:opacity-80 transition"
+              style={{ color: "var(--text-muted)" }}
               title="Zoom In"
             >
               <ZoomIn className="w-3.5 h-3.5" />
@@ -98,7 +143,8 @@ export const SchematicViewer: React.FC<SchematicViewerProps> = ({
             <button
               type="button"
               onClick={() => setZoomLevel(1.0)}
-              className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
+              className="p-1 hover:opacity-80 transition"
+              style={{ color: "var(--text-muted)" }}
               title="Reset Zoom"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -109,55 +155,54 @@ export const SchematicViewer: React.FC<SchematicViewerProps> = ({
           <button
             type="button"
             onClick={() => setShowGrid((g) => !g)}
-            className={`p-1.5 rounded-lg border transition flex items-center gap-1 ${
-              showGrid
-                ? "bg-slate-800 border-slate-700 text-indigo-400"
-                : "border-slate-800 text-slate-400 hover:bg-slate-800"
-            }`}
-            title="Toggle CAD Grid"
+            className="eng-btn"
+            title="Toggle Reticle / CAD Grid"
           >
             <Grid className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Grid</span>
+            <span className="hidden sm:inline">GRID</span>
           </button>
 
-          {/* Theme Toggle */}
-          <button
-            type="button"
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200 flex items-center gap-1 transition"
-            title="Toggle Schematic Theme"
-          >
-            {theme === "dark" ? (
-              <>
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Blueprint</span>
-              </>
-            ) : (
-              <>
-                <Moon className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="hidden sm:inline">Dark</span>
-              </>
-            )}
-          </button>
+          {/* Theme Toggle if uncontrolled */}
+          {!controlledTheme && (
+            <button
+              type="button"
+              onClick={() => setInternalTheme((t) => (t === "dark" ? "light" : "dark"))}
+              className="eng-btn"
+              title="Toggle Schematic Theme"
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">DRAFTING</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">OSCILLOSCOPE</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Export SVG */}
           <button
             type="button"
             onClick={handleDownloadSvg}
-            className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium flex items-center gap-1.5 transition shadow-sm"
-            title="Download SVG Schematic"
+            className="eng-btn primary"
+            title="Export Schematic as Vector SVG"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export SVG</span>
+            <span>EXPORT SVG</span>
           </button>
         </div>
       </div>
 
       {/* SVG Canvas Area */}
       <div
-        className={`flex-1 relative overflow-auto p-4 flex items-center justify-center min-h-[460px] ${
-          theme === "dark" ? "bg-slate-950" : "bg-[#f8fafc]"
-        }`}
+        className="flex-1 relative overflow-auto p-4 flex items-center justify-center min-h-[460px] canvas-grid-pattern"
+        style={{
+          backgroundColor: "var(--canvas-bg)",
+        }}
       >
         <div
           style={{
@@ -165,16 +210,76 @@ export const SchematicViewer: React.FC<SchematicViewerProps> = ({
             transformOrigin: "center center",
             transition: "transform 150ms ease-out",
           }}
-          className="max-w-full drop-shadow-xl"
+          className="max-w-full"
           dangerouslySetInnerHTML={{ __html: renderResult.svg }}
         />
       </div>
 
-      {/* Footer Info */}
-      <div className="px-4 py-2 bg-slate-950/60 border-t border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
-        <div>Design Rule Check: Net-label standard per Doc §10 · Canonical pin coordinates</div>
-        <div className="font-mono">
-          Canvas: {renderResult.width} × {renderResult.height}px
+      {/* Real Engineering Title Block (Bordered Box per ANSI/ISO CAD drawing standard) */}
+      <div
+        className="border-t text-[10px]"
+        style={{
+          borderColor: "var(--border-strong)",
+          backgroundColor: "var(--bg-panel)",
+          color: "var(--text-main)",
+        }}
+      >
+        <div
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 border-b"
+          style={{ borderColor: "var(--border-app)" }}
+        >
+          <div className="p-2 border-r" style={{ borderColor: "var(--border-app)" }}>
+            <span className="text-[9px] block uppercase" style={{ color: "var(--text-muted)" }}>
+              PROJECT / SYS
+            </span>
+            <span className="font-bold truncate block">sketch2circuit</span>
+          </div>
+          <div className="p-2 border-r" style={{ borderColor: "var(--border-app)" }}>
+            <span className="text-[9px] block uppercase" style={{ color: "var(--text-muted)" }}>
+              DRAWING TITLE
+            </span>
+            <span className="font-bold truncate block">{sketchName.toUpperCase()}</span>
+          </div>
+          <div className="p-2 border-r" style={{ borderColor: "var(--border-app)" }}>
+            <span className="text-[9px] block uppercase" style={{ color: "var(--text-muted)" }}>
+              DWG NUMBER
+            </span>
+            <span className="block">S2C-SCH-{circuit.components.length}P</span>
+          </div>
+          <div className="p-2 border-r" style={{ borderColor: "var(--border-app)" }}>
+            <span className="text-[9px] block uppercase" style={{ color: "var(--text-muted)" }}>
+              REV / SPEC
+            </span>
+            <span className="block">REV 1.0 · DOC §10</span>
+          </div>
+          <div className="p-2 border-r" style={{ borderColor: "var(--border-app)" }}>
+            <span className="text-[9px] block uppercase" style={{ color: "var(--text-muted)" }}>
+              GENERATOR
+            </span>
+            <span className="truncate block">S2C-COMPILER-V1</span>
+          </div>
+          <div className="p-2 flex flex-col justify-center">
+            <div className="flex items-center justify-between text-[9px]">
+              <span style={{ color: "var(--text-muted)" }}>SHEET:</span>
+              <span className="font-bold">1 OF 1</span>
+            </div>
+            <div className="flex items-center justify-between text-[9px]">
+              <span style={{ color: "var(--text-muted)" }}>NET COUNT:</span>
+              <span className="font-bold">{circuit.nets.length} NETS</span>
+            </div>
+          </div>
+        </div>
+        <div
+          className="px-3 py-1 flex items-center justify-between text-[9px]"
+          style={{
+            backgroundColor: "var(--bg-subpanel)",
+            color: "var(--text-muted)",
+          }}
+        >
+          <span>STANDARD: NET-LABEL-ONLY CAD · FORMULA VERIFIED · 100 MIL CANONICAL PIN GRID</span>
+          <span>
+            CANVAS: {renderResult.width} × {renderResult.height} PX
+          </span>
         </div>
       </div>
     </div>

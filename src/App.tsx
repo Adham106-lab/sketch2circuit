@@ -27,12 +27,15 @@ import { SchematicViewer } from "./components/SchematicViewer.js";
 import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
 
 export default function App() {
+  // Theme state: "dark" (Oscilloscope) vs "light" (Drafting Sheet)
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
   // Main Tab Navigation
   const [activeMainTab, setActiveMainTab] = useState<
     "studio" | "erc" | "export" | "catalog" | "calculators" | "docs"
   >("studio");
 
-  // Studio Sub-view: Schematic vs. Facts/Inference
+  // Studio Sub-view: Schematic vs. Facts/Inference vs. Pin Graph
   const [studioRightView, setStudioRightView] = useState<"schematic" | "facts" | "pingraph">(
     "schematic",
   );
@@ -50,7 +53,6 @@ export default function App() {
         timestamp: "2026-09-24T00:00:00.000Z",
       });
     } catch (e: unknown) {
-      // In case of syntax error during typing, provide a graceful fallback with diagnostic
       return {
         circuit: {
           schemaVersion: "0.1.0",
@@ -98,71 +100,88 @@ export default function App() {
   return (
     <div
       id="workbench-root"
-      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white"
+      data-theme={theme}
+      className={`theme-${theme} min-h-screen flex flex-col font-mono text-[12px]`}
+      style={{
+        backgroundColor: "var(--bg-app)",
+        color: "var(--text-main)",
+      }}
     >
-      {/* Top Application Header */}
+      {/* Top Application Header / Navigation Ribbon */}
       <header
         id="workbench-header"
-        className="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40"
+        className="border-b px-4 py-2.5 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40"
+        style={{
+          backgroundColor: "var(--bg-subpanel)",
+          borderColor: "var(--border-app)",
+        }}
       >
+        {/* Zone 1: Brand & Subtitle */}
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
-            <Cpu className="w-5 h-5" />
+          <div
+            className="w-7 h-7 flex items-center justify-center border rounded-[2px]"
+            style={{
+              borderColor: "var(--border-strong)",
+              backgroundColor: "var(--bg-sunken)",
+              color: "var(--text-main)",
+            }}
+          >
+            <Cpu className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-white">sketch2circuit</h1>
-              <span className="text-[11px] px-2 py-0.5 rounded-full font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Evidence-Based Synthesizer
+              <span
+                className="text-sm font-bold tracking-tight uppercase"
+                style={{ color: "var(--text-main)" }}
+              >
+                sketch2circuit
+              </span>
+              <span
+                className="text-[9px] px-1.5 py-0.2 border rounded-[1px] font-mono tracking-wider"
+                style={{
+                  borderColor: "var(--border-strong)",
+                  color: "var(--text-main)",
+                }}
+              >
+                SYNTHESIS ENGINE
               </span>
             </div>
-            <p className="text-xs text-slate-400 hidden sm:block">
-              Electronics-as-Code Compiler &amp; 18-Rule Electrical Verification
+            <p className="text-[10px] hidden sm:block" style={{ color: "var(--text-muted)" }}>
+              CODE-TO-CIRCUIT COMPILER &amp; DETERMINISTIC ERC VALIDATION
             </p>
           </div>
         </div>
 
-        {/* Global Navigation Tabs */}
-        <nav
-          id="workbench-nav"
-          className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs"
-        >
+        {/* Zone 2: Navigation Folder Tabs */}
+        <nav id="workbench-nav" className="flex items-end gap-1 text-[11px] overflow-x-auto">
           <button
             id="tab-studio"
             type="button"
             onClick={() => setActiveMainTab("studio")}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              activeMainTab === "studio"
-                ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            className={`folder-tab ${activeMainTab === "studio" ? "active" : ""}`}
           >
-            <Code2 className="w-4 h-4" />
-            <span>Sketch Studio</span>
+            <Code2 className="w-3.5 h-3.5" />
+            <span>SKETCH STUDIO</span>
           </button>
 
           <button
             id="tab-erc"
             type="button"
             onClick={() => setActiveMainTab("erc")}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              activeMainTab === "erc"
-                ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            className={`folder-tab ${activeMainTab === "erc" ? "active" : ""}`}
           >
-            <ShieldAlert className="w-4 h-4" />
-            <span>ERC Diagnostics</span>
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>ERC DIAGNOSTICS</span>
             {(errorCount > 0 || warningCount > 0) && (
               <span
-                className={`ml-0.5 px-1.5 py-0.2 rounded-full font-mono text-[10px] ${
-                  errorCount > 0
-                    ? "bg-rose-500 text-white"
-                    : "bg-amber-500 text-slate-950 font-bold"
-                }`}
+                className="ml-1 px-1 py-0.2 text-[9px] font-bold border rounded-[1px]"
+                style={{
+                  backgroundColor: "var(--accent-copper-bg)",
+                  borderColor: "var(--accent-copper-border)",
+                  color: "var(--accent-copper)",
+                }}
               >
-                {errorCount || warningCount}
+                {errorCount + warningCount}
               </span>
             )}
           </button>
@@ -171,84 +190,106 @@ export default function App() {
             id="tab-export"
             type="button"
             onClick={() => setActiveMainTab("export")}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              activeMainTab === "export"
-                ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            className={`folder-tab ${activeMainTab === "export" ? "active" : ""}`}
           >
-            <Share2 className="w-4 h-4" />
-            <span>Export Artifacts</span>
+            <Share2 className="w-3.5 h-3.5" />
+            <span>EXPORT ARTIFACTS</span>
           </button>
 
           <button
             id="tab-catalog"
             type="button"
             onClick={() => setActiveMainTab("catalog")}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              activeMainTab === "catalog"
-                ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            className={`folder-tab ${activeMainTab === "catalog" ? "active" : ""}`}
           >
-            <Boxes className="w-4 h-4" />
-            <span>Parts Catalog</span>
+            <Boxes className="w-3.5 h-3.5" />
+            <span>PARTS CATALOG</span>
           </button>
 
           <button
             id="tab-calculators"
             type="button"
             onClick={() => setActiveMainTab("calculators")}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              activeMainTab === "calculators"
-                ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            className={`folder-tab ${activeMainTab === "calculators" ? "active" : ""}`}
           >
-            <Calculator className="w-4 h-4" />
-            <span>Calculators</span>
+            <Calculator className="w-3.5 h-3.5" />
+            <span>CALCULATORS</span>
           </button>
 
           <button
             id="tab-docs"
             type="button"
             onClick={() => setActiveMainTab("docs")}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-              activeMainTab === "docs"
-                ? "bg-indigo-600 text-white font-medium shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            className={`folder-tab ${activeMainTab === "docs" ? "active" : ""}`}
           >
-            <BookOpen className="w-4 h-4 text-emerald-400" />
-            <span>Docs &amp; Validation</span>
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>DOCS &amp; VALIDATION</span>
           </button>
         </nav>
+
+        {/* Zone 3: Theme Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="eng-btn"
+            title="Toggle Visual Identity: Drafting Sheet (Light) / Oscilloscope (Dark)"
+          >
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{
+                backgroundColor: theme === "dark" ? "#4ADE80" : "#B5432A",
+              }}
+            />
+            <span className="text-[10px] font-bold tracking-wider uppercase">
+              {theme === "dark" ? "THEME: OSCILLOSCOPE" : "THEME: DRAFTING SHEET"}
+            </span>
+          </button>
+        </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 lg:p-6 max-w-[1700px] w-full mx-auto flex flex-col">
+      <main className="flex-1 p-4 max-w-[1800px] w-full mx-auto flex flex-col">
         {/* ========================================================================= */}
         {/* TAB 1: ARDUINO SKETCH STUDIO & LIVE SYNTHESIZER                           */}
         {/* ========================================================================= */}
         {activeMainTab === "studio" && (
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[600px]">
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[600px]">
             {/* LEFT COLUMN: Arduino Sketch Code Editor */}
-            <div className="lg:col-span-5 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+            <div
+              className="lg:col-span-5 flex flex-col border rounded-[2px] overflow-hidden"
+              style={{
+                backgroundColor: "var(--bg-panel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
               {/* Preset Selector & Board Target */}
-              <div className="p-3.5 bg-slate-950/80 border-b border-slate-800 space-y-3">
+              <div
+                className="p-3 border-b space-y-2.5"
+                style={{
+                  backgroundColor: "var(--bg-subpanel)",
+                  borderColor: "var(--border-app)",
+                }}
+              >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1">
                     <label
                       htmlFor="corpus-preset-select"
-                      className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-1"
+                      className="text-[10px] uppercase tracking-wider block mb-1 font-bold"
+                      style={{ color: "var(--text-muted)" }}
                     >
-                      Corpus Preset Sketch:
+                      CORPUS PRESET SKETCH:
                     </label>
                     <select
                       id="corpus-preset-select"
                       value={selectedSketchId}
                       onChange={(e) => handleSelectPreset(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium focus:outline-none focus:border-indigo-500"
+                      className="w-full border rounded-[2px] px-2 py-1 text-xs focus:outline-none"
+                      style={{
+                        backgroundColor: "var(--bg-sunken)",
+                        borderColor: "var(--border-app)",
+                        color: "var(--text-main)",
+                      }}
                     >
                       {SAMPLE_SKETCHES.map((s) => (
                         <option key={s.id} value={s.id}>
@@ -261,15 +302,21 @@ export default function App() {
                   <div>
                     <label
                       htmlFor="mcu-target-select"
-                      className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block mb-1"
+                      className="text-[10px] uppercase tracking-wider block mb-1 font-bold"
+                      style={{ color: "var(--text-muted)" }}
                     >
-                      MCU Target:
+                      MCU TARGET:
                     </label>
                     <select
                       id="mcu-target-select"
                       value={targetBoard}
                       onChange={(e) => setTargetBoard(e.target.value)}
-                      className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                      className="border rounded-[2px] px-2 py-1 text-xs focus:outline-none"
+                      style={{
+                        backgroundColor: "var(--bg-sunken)",
+                        borderColor: "var(--border-app)",
+                        color: "var(--text-main)",
+                      }}
                     >
                       <option value="ARDUINO_UNO_R3">Arduino Uno R3</option>
                       <option value="ARDUINO_NANO">Arduino Nano V3</option>
@@ -278,34 +325,44 @@ export default function App() {
                 </div>
 
                 {currentSketchMeta && (
-                  <p className="text-xs text-slate-400 leading-relaxed bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+                  <p
+                    className="text-[11px] leading-relaxed p-2 border rounded-[1px]"
+                    style={{
+                      backgroundColor: "var(--bg-sunken)",
+                      borderColor: "var(--border-subtle)",
+                      color: "var(--text-muted)",
+                    }}
+                  >
                     {currentSketchMeta.description}
                   </p>
                 )}
 
                 {/* Quick Annotation Injectors */}
                 <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase">
-                    Insert Annotation:
+                  <span
+                    className="text-[9px] uppercase font-bold"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    INJECT ANNOTATION:
                   </span>
                   <button
                     type="button"
                     onClick={() => handleInsertAnnotation("// @s2c: led(color=blue) on D9")}
-                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono text-[10px] transition"
+                    className="eng-btn"
                   >
                     + @s2c: led on D9
                   </button>
                   <button
                     type="button"
                     onClick={() => handleInsertAnnotation("// @s2c: button on D2")}
-                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono text-[10px] transition"
+                    className="eng-btn"
                   >
                     + @s2c: button on D2
                   </button>
                   <button
                     type="button"
                     onClick={() => handleInsertAnnotation("// @s2c: ignore on D0")}
-                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 font-mono text-[10px] transition"
+                    className="eng-btn"
                   >
                     + @s2c: ignore D0
                   </button>
@@ -314,83 +371,126 @@ export default function App() {
 
               {/* Code Editor Area */}
               <div className="flex-1 relative flex flex-col min-h-[350px]">
-                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-950 border-b border-slate-800 text-[11px] font-mono text-slate-400">
-                  <span>sketch.ino (C++ / Arduino)</span>
-                  <span className="text-slate-500">Tree-sitter C++ AST active</span>
+                <div
+                  className="flex items-center justify-between px-3 py-1.5 border-b text-[10px]"
+                  style={{
+                    backgroundColor: "var(--bg-subpanel)",
+                    borderColor: "var(--border-app)",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  <span className="font-bold">sketch.ino (C++ / Arduino)</span>
+                  <span>TREE-SITTER C++ AST ACTIVE</span>
                 </div>
                 <textarea
                   value={sketchSource}
                   onChange={(e) => setSketchSource(e.target.value)}
-                  className="flex-1 w-full bg-slate-950/90 text-slate-100 font-mono text-xs p-4 leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="flex-1 w-full text-xs p-3 leading-relaxed resize-none focus:outline-none"
+                  style={{
+                    backgroundColor: "var(--code-bg)",
+                    color: "var(--code-text)",
+                  }}
                   spellCheck={false}
                 />
               </div>
 
               {/* Editor Footer / Synthesis Status */}
-              <div className="p-3 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between text-xs">
+              <div
+                className="p-2.5 border-t flex items-center justify-between text-[11px]"
+                style={{
+                  backgroundColor: "var(--bg-subpanel)",
+                  borderColor: "var(--border-app)",
+                }}
+              >
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="font-mono text-slate-300">
-                    {synthesis.peripherals.length} peripherals inferred
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: "var(--accent-valid)" }}
+                  />
+                  <span style={{ color: "var(--text-main)" }}>
+                    {synthesis.peripherals.length} PERIPHERALS INFERRED
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   {synthesis.unresolved.length > 0 && (
-                    <span className="text-amber-400 font-mono text-[11px] flex items-center gap-1">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                      {synthesis.unresolved.length} Unresolved
+                    <span
+                      className="text-[10px] font-bold flex items-center gap-1"
+                      style={{ color: "var(--accent-copper)" }}
+                    >
+                      <AlertTriangle className="w-3 h-3" />
+                      {synthesis.unresolved.length} UNRESOLVED
                     </span>
                   )}
-                  <span className="text-slate-500 font-mono text-[11px]">
-                    Auto-synthesizing live
-                  </span>
+                  <span style={{ color: "var(--text-muted)" }}>AUTO-SYNTHESIS ACTIVE</span>
                 </div>
               </div>
             </div>
 
             {/* RIGHT COLUMN: Interactive Schematic & Synthesis Inspector */}
-            <div className="lg:col-span-7 flex flex-col space-y-4">
+            <div className="lg:col-span-7 flex flex-col space-y-3">
               {/* Sub-view switcher */}
-              <div className="flex items-center justify-between bg-slate-900/60 p-1.5 rounded-xl border border-slate-800 text-xs">
+              <div
+                className="flex items-center justify-between p-1 border rounded-[2px] text-xs"
+                style={{
+                  backgroundColor: "var(--bg-subpanel)",
+                  borderColor: "var(--border-app)",
+                }}
+              >
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setStudioRightView("schematic")}
-                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-                      studioRightView === "schematic"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
+                    className="eng-btn"
+                    style={{
+                      borderColor:
+                        studioRightView === "schematic"
+                          ? "var(--border-strong)"
+                          : "var(--border-app)",
+                      backgroundColor:
+                        studioRightView === "schematic" ? "var(--bg-panel)" : "transparent",
+                      color: "var(--text-main)",
+                      fontWeight: studioRightView === "schematic" ? 600 : 400,
+                    }}
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>Live Schematic</span>
+                    <span>LIVE SCHEMATIC</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setStudioRightView("facts")}
-                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-                      studioRightView === "facts"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
+                    className="eng-btn"
+                    style={{
+                      borderColor:
+                        studioRightView === "facts" ? "var(--border-strong)" : "var(--border-app)",
+                      backgroundColor:
+                        studioRightView === "facts" ? "var(--bg-panel)" : "transparent",
+                      color: "var(--text-main)",
+                      fontWeight: studioRightView === "facts" ? 600 : 400,
+                    }}
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Inferred Peripherals ({synthesis.peripherals.length})</span>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>INFERRED PERIPHERALS ({synthesis.peripherals.length})</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setStudioRightView("pingraph")}
-                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
-                      studioRightView === "pingraph"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
+                    className="eng-btn"
+                    style={{
+                      borderColor:
+                        studioRightView === "pingraph"
+                          ? "var(--border-strong)"
+                          : "var(--border-app)",
+                      backgroundColor:
+                        studioRightView === "pingraph" ? "var(--bg-panel)" : "transparent",
+                      color: "var(--text-main)",
+                      fontWeight: studioRightView === "pingraph" ? 600 : 400,
+                    }}
                   >
-                    <Layers className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Pin Graph &amp; Unresolved</span>
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>PIN GRAPH &amp; UNRESOLVED</span>
                   </button>
                 </div>
 
@@ -398,17 +498,25 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setActiveMainTab("erc")}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-[11px] font-mono border transition ${
-                    errorCount > 0
-                      ? "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
-                      : warningCount > 0
-                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
-                        : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
-                  }`}
+                  className="px-2 py-0.5 border rounded-[1px] text-[10px] flex items-center gap-1 transition"
+                  style={{
+                    borderColor:
+                      errorCount > 0 || warningCount > 0
+                        ? "var(--accent-copper-border)"
+                        : "var(--accent-valid-border)",
+                    backgroundColor:
+                      errorCount > 0 || warningCount > 0
+                        ? "var(--accent-copper-bg)"
+                        : "var(--accent-valid-bg)",
+                    color:
+                      errorCount > 0 || warningCount > 0
+                        ? "var(--accent-copper)"
+                        : "var(--accent-valid)",
+                  }}
                 >
-                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <ShieldAlert className="w-3 h-3" />
                   <span>
-                    ERC: {errorCount} Err, {warningCount} Warn
+                    ERC: {errorCount} ERR, {warningCount} WARN
                   </span>
                 </button>
               </div>
@@ -419,73 +527,113 @@ export default function App() {
                   <SchematicViewer
                     circuit={synthesis.circuit}
                     sketchName={currentSketchMeta?.name || "ArduinoSketch"}
+                    theme={theme}
                   />
                 </div>
               )}
 
               {/* View 2: Inferred Peripherals with Evidence & Confidence */}
               {studioRightView === "facts" && (
-                <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-y-auto space-y-4 shadow-2xl">
+                <div
+                  className="flex-1 border rounded-[2px] p-4 overflow-y-auto space-y-3"
+                  style={{
+                    backgroundColor: "var(--bg-panel)",
+                    borderColor: "var(--border-app)",
+                  }}
+                >
                   <div>
-                    <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-400" />
-                      <span>Evidence-Based Peripheral Inference (Doc §12.4a)</span>
+                    <h3
+                      className="text-xs font-bold uppercase flex items-center gap-2"
+                      style={{ color: "var(--text-main)" }}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>EVIDENCE-BASED PERIPHERAL INFERENCE (DOC §12.4A)</span>
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Every peripheral component is synthesized with an audit trail showing
-                      confidence scoring and code evidence.
+                    <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      Deterministic audit trail showing confidence scoring, pin bindings, and sketch
+                      evidence.
                     </p>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {synthesis.peripherals.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic p-6 text-center">
-                        No peripherals inferred from current sketch. Add pin operations or @s2c
-                        annotations.
+                      <p
+                        className="text-[11px] italic p-6 text-center"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        No peripherals inferred from sketch.
                       </p>
                     ) : (
-                      synthesis.peripherals.map((p) => (
+                      synthesis.peripherals.map((p, pIdx) => (
                         <div
-                          key={p.id}
-                          className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2.5"
+                          key={`${p.id}-${pIdx}`}
+                          className="p-3 border rounded-[2px] space-y-2"
+                          style={{
+                            backgroundColor: "var(--bg-subpanel)",
+                            borderColor: "var(--border-app)",
+                          }}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs font-bold text-indigo-400">
+                              <span
+                                className="font-bold text-xs"
+                                style={{ color: "var(--text-main)" }}
+                              >
                                 {p.id}
                               </span>
-                              <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono capitalize">
+                              <span
+                                className="text-[10px] px-1.5 py-0.2 border rounded-[1px] uppercase font-bold"
+                                style={{
+                                  borderColor: "var(--border-app)",
+                                  backgroundColor: "var(--bg-sunken)",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
                                 {p.kind}
                               </span>
                             </div>
 
                             {/* Confidence Score Meter */}
                             <div className="flex items-center gap-2">
-                              <div className="w-20 bg-slate-800 h-2 rounded-full overflow-hidden">
+                              <div
+                                className="w-20 h-1.5 border rounded-[1px] overflow-hidden"
+                                style={{
+                                  borderColor: "var(--border-app)",
+                                  backgroundColor: "var(--bg-sunken)",
+                                }}
+                              >
                                 <div
-                                  className={`h-full rounded-full ${
-                                    p.confidence >= 0.9
-                                      ? "bg-emerald-400"
-                                      : p.confidence >= 0.7
-                                        ? "bg-amber-400"
-                                        : "bg-rose-400"
-                                  }`}
-                                  style={{ width: `${p.confidence * 100}%` }}
+                                  className="h-full"
+                                  style={{
+                                    width: `${p.confidence * 100}%`,
+                                    backgroundColor:
+                                      p.confidence >= 0.8
+                                        ? "var(--accent-valid)"
+                                        : "var(--accent-copper)",
+                                  }}
                                 />
                               </div>
-                              <span className="font-mono text-xs text-slate-200">
+                              <span
+                                className="text-[10px] font-bold"
+                                style={{ color: "var(--text-main)" }}
+                              >
                                 {Math.round(p.confidence * 100)}%
                               </span>
                             </div>
                           </div>
 
                           {/* Connected Pins */}
-                          <div className="flex gap-2 text-xs font-mono">
-                            <span className="text-slate-500">Connected Pins:</span>
+                          <div className="flex gap-2 text-[10px] items-center">
+                            <span style={{ color: "var(--text-muted)" }}>PINS:</span>
                             {Object.entries(p.pins).map(([role, pin]) => (
                               <span
                                 key={role}
-                                className="px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-amber-300"
+                                className="px-1.5 py-0.2 border rounded-[1px]"
+                                style={{
+                                  borderColor: "var(--border-app)",
+                                  backgroundColor: "var(--bg-sunken)",
+                                  color: "var(--text-main)",
+                                }}
                               >
                                 {role}: {pin}
                               </span>
@@ -493,29 +641,27 @@ export default function App() {
                           </div>
 
                           {/* Evidence list */}
-                          <div className="space-y-1 text-xs">
-                            <span className="text-slate-500 font-semibold block text-[11px]">
-                              Evidence from Sketch:
+                          <div className="space-y-1 text-[11px]">
+                            <span
+                              className="font-bold block text-[9px] uppercase"
+                              style={{ color: "var(--text-muted)" }}
+                            >
+                              SKETCH EVIDENCE:
                             </span>
                             {p.evidence.map((ev, i) => (
                               <p
                                 key={i}
-                                className="text-slate-300 font-mono text-[11px] bg-slate-900/60 p-1.5 rounded border border-slate-800/80"
+                                className="font-mono text-[10px] p-1 border rounded-[1px]"
+                                style={{
+                                  backgroundColor: "var(--bg-sunken)",
+                                  borderColor: "var(--border-subtle)",
+                                  color: "var(--text-muted)",
+                                }}
                               >
                                 • {ev}
                               </p>
                             ))}
                           </div>
-
-                          {/* Assumptions */}
-                          {p.assumptions.length > 0 && (
-                            <div className="text-xs bg-slate-900/40 p-2 rounded border border-slate-800 text-slate-400">
-                              <strong className="text-slate-300 text-[11px]">
-                                Hardware Assumptions:
-                              </strong>{" "}
-                              {p.assumptions.join("; ")}
-                            </div>
-                          )}
                         </div>
                       ))
                     )}
@@ -525,77 +671,67 @@ export default function App() {
 
               {/* View 3: Pin Usage Graph & Unresolved Items */}
               {studioRightView === "pingraph" && (
-                <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-y-auto space-y-5 shadow-2xl">
+                <div
+                  className="flex-1 border rounded-[2px] p-4 overflow-y-auto space-y-4"
+                  style={{
+                    backgroundColor: "var(--bg-panel)",
+                    borderColor: "var(--border-app)",
+                  }}
+                >
                   <div>
-                    <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-sky-400" />
-                      <span>Pin Usage Graph (Doc §12.3)</span>
+                    <h3
+                      className="text-xs font-bold uppercase flex items-center gap-2"
+                      style={{ color: "var(--text-main)" }}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>PIN USAGE GRAPH (DOC §12.3)</span>
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Tracks pinMode configurations, operations (digitalWrite, analogRead, tone),
-                      and dynamic expression resolution.
+                    <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      Static analysis tracking of pinMode configurations and operation semantics.
                     </p>
                   </div>
 
                   {/* Pin Graph Table */}
-                  <div className="overflow-x-auto border border-slate-800 rounded-xl">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead className="bg-slate-950 text-slate-300 uppercase font-mono text-[10px] tracking-wider border-b border-slate-800">
+                  <div
+                    className="overflow-x-auto border rounded-[2px]"
+                    style={{ borderColor: "var(--border-app)" }}
+                  >
+                    <table className="w-full text-left border-collapse text-[11px]">
+                      <thead
+                        className="border-b uppercase text-[9px] tracking-wider"
+                        style={{
+                          backgroundColor: "var(--bg-subpanel)",
+                          borderColor: "var(--border-app)",
+                          color: "var(--text-muted)",
+                        }}
+                      >
                         <tr>
-                          <th className="py-2.5 px-3">Pin</th>
-                          <th className="py-2.5 px-3">Configured Modes</th>
-                          <th className="py-2.5 px-3">Operations</th>
-                          <th className="py-2.5 px-3">Variable Identifiers</th>
+                          <th className="py-2 px-3">PIN</th>
+                          <th className="py-2 px-3">CONFIGURED MODES</th>
+                          <th className="py-2 px-3">OPERATIONS</th>
+                          <th className="py-2 px-3">IDENTIFIERS</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
+                      <tbody className="divide-y" style={{ borderColor: "var(--border-app)" }}>
                         {Array.from(synthesis.pinGraph.values()).map((p) => (
-                          <tr key={p.pin} className="hover:bg-slate-800/40 transition">
-                            <td className="py-2 px-3 font-bold text-indigo-400">{p.pin}</td>
-                            <td className="py-2 px-3 text-emerald-400">
+                          <tr key={p.pin}>
+                            <td
+                              className="py-2 px-3 font-bold"
+                              style={{ color: "var(--text-main)" }}
+                            >
+                              {p.pin}
+                            </td>
+                            <td className="py-2 px-3" style={{ color: "var(--accent-valid)" }}>
                               {Array.from(p.modes).join(", ") || "—"}
                             </td>
-                            <td className="py-2 px-3 text-amber-300">
-                              {Array.from(p.ops).join(", ") || "—"}
-                            </td>
-                            <td className="py-2 px-3 text-slate-400">
+                            <td className="py-2 px-3">{Array.from(p.ops).join(", ") || "—"}</td>
+                            <td className="py-2 px-3" style={{ color: "var(--text-muted)" }}>
                               {p.nameHints.join(", ") || "—"}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  </div>
-
-                  {/* Unresolved items panel */}
-                  <div className="p-4 bg-slate-950 rounded-xl border border-amber-500/30 space-y-2">
-                    <h4 className="text-xs font-semibold text-amber-400 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>Unresolved Dynamic Pin Expressions (Doc §12.8)</span>
-                    </h4>
-                    {synthesis.unresolvedItems.length === 0 ? (
-                      <p className="text-xs text-slate-400">
-                        All pin references in the sketch are statically resolved constants or
-                        macros. No dynamic runtime indexes detected.
-                      </p>
-                    ) : (
-                      <div className="space-y-2 pt-1">
-                        {synthesis.unresolvedItems.map((u, i) => (
-                          <div
-                            key={i}
-                            className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 text-xs font-mono space-y-1"
-                          >
-                            <div className="text-rose-400 font-bold">
-                              Expression: {u.expression}
-                            </div>
-                            <div className="text-slate-300 text-[11px] font-sans">{u.reason}</div>
-                            <div className="text-slate-500 text-[10px]">
-                              Rule: System strictly refuses to guess dynamic pins at compile time.
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
@@ -655,17 +791,26 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 px-6 py-3 bg-slate-950 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-slate-400">sketch2circuit v0.1.0</span>
+      <footer
+        className="border-t px-4 py-2 text-[10px] flex flex-wrap items-center justify-between gap-4"
+        style={{
+          backgroundColor: "var(--bg-subpanel)",
+          borderColor: "var(--border-app)",
+          color: "var(--text-muted)",
+        }}
+      >
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-bold" style={{ color: "var(--text-main)" }}>
+            sketch2circuit CAD WORKBENCH
+          </span>
           <span>·</span>
-          <span>Doc §12 Arduino Synthesis Pipeline</span>
+          <span>DOC §12 SYNTHESIS</span>
           <span>·</span>
-          <span>Doc §10 Net-Label Schematic Renderer</span>
+          <span>DOC §10 NET-LABEL SCHEMATIC</span>
           <span>·</span>
-          <span>18-Rule Electrical Check Engine</span>
+          <span>18-RULE ERC ENGINE</span>
         </div>
-        <div className="font-mono text-[11px]">Deterministic Pipeline · Output IR Schema 0.1.0</div>
+        <div>DETERMINISTIC COMPILATION · OUTPUT IR SCHEMA 0.1.0</div>
       </footer>
     </div>
   );

@@ -1,0 +1,98 @@
+{
+  "blink": {
+    "name": "01. Blink (LED on D13)",
+    "componentCount": 4,
+    "placedCount": 4,
+    "unplacedCount": 0,
+    "edgeCount": 5,
+    "totalWirelengthMm": 58.119
+  },
+  "button_pullup": {
+    "name": "02. Button (INPUT_PULLUP)",
+    "componentCount": 5,
+    "placedCount": 5,
+    "unplacedCount": 0,
+    "edgeCount": 7,
+    "totalWirelengthMm": 92.555
+  },
+  "button_pulldown": {
+    "name": "03. Button (External 10kΩ Pull-down)",
+    "componentCount": 6,
+    "placedCount": 6,
+    "unplacedCount": 0,
+    "edgeCount": 9,
+    "totalWirelengthMm": 127.425
+  },
+  "servo_sweep": {
+    "name": "04. Servo Motor Sweep",
+    "componentCount": 4,
+    "placedCount": 4,
+    "unplacedCount": 0,
+    "edgeCount": 7,
+    "totalWirelengthMm": 92.581
+  },
+  "hc_sr04": {
+    "name": "05. Ultrasonic Rangefinder (HC-SR04)",
+    "componentCount": 3,
+    "placedCount": 3,
+    "unplacedCount": 0,
+    "edgeCount": 6,
+    "totalWirelengthMm": 98.99
+  },
+  "pot_analog": {
+    "name": "06. Potentiometer / Analog Input",
+    "componentCount": 5,
+    "placedCount": 5,
+    "unplacedCount": 0,
+    "edgeCount": 8,
+    "totalWirelengthMm": 86.765
+  },
+  "piezo_tone": {
+    "name": "07. Piezo Buzzer Melody",
+    "componentCount": 4,
+    "placedCount": 4,
+    "unplacedCount": 0,
+    "edgeCount": 5,
+    "totalWirelengthMm": 57.236
+  },
+  "dynamic_loop": {
+    "name": "08. Dynamic Loop (Unresolved Diagnostic)",
+    "componentCount": 2,
+    "placedCount": 2,
+    "unplacedCount": 0,
+    "edgeCount": 2,
+    "totalWirelengthMm": 10.472
+  },
+  "annotated_rgb": {
+    "name": "09. User-Annotated Circuit (@s2c)",
+    "componentCount": 7,
+    "placedCount": 7,
+    "unplacedCount": 0,
+    "edgeCount": 10,
+    "totalWirelengthMm": 115.378
+  },
+  "multi_peripheral_benchmark": {
+    "name": "10. Multi-Peripheral Stress Test",
+    "componentCount": 16,
+    "placedCount": 16,
+    "unplacedCount": 0,
+    "edgeCount": 29,
+    "totalWirelengthMm": 368.047
+  },
+  "erc_hazards": {
+    "name": "11. ERC Hazards (Flyback Diode & Pin Over-Current)",
+    "componentCount": 5,
+    "placedCount": 5,
+    "unplacedCount": 0,
+    "edgeCount": 7,
+    "totalWirelengthMm": 90.218
+  },
+  "user_multi_peripheral": {
+    "name": "12. User Multi-Peripheral Sketch",
+    "componentCount": 16,
+    "placedCount": 16,
+    "unplacedCount": 0,
+    "edgeCount": 29,
+    "totalWirelengthMm": 338.483
+  }
+}

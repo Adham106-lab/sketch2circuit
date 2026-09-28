@@ -1,8 +1,10 @@
 /**
  * @license Apache-2.0
  * Parts Catalog Explorer component powered by @s2c/parts.
+ * Deduplicated, token-based engineering CAD layout.
  */
 
+import { getFootprintDefinition } from "@s2c/footprints";
 import { getPartDefinition, PARTS_CATALOG, type PartDefinition } from "@s2c/parts";
 import { Cpu, ExternalLink, Search, Zap } from "lucide-react";
 import type React from "react";
@@ -13,7 +15,16 @@ export const PartsCatalogBrowser: React.FC = () => {
   const [selectedKind, setSelectedKind] = useState<string>("all");
   const [selectedPartId, setSelectedPartId] = useState<string>("ARDUINO_UNO_R3");
 
-  const allParts: PartDefinition[] = useMemo(() => Object.values(PARTS_CATALOG), []);
+  // Deduplicate all parts strictly by canonical part ID
+  const allParts: PartDefinition[] = useMemo(() => {
+    const map = new Map<string, PartDefinition>();
+    for (const p of Object.values(PARTS_CATALOG)) {
+      if (!map.has(p.id)) {
+        map.set(p.id, p);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.id.localeCompare(b.id));
+  }, []);
 
   const kinds = useMemo(() => {
     const set = new Set<string>();
@@ -29,6 +40,7 @@ export const PartsCatalogBrowser: React.FC = () => {
       const matchSearch =
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.id.toLowerCase().includes(search.toLowerCase()) ||
+        p.partNumber.toLowerCase() === search.toLowerCase() ||
         p.partNumber.toLowerCase().includes(search.toLowerCase()) ||
         p.description.toLowerCase().includes(search.toLowerCase());
       return matchKind && matchSearch;
@@ -40,18 +52,39 @@ export const PartsCatalogBrowser: React.FC = () => {
   }, [selectedPartId, allParts]);
 
   return (
-    <div className="flex flex-col md:flex-row h-full bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+    <div
+      className="flex flex-col md:flex-row h-full border rounded-none overflow-hidden font-mono"
+      style={{
+        backgroundColor: "var(--bg-panel)",
+        borderColor: "var(--border-app)",
+        color: "var(--text-main)",
+      }}
+    >
       {/* Sidebar List */}
-      <div className="w-full md:w-80 border-r border-slate-800 flex flex-col bg-slate-950/60">
-        <div className="p-3 border-b border-slate-800 space-y-2">
+      <div
+        className="w-full md:w-80 border-r flex flex-col"
+        style={{
+          borderColor: "var(--border-app)",
+          backgroundColor: "var(--bg-subpanel)",
+        }}
+      >
+        <div className="p-3 border-b space-y-2" style={{ borderColor: "var(--border-app)" }}>
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+            <Search
+              className="w-3.5 h-3.5 absolute left-3 top-2.5"
+              style={{ color: "var(--text-muted)" }}
+            />
             <input
               type="text"
-              placeholder="Search parts catalog..."
+              placeholder="SEARCH CATALOG..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="w-full border rounded-none pl-8 pr-3 py-1.5 text-xs outline-none uppercase"
+              style={{
+                backgroundColor: "var(--bg-panel)",
+                borderColor: "var(--border-app)",
+                color: "var(--text-main)",
+              }}
             />
           </div>
 
@@ -59,24 +92,26 @@ export const PartsCatalogBrowser: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedKind("all")}
-              className={`px-2 py-0.5 rounded transition capitalize ${
-                selectedKind === "all"
-                  ? "bg-indigo-600 text-white font-medium"
-                  : "bg-slate-900 text-slate-400 hover:text-slate-200"
-              }`}
+              className="px-2 py-0.5 rounded-none border transition uppercase text-[10px] font-bold"
+              style={{
+                backgroundColor: selectedKind === "all" ? "var(--bg-panel)" : "transparent",
+                borderColor: selectedKind === "all" ? "var(--border-strong)" : "var(--border-app)",
+                color: selectedKind === "all" ? "var(--text-main)" : "var(--text-muted)",
+              }}
             >
-              All ({allParts.length})
+              ALL ({allParts.length})
             </button>
             {kinds.map((k) => (
               <button
                 key={k}
                 type="button"
                 onClick={() => setSelectedKind(k)}
-                className={`px-2 py-0.5 rounded transition capitalize ${
-                  selectedKind === k
-                    ? "bg-indigo-600 text-white font-medium"
-                    : "bg-slate-900 text-slate-400 hover:text-slate-200"
-                }`}
+                className="px-2 py-0.5 rounded-none border transition uppercase text-[10px]"
+                style={{
+                  backgroundColor: selectedKind === k ? "var(--bg-panel)" : "transparent",
+                  borderColor: selectedKind === k ? "var(--border-strong)" : "var(--border-app)",
+                  color: selectedKind === k ? "var(--text-main)" : "var(--text-muted)",
+                }}
               >
                 {k}
               </button>
@@ -85,31 +120,75 @@ export const PartsCatalogBrowser: React.FC = () => {
         </div>
 
         {/* Parts list */}
-        <div className="flex-1 overflow-y-auto divide-y divide-slate-800/60">
-          {filteredParts.map((p) => {
+        <div
+          className="flex-1 overflow-y-auto divide-y"
+          style={{ borderColor: "var(--border-app)" }}
+        >
+          {filteredParts.map((p, idx) => {
             const isSelected = p.id === selectedPartId;
             return (
               <button
-                key={p.id}
+                key={`${p.id}-${idx}`}
                 type="button"
                 onClick={() => setSelectedPartId(p.id)}
-                className={`w-full text-left p-3 transition flex items-start gap-2.5 ${
-                  isSelected
-                    ? "bg-indigo-600/10 border-l-2 border-indigo-500"
-                    : "hover:bg-slate-800/30"
-                }`}
+                className="w-full text-left p-3 transition flex items-start gap-2.5 border-l-2"
+                style={{
+                  borderLeftColor: isSelected ? "var(--border-strong)" : "transparent",
+                  backgroundColor: isSelected ? "var(--bg-panel)" : "transparent",
+                }}
               >
-                <div className="p-1.5 rounded bg-slate-900 border border-slate-800 text-indigo-400 mt-0.5">
+                <div
+                  className="p-1.5 border rounded-none shrink-0 mt-0.5"
+                  style={{
+                    backgroundColor: "var(--bg-sunken)",
+                    borderColor: "var(--border-app)",
+                    color: "var(--text-main)",
+                  }}
+                >
                   <Cpu className="w-3.5 h-3.5" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
-                    <h4 className="text-xs font-semibold text-slate-200 truncate">{p.name}</h4>
-                    <span className="text-[10px] font-mono text-slate-500 uppercase px-1.5 py-0.2 rounded bg-slate-900">
+                    <h4
+                      className="text-xs font-semibold truncate uppercase"
+                      style={{ color: "var(--text-main)" }}
+                    >
+                      {p.name}
+                    </h4>
+                    <span
+                      className="text-[9px] font-mono uppercase px-1.5 py-0.2 border rounded-none shrink-0"
+                      style={{
+                        borderColor: "var(--border-app)",
+                        backgroundColor: "var(--bg-sunken)",
+                        color: "var(--text-muted)",
+                      }}
+                    >
                       {p.kind}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">{p.partNumber}</p>
+                  <div className="flex items-center justify-between gap-1">
+                    <p
+                      className="text-[10px] font-mono mt-0.5 truncate"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {p.partNumber}
+                    </p>
+                    {(() => {
+                      const fpId = p.footprintId || p.defaultFootprint;
+                      const fpDef = fpId ? getFootprintDefinition(fpId) : undefined;
+                      const isVerified =
+                        fpDef?.verification === "cross-checked-kicad-lib" ||
+                        fpDef?.verification === "datasheet-checked";
+                      if (!isVerified) {
+                        return (
+                          <span className="text-[8px] font-mono uppercase px-1 py-0.2 border rounded-none text-amber-500 border-amber-500/40 bg-amber-500/10 shrink-0 font-bold">
+                            unverified
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                 </div>
               </button>
             );
@@ -120,19 +199,57 @@ export const PartsCatalogBrowser: React.FC = () => {
       {/* Part Detail View */}
       {currentPart && (
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-5">
+          <div
+            className="flex items-start justify-between gap-4 border-b pb-5"
+            style={{ borderColor: "var(--border-app)" }}
+          >
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
+                <span
+                  className="font-mono text-xs px-2 py-0.5 border rounded-none font-bold"
+                  style={{
+                    borderColor: "var(--border-strong)",
+                    backgroundColor: "var(--bg-sunken)",
+                    color: "var(--text-main)",
+                  }}
+                >
                   {currentPart.id}
                 </span>
-                <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  Verified Library Part
-                </span>
+                {(() => {
+                  const fpId = currentPart.footprintId || currentPart.defaultFootprint;
+                  const fpDef = fpId ? getFootprintDefinition(fpId) : undefined;
+                  const isVerifiedFp =
+                    fpDef?.verification === "cross-checked-kicad-lib" ||
+                    fpDef?.verification === "datasheet-checked";
+                  if (!isVerifiedFp) {
+                    return (
+                      <span className="text-xs font-mono flex items-center gap-1 font-bold text-amber-500">
+                        [⚠] UNVERIFIED GEOMETRY
+                      </span>
+                    );
+                  }
+                  return (
+                    <span
+                      className="text-xs font-mono flex items-center gap-1 font-bold"
+                      style={{ color: "var(--accent-valid)" }}
+                    >
+                      [✓] VERIFIED LIBRARY COMPONENT
+                    </span>
+                  );
+                })()}
               </div>
-              <h2 className="text-xl font-bold text-slate-100 mt-2">{currentPart.name}</h2>
-              <p className="text-xs text-slate-400 mt-1 max-w-2xl">{currentPart.description}</p>
+              <h2
+                className="text-lg font-bold mt-2 uppercase tracking-wide"
+                style={{ color: "var(--text-main)" }}
+              >
+                {currentPart.name}
+              </h2>
+              <p
+                className="text-xs mt-1 max-w-2xl leading-relaxed"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {currentPart.description}
+              </p>
             </div>
 
             {currentPart.datasheetUrl && (
@@ -140,89 +257,182 @@ export const PartsCatalogBrowser: React.FC = () => {
                 href={currentPart.datasheetUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition"
+                className="eng-btn"
               >
-                <span>Datasheet</span>
-                <ExternalLink className="w-3 h-3 text-slate-400" />
+                <span>DATASHEET</span>
+                <ExternalLink className="w-3 h-3" />
               </a>
             )}
           </div>
 
           {/* Properties & Specs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase font-mono">Part Number</span>
-              <p className="text-xs font-mono font-semibold text-slate-200 mt-1">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div
+              className="p-3 border rounded-none"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <span
+                className="text-[10px] uppercase font-mono block"
+                style={{ color: "var(--text-muted)" }}
+              >
+                PART NUMBER
+              </span>
+              <p
+                className="font-mono font-bold mt-1 truncate"
+                style={{ color: "var(--text-main)" }}
+              >
                 {currentPart.partNumber}
               </p>
             </div>
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase font-mono">Component Kind</span>
-              <p className="text-xs font-mono font-semibold text-indigo-400 mt-1 capitalize">
+            <div
+              className="p-3 border rounded-none"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <span
+                className="text-[10px] uppercase font-mono block"
+                style={{ color: "var(--text-muted)" }}
+              >
+                COMPONENT KIND
+              </span>
+              <p
+                className="font-mono font-bold mt-1 uppercase"
+                style={{ color: "var(--text-main)" }}
+              >
                 {currentPart.kind}
               </p>
             </div>
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase font-mono">
-                Default Footprint
+            <div
+              className="p-3 border rounded-none"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <span
+                className="text-[10px] uppercase font-mono block"
+                style={{ color: "var(--text-muted)" }}
+              >
+                DEFAULT FOOTPRINT
               </span>
-              <p className="text-xs font-mono font-semibold text-slate-300 mt-1">
+              <p
+                className="font-mono font-bold mt-1 truncate"
+                style={{ color: "var(--text-main)" }}
+              >
                 {currentPart.defaultFootprint || "Generic"}
               </p>
+              {(() => {
+                const fpId = currentPart.footprintId || currentPart.defaultFootprint;
+                const fpDef = fpId ? getFootprintDefinition(fpId) : undefined;
+                const isVerified =
+                  fpDef?.verification === "cross-checked-kicad-lib" ||
+                  fpDef?.verification === "datasheet-checked";
+                if (!isVerified) {
+                  return (
+                    <span className="inline-block mt-1 text-[9px] font-mono px-1 py-0.5 border text-amber-500 border-amber-500/50 bg-amber-500/10 font-bold uppercase">
+                      ⚠ unverified geometry
+                    </span>
+                  );
+                }
+                return (
+                  <span className="inline-block mt-1 text-[9px] font-mono px-1 py-0.5 border text-emerald-600 border-emerald-500/50 bg-emerald-500/10 font-bold uppercase">
+                    ✓ KiCad verified
+                  </span>
+                );
+              })()}
             </div>
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase font-mono">Pin Count</span>
-              <p className="text-xs font-mono font-semibold text-amber-300 mt-1">
-                {currentPart.ports.length} Ports
+            <div
+              className="p-3 border rounded-none"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <span
+                className="text-[10px] uppercase font-mono block"
+                style={{ color: "var(--text-muted)" }}
+              >
+                PIN COUNT
+              </span>
+              <p className="font-mono font-bold mt-1" style={{ color: "var(--text-main)" }}>
+                {currentPart.ports.length} PORTS
               </p>
             </div>
           </div>
 
           {/* Port / Pinout Table */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-indigo-400" />
-              <span>Port Pinout &amp; Electrical Ratings</span>
+            <h3
+              className="text-xs font-bold uppercase flex items-center gap-2 tracking-wide"
+              style={{ color: "var(--text-main)" }}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>PORT PINOUT &amp; ELECTRICAL RATINGS</span>
             </h3>
 
-            <div className="overflow-x-auto border border-slate-800 rounded-xl">
+            <div
+              className="overflow-x-auto border rounded-none"
+              style={{ borderColor: "var(--border-app)" }}
+            >
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-slate-950 text-slate-300 uppercase font-mono text-[10px] tracking-wider border-b border-slate-800">
+                <thead
+                  className="uppercase font-mono text-[9px] tracking-wider border-b"
+                  style={{
+                    backgroundColor: "var(--bg-subpanel)",
+                    borderColor: "var(--border-app)",
+                    color: "var(--text-muted)",
+                  }}
+                >
                   <tr>
-                    <th className="py-2.5 px-3">Port Name</th>
-                    <th className="py-2.5 px-3">Header Pin</th>
-                    <th className="py-2.5 px-3">Direction</th>
-                    <th className="py-2.5 px-3">Capabilities</th>
-                    <th className="py-2.5 px-3">Voltage Range</th>
-                    <th className="py-2.5 px-3">Current Limit</th>
+                    <th className="py-2.5 px-3">PORT NAME</th>
+                    <th className="py-2.5 px-3">HEADER PIN</th>
+                    <th className="py-2.5 px-3">DIRECTION</th>
+                    <th className="py-2.5 px-3">CAPABILITIES</th>
+                    <th className="py-2.5 px-3">VOLTAGE RANGE</th>
+                    <th className="py-2.5 px-3">CURRENT LIMIT</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
+                <tbody
+                  className="divide-y font-mono text-xs"
+                  style={{ borderColor: "var(--border-app)" }}
+                >
                   {currentPart.ports.map((pt) => (
-                    <tr key={pt.name} className="hover:bg-slate-800/40 transition">
-                      <td className="py-2 px-3 font-semibold text-indigo-400">{pt.name}</td>
-                      <td className="py-2 px-3 text-slate-400">{pt.pinNumber ?? "—"}</td>
-                      <td className="py-2 px-3 capitalize text-slate-300">{pt.kind}</td>
+                    <tr key={pt.name} className="transition" style={{ color: "var(--text-main)" }}>
+                      <td className="py-2 px-3 font-bold">{pt.name}</td>
+                      <td className="py-2 px-3" style={{ color: "var(--text-muted)" }}>
+                        {pt.pinNumber ?? "—"}
+                      </td>
+                      <td className="py-2 px-3 uppercase">{pt.kind}</td>
                       <td className="py-2 px-3">
                         {pt.pinCapabilities && pt.pinCapabilities.length > 0 ? (
                           <div className="flex gap-1 flex-wrap">
                             {pt.pinCapabilities.map((cap) => (
                               <span
                                 key={cap}
-                                className="px-1.5 py-0.2 rounded bg-slate-900 border border-slate-700 text-[10px] text-slate-300"
+                                className="px-1.5 py-0.2 border rounded-none text-[9px]"
+                                style={{
+                                  borderColor: "var(--border-app)",
+                                  backgroundColor: "var(--bg-sunken)",
+                                  color: "var(--text-main)",
+                                }}
                               >
                                 {cap}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-500">—</span>
+                          <span style={{ color: "var(--text-muted)" }}>—</span>
                         )}
                       </td>
-                      <td className="py-2 px-3 text-emerald-400">
+                      <td className="py-2 px-3" style={{ color: "var(--accent-valid)" }}>
                         {pt.voltageRange ? `${pt.voltageRange[0]}V – ${pt.voltageRange[1]}V` : "—"}
                       </td>
-                      <td className="py-2 px-3 text-amber-300">
+                      <td className="py-2 px-3">
                         {pt.currentLimit ? `${pt.currentLimit * 1000} mA` : "—"}
                       </td>
                     </tr>

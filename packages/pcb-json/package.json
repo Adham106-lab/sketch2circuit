@@ -1,0 +1,15 @@
+{
+  "name": "@s2c/pcb-json",
+  "version": "0.1.0",
+  "description": "PCB layout data model, zod schemas, and JSON Schema export for sketch2circuit",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

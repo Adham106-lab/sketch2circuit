@@ -1,0 +1,46 @@
+{
+  "repository": "https://github.com/KiCad/kicad-footprints",
+  "commit": "7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd",
+  "files": {
+    "LED_D5.0mm.kicad_mod": {
+      "remote_path": "LED_THT.pretty/LED_D5.0mm.kicad_mod",
+      "source_url": "https://raw.githubusercontent.com/KiCad/kicad-footprints/7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd/LED_THT.pretty/LED_D5.0mm.kicad_mod",
+      "bytes": 1694
+    },
+    "R_Axial_P7.62mm.kicad_mod": {
+      "remote_path": "Resistor_THT.pretty/R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal.kicad_mod",
+      "source_url": "https://raw.githubusercontent.com/KiCad/kicad-footprints/7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd/Resistor_THT.pretty/R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal.kicad_mod",
+      "bytes": 2268
+    },
+    "CP_Radial_D5.0mm_P2.00mm.kicad_mod": {
+      "remote_path": "Capacitor_THT.pretty/CP_Radial_D5.0mm_P2.00mm.kicad_mod",
+      "source_url": "https://raw.githubusercontent.com/KiCad/kicad-footprints/7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd/Capacitor_THT.pretty/CP_Radial_D5.0mm_P2.00mm.kicad_mod",
+      "bytes": 10586
+    },
+    "SW_PUSH_6mm.kicad_mod": {
+      "remote_path": "Button_Switch_THT.pretty/SW_PUSH_6mm.kicad_mod",
+      "source_url": "https://raw.githubusercontent.com/KiCad/kicad-footprints/7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd/Button_Switch_THT.pretty/SW_PUSH_6mm.kicad_mod",
+      "bytes": 2520
+    },
+    "D_DO-41_P10.16mm.kicad_mod": {
+      "remote_path": "Diode_THT.pretty/D_DO-41_SOD81_P10.16mm_Horizontal.kicad_mod",
+      "source_url": "https://raw.githubusercontent.com/KiCad/kicad-footprints/7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd/Diode_THT.pretty/D_DO-41_SOD81_P10.16mm_Horizontal.kicad_mod",
+      "bytes": 2814
+    },
+    "TO-92_Inline.kicad_mod": {
+      "remote_path": "Package_TO_SOT_THT.pretty/TO-92_Inline.kicad_mod",
+      "source_url": "https://raw.githubusercontent.com/KiCad/kicad-footprints/7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd/Package_TO_SOT_THT.pretty/TO-92_Inline.kicad_mod",
+      "bytes": 1687
+    },
+    "PinHeader_1x03_P2.54mm.kicad_mod": {
+      "remote_path": "Connector_PinHeader_2.54mm.pretty/PinHeader_1x03_P2.54mm_Vertical.kicad_mod",
+      "source_url": "https://raw.githubusercontent.com/KiCad/kicad-footprints/7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd/Connector_PinHeader_2.54mm.pretty/PinHeader_1x03_P2.54mm_Vertical.kicad_mod",
+      "bytes": 2095
+    },
+    "Arduino_UNO_R3.kicad_mod": {
+      "remote_path": "Module.pretty/Arduino_UNO_R3.kicad_mod",
+      "source_url": "https://raw.githubusercontent.com/KiCad/kicad-footprints/7ebfa6b23cc292a56f751b7b5f4a0e12eeef69dd/Module.pretty/Arduino_UNO_R3.kicad_mod",
+      "bytes": 7523
+    }
+  }
+}

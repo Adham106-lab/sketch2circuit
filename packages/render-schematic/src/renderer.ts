@@ -60,7 +60,7 @@ export function renderSchematicSvg(
   }
 
   // Background canvas
-  const bgFill = theme === "dark" ? "#0b0f19" : "#ffffff";
+  const bgFill = theme === "dark" ? "#0A0A0A" : "#F7F4EC";
   svgSections.push(`<rect width="${width}" height="${height}" fill="${bgFill}" />`);
 
   // Grid layer
