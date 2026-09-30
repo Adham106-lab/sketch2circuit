@@ -182,3 +182,45 @@ export function isPolygonContained(inner: Point[], outer: Point[]): boolean {
 
   return true;
 }
+
+/**
+ * Computes shortest distance from a point to a line segment (a - b).
+ */
+export function pointToSegmentDistance(p: Point, a: Point, b: Point): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy;
+  if (l2 === 0) return distance(p, a);
+  let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return distance(p, { x: a.x + t * dx, y: a.y + t * dy });
+}
+
+/**
+ * Computes shortest distance between two line segments (a1-a2) and (b1-b2).
+ */
+export function segmentToSegmentDistance(a1: Point, a2: Point, b1: Point, b2: Point): number {
+  if (lineSegmentsIntersect(a1, a2, b1, b2)) return 0;
+  return Math.min(
+    pointToSegmentDistance(a1, b1, b2),
+    pointToSegmentDistance(a2, b1, b2),
+    pointToSegmentDistance(b1, a1, a2),
+    pointToSegmentDistance(b2, a1, a2),
+  );
+}
+
+/**
+ * Computes minimum distance from a point to the boundary edges of a polygon.
+ */
+export function pointToPolygonDistance(p: Point, poly: Point[]): number {
+  if (poly.length === 0) return Number.POSITIVE_INFINITY;
+  let minD = Number.POSITIVE_INFINITY;
+  const n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i]!;
+    const b = poly[(i + 1) % n]!;
+    const d = pointToSegmentDistance(p, a, b);
+    if (d < minD) minD = d;
+  }
+  return minD;
+}

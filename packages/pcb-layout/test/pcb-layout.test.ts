@@ -8,16 +8,15 @@ import path from "node:path";
 import { synthesizeSketch } from "@s2c/arduino";
 import type { Circuit } from "@s2c/circuit-json";
 import { ARDUINO_UNO_R3_SHIELD_OUTLINE, getFootprintDefinition } from "@s2c/footprints";
-import { getPartDefinition } from "@s2c/parts";
 import { PcbLayoutSchema } from "@s2c/pcb-json";
 import { describe, expect, it } from "vitest";
 import { SAMPLE_SKETCHES } from "../../../src/components/sample-sketches.js";
 import {
   ARDUINO_UNO_R3_KEEPOUTS,
-  getBoundingBox,
   isPolygonContained,
   placeCircuit,
   polygonsIntersect,
+  resolvePartAndFootprint,
   transformPolygon,
 } from "../src/index.js";
 
@@ -44,43 +43,6 @@ describe("M10 Deterministic PCB Placement & Layout Engine", () => {
     void loop() {
       int val = analogRead(potPin);
       analogWrite(ledPin, val / 4);
-    }
-  `;
-
-  const MULTI_PERIPHERAL_SKETCH = `
-    #include <Servo.h>
-    const int btn1Pin = 2;
-    const int btn2Pin = 3;
-    const int led1Pin = 4;
-    const int led2Pin = 5;
-    const int motorPin = 6;
-    const int buzzerPin = 7;
-    const int servoPin = 9;
-    const int potPin = A0;
-    const int ldrPin = A1;
-
-    Servo myServo;
-
-    void setup() {
-      pinMode(btn1Pin, INPUT_PULLUP);
-      pinMode(btn2Pin, INPUT_PULLUP);
-      pinMode(led1Pin, OUTPUT);
-      pinMode(led2Pin, OUTPUT);
-      pinMode(motorPin, OUTPUT);
-      pinMode(buzzerPin, OUTPUT);
-      myServo.attach(servoPin);
-    }
-
-    void loop() {
-      int p = analogRead(potPin);
-      int l = analogRead(ldrPin);
-      int b1 = digitalRead(btn1Pin);
-      int b2 = digitalRead(btn2Pin);
-      digitalWrite(led1Pin, b1);
-      digitalWrite(led2Pin, b2);
-      analogWrite(motorPin, 128);
-      tone(buzzerPin, 440);
-      myServo.write(90);
     }
   `;
 
@@ -292,6 +254,30 @@ describe("M10 Deterministic PCB Placement & Layout Engine", () => {
     expect(capPlacement).toBeDefined();
     expect(capPlacement?.footprintId).toBe("capacitor:radial-0.1in");
 
+    // Assert SPK1 always has an associated ~100 ohm series current-limiting resistor in its driving net
+    const spkComp = syn.circuit.components.find((c) => c.id === "SPK1");
+    expect(spkComp).toBeDefined();
+    const spkPosNet = syn.circuit.nets.find((n) => n.portIds.includes("SPK1.+"));
+    expect(spkPosNet, "SPK1.+ has a driving net").toBeDefined();
+    const buzzerResistorPort = spkPosNet?.portIds.find((p) => p !== "SPK1.+");
+    expect(buzzerResistorPort).toBeDefined();
+    const buzzerResId = buzzerResistorPort?.split(".")[0];
+    const buzzerResComp = syn.circuit.components.find((c) => c.id === buzzerResId);
+    expect(buzzerResComp?.kind).toBe("resistor");
+    expect(buzzerResComp?.value).toBe("100Ω");
+
+    // Assert buttons use internal pullup: SW1 and SW2 connect directly between MCU pin and GND (no external pullup resistors)
+    const sw1PinNet = syn.circuit.nets.find((n) => n.portIds.includes("SW1.1"));
+    expect(sw1PinNet?.portIds).toEqual(["SW1.1", "U1.D2"]);
+    const sw2PinNet = syn.circuit.nets.find((n) => n.portIds.includes("SW2.1"));
+    expect(sw2PinNet?.portIds).toEqual(["SW2.1", "U1.D3"]);
+
+    // Assert LED resistors are 300Ω per E24 series calculation (5V - 2.0V @ 10mA)
+    const r1 = syn.circuit.components.find((c) => c.id === "R1");
+    const r2 = syn.circuit.components.find((c) => c.id === "R2");
+    expect(r1?.value).toBe("300Ω");
+    expect(r2?.value).toBe("300Ω");
+
     // Check keepout hits
     for (const p of placements) {
       if (p.footprintId === "module:arduino-uno-r3") continue;
@@ -386,18 +372,19 @@ describe("M10 Deterministic PCB Placement & Layout Engine", () => {
             continue;
           }
 
-          const partDef =
-            (comp.partNumber ? getPartDefinition(comp.partNumber) : undefined) ??
-            getPartDefinition(comp.id) ??
-            getPartDefinition(comp.kind);
+          const { pinMap } = resolvePartAndFootprint(comp);
+          expect(
+            pinMap,
+            `Component '${compId}' (${comp.partNumber ?? comp.kind}) must have an explicit pinMap entry`,
+          ).toBeDefined();
 
-          let padNumber = partDef?.pinMap?.[portName];
+          const padNumber = pinMap?.[portName];
           if (!padNumber) {
-            if (comp.kind === "led")
-              padNumber = portName === "A" ? "2" : portName === "K" ? "1" : portName;
-            else if (comp.kind === "resistor" || comp.kind === "button" || comp.kind === "mcu")
-              padNumber = portName;
-            else padNumber = portName;
+            portsWithoutPad++;
+            unresolvablePorts.push(
+              `${portId} (missing explicit pinMap entry for port "${portName}")`,
+            );
+            continue;
           }
 
           const padExists = fp.pads.some((p: { number: string }) => p.number === padNumber);

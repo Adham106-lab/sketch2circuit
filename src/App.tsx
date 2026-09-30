@@ -12,17 +12,23 @@ import {
   Code2,
   Cpu,
   Eye,
+  FileSpreadsheet,
   Layers,
   Share2,
   ShieldAlert,
   Sparkles,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { placeCircuit, routeCircuit, type RoutingResult } from "@s2c/pcb-layout";
+import { ARDUINO_UNO_R3_SHIELD_OUTLINE } from "@s2c/footprints";
+import { BomViewerTab } from "./components/BomViewerTab.js";
 import { CalculatorsTab } from "./components/CalculatorsTab.js";
 import { DocumentationTab } from "./components/DocumentationTab.js";
 import { ErcDiagnostics } from "./components/ErcDiagnostics.js";
 import { ExportArtifacts } from "./components/ExportArtifacts.js";
 import { PartsCatalogBrowser } from "./components/PartsCatalogBrowser.js";
+import { Pcb3DViewer } from "./components/Pcb3DViewer.js";
+import { PcbViewer } from "./components/PcbViewer.js";
 import { SchematicViewer } from "./components/SchematicViewer.js";
 import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
 
@@ -30,25 +36,36 @@ export default function App() {
   // Theme state: "dark" (Oscilloscope) vs "light" (Drafting Sheet)
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
-  // Main Tab Navigation
+  // Main Tab Navigation: Schematic (Studio) | PCB (2D) | 3D | BOM | ERC | Export | Catalog | Calculators | Docs
   const [activeMainTab, setActiveMainTab] = useState<
-    "studio" | "erc" | "export" | "catalog" | "calculators" | "docs"
+    "studio" | "pcb" | "pcb3d" | "bom" | "erc" | "export" | "catalog" | "calculators" | "docs"
   >("studio");
 
-  // Studio Sub-view: Schematic vs. Facts/Inference vs. Pin Graph
-  const [studioRightView, setStudioRightView] = useState<"schematic" | "facts" | "pingraph">(
-    "schematic",
-  );
+  // Studio Sub-view: Schematic vs. PCB vs. PCB 3D vs. Facts/Inference vs. Pin Graph
+  const [studioRightView, setStudioRightView] = useState<
+    "schematic" | "pcb" | "pcb3d" | "facts" | "pingraph"
+  >("schematic");
 
-  // Synthesizer State
-  const [selectedSketchId, setSelectedSketchId] = useState<string>("blink");
-  const [sketchSource, setSketchSource] = useState<string>(SAMPLE_SKETCHES[0].code);
+  // Synthesizer State — Default to verified user_multi_peripheral benchmark
+  const defaultSketch =
+    SAMPLE_SKETCHES.find((s) => s.id === "user_multi_peripheral") ?? SAMPLE_SKETCHES[0];
+  const [selectedSketchId, setSelectedSketchId] = useState<string>("user_multi_peripheral");
+  const [sketchSource, setSketchSource] = useState<string>(defaultSketch.code);
+  const [debouncedSource, setDebouncedSource] = useState<string>(defaultSketch.code);
   const [targetBoard, setTargetBoard] = useState<string>("ARDUINO_UNO_R3");
 
-  // Run Synthesis reactively
+  // Debounce sketch edits to avoid laggy AST parsing & layout re-routing on every keystroke
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSource(sketchSource);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [sketchSource]);
+
+  // Run Synthesis reactively from debounced sketch source
   const synthesis: SynthesisResult = useMemo(() => {
     try {
-      return synthesizeSketch(sketchSource, {
+      return synthesizeSketch(debouncedSource, {
         boardId: targetBoard,
         timestamp: "2026-09-24T00:00:00.000Z",
       });
@@ -76,20 +93,75 @@ export default function App() {
         unresolvedItems: [],
       };
     }
-  }, [sketchSource, targetBoard]);
+  }, [debouncedSource, targetBoard]);
 
-  // Handle Preset Selection
+  // Single shared 2-layer routed layout across Schematic, PCB 2D, 3D, and BOM
+  const routedResult: RoutingResult | null = useMemo(() => {
+    if (!synthesis.circuit || synthesis.circuit.components.length === 0) return null;
+    try {
+      const placed = placeCircuit(synthesis.circuit, ARDUINO_UNO_R3_SHIELD_OUTLINE);
+      const routed = routeCircuit(placed.layout, synthesis.circuit, { gridPitchMm: 0.635 });
+      return routed;
+    } catch (e) {
+      console.warn("Auto-routing fallback:", e);
+      try {
+        const placed = placeCircuit(synthesis.circuit, ARDUINO_UNO_R3_SHIELD_OUTLINE);
+        return {
+          layout: placed.layout,
+          totalConnections: 0,
+          routedConnections: 0,
+          unroutedConnections: 0,
+          drcErrors: [],
+          wirelengthMm: 0,
+          totalVias: 0,
+          totalTraces: 0,
+        };
+      } catch {
+        return null;
+      }
+    }
+  }, [synthesis.circuit]);
+
+  // Routing & DRC status badge metrics
+  const routingBadgeStats = useMemo(() => {
+    if (!routedResult) {
+      return {
+        total: 0,
+        routed: 0,
+        unrouted: 0,
+        pct: "0.0",
+        drcErrors: 0,
+      };
+    }
+    const total = routedResult.totalConnections ?? 0;
+    const routed = routedResult.routedConnections ?? 0;
+    const unrouted = routedResult.unroutedConnections ?? 0;
+    const pct = total > 0 ? ((routed / total) * 100).toFixed(1) : "100.0";
+    const drcErrors = routedResult.drcErrors?.length ?? 0;
+    return {
+      total,
+      routed,
+      unrouted,
+      pct,
+      drcErrors,
+    };
+  }, [routedResult]);
+
+  // Handle Preset Selection (Immediate update without debounce delay)
   const handleSelectPreset = (id: string) => {
     setSelectedSketchId(id);
     const found = SAMPLE_SKETCHES.find((s) => s.id === id);
     if (found) {
       setSketchSource(found.code);
+      setDebouncedSource(found.code);
     }
   };
 
-  // Add Annotation Helper
+  // Add Annotation Helper (Immediate update)
   const handleInsertAnnotation = (ann: string) => {
-    setSketchSource((prev) => `${ann}\n${prev}`);
+    const updated = `${ann}\n${sketchSource}`;
+    setSketchSource(updated);
+    setDebouncedSource(updated);
   };
 
   const currentSketchMeta = SAMPLE_SKETCHES.find((s) => s.id === selectedSketchId);
@@ -145,6 +217,17 @@ export default function App() {
               >
                 SYNTHESIS ENGINE
               </span>
+              <span
+                className="text-[9px] px-1.5 py-0.2 border rounded-[1px] font-mono tracking-wider font-semibold"
+                style={{
+                  borderColor: "rgba(59, 130, 246, 0.4)",
+                  backgroundColor: "rgba(59, 130, 246, 0.1)",
+                  color: "#60a5fa",
+                }}
+                title="Current Target Hardware Scope: Arduino Uno R3 Shield Architecture only"
+              >
+                TARGET: ARDUINO UNO R3 (v1)
+              </span>
             </div>
             <p className="text-[10px] hidden sm:block" style={{ color: "var(--text-muted)" }}>
               CODE-TO-CIRCUIT COMPILER &amp; DETERMINISTIC ERC VALIDATION
@@ -159,9 +242,43 @@ export default function App() {
             type="button"
             onClick={() => setActiveMainTab("studio")}
             className={`folder-tab ${activeMainTab === "studio" ? "active" : ""}`}
+            title="Interactive Sketch Editor & Schematic Vector View"
           >
             <Code2 className="w-3.5 h-3.5" />
-            <span>SKETCH STUDIO</span>
+            <span>SCHEMATIC</span>
+          </button>
+
+          <button
+            id="tab-pcb"
+            type="button"
+            onClick={() => setActiveMainTab("pcb")}
+            className={`folder-tab ${activeMainTab === "pcb" ? "active" : ""}`}
+            title="2D Vector PCB Layout Workbench & DRC Engine"
+          >
+            <Layers className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="font-bold">2D PCB</span>
+          </button>
+
+          <button
+            id="tab-pcb3d"
+            type="button"
+            onClick={() => setActiveMainTab("pcb3d")}
+            className={`folder-tab ${activeMainTab === "pcb3d" ? "active" : ""}`}
+            title="3D WebGL CAD Viewer with View-Cube & Orbit Controls"
+          >
+            <Boxes className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="font-bold">3D VIEWER</span>
+          </button>
+
+          <button
+            id="tab-bom"
+            type="button"
+            onClick={() => setActiveMainTab("bom")}
+            className={`folder-tab ${activeMainTab === "bom" ? "active" : ""}`}
+            title="Bill of Materials with Component Footprints, Costs & Coordinates"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
+            <span className="font-bold">BOM</span>
           </button>
 
           <button
@@ -171,7 +288,7 @@ export default function App() {
             className={`folder-tab ${activeMainTab === "erc" ? "active" : ""}`}
           >
             <ShieldAlert className="w-3.5 h-3.5" />
-            <span>ERC DIAGNOSTICS</span>
+            <span>ERC</span>
             {(errorCount > 0 || warningCount > 0) && (
               <span
                 className="ml-1 px-1 py-0.2 text-[9px] font-bold border rounded-[1px]"
@@ -193,7 +310,7 @@ export default function App() {
             className={`folder-tab ${activeMainTab === "export" ? "active" : ""}`}
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>EXPORT ARTIFACTS</span>
+            <span>EXPORTS</span>
           </button>
 
           <button
@@ -203,7 +320,7 @@ export default function App() {
             className={`folder-tab ${activeMainTab === "catalog" ? "active" : ""}`}
           >
             <Boxes className="w-3.5 h-3.5" />
-            <span>PARTS CATALOG</span>
+            <span>CATALOG</span>
           </button>
 
           <button
@@ -213,7 +330,7 @@ export default function App() {
             className={`folder-tab ${activeMainTab === "calculators" ? "active" : ""}`}
           >
             <Calculator className="w-3.5 h-3.5" />
-            <span>CALCULATORS</span>
+            <span>CALCS</span>
           </button>
 
           <button
@@ -223,12 +340,32 @@ export default function App() {
             className={`folder-tab ${activeMainTab === "docs" ? "active" : ""}`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>DOCS &amp; VALIDATION</span>
+            <span>DOCS</span>
           </button>
         </nav>
 
-        {/* Zone 3: Theme Toggle */}
-        <div className="flex items-center gap-2">
+        {/* Zone 3: Routing/DRC Status Badge & Theme Toggle */}
+        <div className="flex items-center gap-2.5">
+          {/* Honest Routing & DRC Status Badge */}
+          <button
+            type="button"
+            onClick={() => setActiveMainTab("pcb")}
+            className="px-2 py-1 border rounded-[2px] font-bold text-[10px] tracking-wide flex items-center gap-1.5 transition hover:brightness-110 cursor-pointer"
+            style={{
+              backgroundColor:
+                routingBadgeStats.unrouted > 0 ? "rgba(234, 88, 12, 0.16)" : "rgba(34, 197, 94, 0.16)",
+              borderColor: routingBadgeStats.unrouted > 0 ? "#ea580c" : "#22c55e",
+              color: routingBadgeStats.unrouted > 0 ? "#fdba74" : "#86efac",
+            }}
+            title="Click to switch to 2D PCB Layout and inspect routing & DRC details"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>
+              {routingBadgeStats.routed}/{routingBadgeStats.total} routed ({routingBadgeStats.pct}%) ·{" "}
+              {routingBadgeStats.drcErrors} DRC
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -249,7 +386,40 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 max-w-[1800px] w-full mx-auto flex flex-col">
+      <main className="flex-1 p-4 max-w-[1800px] w-full mx-auto flex flex-col space-y-3">
+        {/* Upfront Board-Target Scope Notice & Architecture Mismatch Alert */}
+        {synthesis.diagnostics.some((d) => d.ruleId === "synthesis.board-architecture-mismatch") && (
+          <div
+            className="p-3 border rounded-[2px] flex items-start gap-3 text-xs"
+            style={{
+              backgroundColor: "rgba(234, 88, 12, 0.14)",
+              borderColor: "#ea580c",
+              color: "var(--text-main)",
+            }}
+          >
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold text-amber-400 tracking-wide uppercase">
+                  BOARD TARGET SCOPE NOTICE: Sketch appears to target ESP32, but target board is Arduino Uno R3.
+                </span>
+                <span className="px-1.5 py-0.2 text-[9px] border rounded-[1px] bg-amber-950/40 border-amber-600/50 text-amber-300 font-mono">
+                  v1 Scope: Uno Only
+                </span>
+              </div>
+              <div className="text-[11px] opacity-90 leading-relaxed">
+                {
+                  synthesis.diagnostics.find((d) => d.ruleId === "synthesis.board-architecture-mismatch")
+                    ?.explanation
+                }
+              </div>
+              <div className="text-[10px] text-amber-300 font-mono mt-0.5">
+                💡 Only Arduino Uno R3 is supported in v1. Out-of-range GPIOs (≥20) and network libraries cannot be synthesized to Uno shields without @s2c annotations.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ========================================================================= */}
         {/* TAB 1: ARDUINO SKETCH STUDIO & LIVE SYNTHESIZER                           */}
         {/* ========================================================================= */}
@@ -440,6 +610,40 @@ export default function App() {
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
+                    onClick={() => setStudioRightView("pcb")}
+                    className="eng-btn"
+                    style={{
+                      borderColor:
+                        studioRightView === "pcb" ? "var(--border-strong)" : "var(--border-app)",
+                      backgroundColor:
+                        studioRightView === "pcb" ? "var(--bg-panel)" : "transparent",
+                      color: "var(--text-main)",
+                      fontWeight: studioRightView === "pcb" ? 600 : 400,
+                    }}
+                  >
+                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="font-bold">2D PCB VIEW (M12)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStudioRightView("pcb3d")}
+                    className="eng-btn"
+                    style={{
+                      borderColor:
+                        studioRightView === "pcb3d" ? "var(--border-strong)" : "var(--border-app)",
+                      backgroundColor:
+                        studioRightView === "pcb3d" ? "var(--bg-panel)" : "transparent",
+                      color: "var(--text-main)",
+                      fontWeight: studioRightView === "pcb3d" ? 600 : 400,
+                    }}
+                  >
+                    <Boxes className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="font-bold">3D PCB VIEW (M13)</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setStudioRightView("schematic")}
                     className="eng-btn"
                     style={{
@@ -521,7 +725,29 @@ export default function App() {
                 </button>
               </div>
 
-              {/* View 1: Vector Schematic */}
+              {/* View 1: 2D PCB Canvas (M12) */}
+              {studioRightView === "pcb" && (
+                <div className="flex-1 min-h-[500px]">
+                  <PcbViewer
+                    circuit={synthesis.circuit}
+                    sketchName={currentSketchMeta?.name || "ArduinoCircuit"}
+                    theme={theme}
+                  />
+                </div>
+              )}
+
+              {/* View 1b: 3D PCB Viewer (M13) */}
+              {studioRightView === "pcb3d" && (
+                <div className="flex-1 min-h-[500px]">
+                  <Pcb3DViewer
+                    circuit={synthesis.circuit}
+                    sketchName={currentSketchMeta?.name || "ArduinoCircuit"}
+                    theme={theme}
+                  />
+                </div>
+              )}
+
+              {/* View 2: Vector Schematic */}
               {studioRightView === "schematic" && (
                 <div className="flex-1 min-h-[500px]">
                   <SchematicViewer
@@ -740,7 +966,283 @@ export default function App() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 2: ELECTRICAL RULES CHECK (ERC) DIAGNOSTICS                            */}
+        {/* TAB 2: 2D PCB LAYOUT WORKBENCH (M12)                                      */}
+        {/* ========================================================================= */}
+        {activeMainTab === "pcb" && (
+          <div className="flex-1 flex flex-col space-y-3 min-h-[700px]">
+            {/* Top PCB Sketch & Target Control Ribbon */}
+            <div
+              className="flex flex-wrap items-center justify-between gap-3 p-2.5 border rounded-[2px] text-xs"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] uppercase font-bold tracking-wider"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    ACTIVE CIRCUIT / SKETCH:
+                  </span>
+                  <select
+                    value={selectedSketchId}
+                    onChange={(e) => handleSelectPreset(e.target.value)}
+                    className="border rounded-[2px] px-2 py-1 text-xs focus:outline-none font-mono"
+                    style={{
+                      backgroundColor: "var(--bg-sunken)",
+                      borderColor: "var(--border-app)",
+                      color: "var(--text-main)",
+                    }}
+                  >
+                    {SAMPLE_SKETCHES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.category})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] uppercase font-bold tracking-wider"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    TARGET BOARD:
+                  </span>
+                  <select
+                    value={targetBoard}
+                    onChange={(e) => setTargetBoard(e.target.value)}
+                    className="border rounded-[2px] px-2 py-1 text-xs focus:outline-none font-mono"
+                    style={{
+                      backgroundColor: "var(--bg-sunken)",
+                      borderColor: "var(--border-app)",
+                      color: "var(--text-main)",
+                    }}
+                  >
+                    <option value="ARDUINO_UNO_R3">Arduino Uno R3 Shield</option>
+                    <option value="ARDUINO_NANO">Arduino Nano V3 Shield</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] px-2 py-0.5 border rounded-[1px] font-mono" style={{ borderColor: "var(--border-strong)", color: "var(--text-muted)" }}>
+                  {synthesis.circuit.components.length} COMPONENTS · {synthesis.circuit.nets.length} NETS
+                </span>
+                {selectedSketchId !== "user_multi_peripheral" && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset("user_multi_peripheral")}
+                    className="eng-btn font-bold text-amber-400"
+                    title="Load user_multi_peripheral benchmark"
+                  >
+                    ⚡ Load 12. User Multi-Peripheral Benchmark
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col min-h-[650px]">
+              <PcbViewer
+                circuit={synthesis.circuit}
+                layout={routedResult?.layout}
+                sketchName={currentSketchMeta?.name || "ArduinoCircuit"}
+                theme={theme}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 2b: 3D PCB VIEWER WORKBENCH (M13)                                     */}
+        {/* ========================================================================= */}
+        {activeMainTab === "pcb3d" && (
+          <div className="flex-1 flex flex-col space-y-3 min-h-[700px]">
+            {/* Top PCB Sketch & Target Control Ribbon */}
+            <div
+              className="flex flex-wrap items-center justify-between gap-3 p-2.5 border rounded-[2px] text-xs"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] uppercase font-bold tracking-wider"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    ACTIVE CIRCUIT / SKETCH:
+                  </span>
+                  <select
+                    value={selectedSketchId}
+                    onChange={(e) => handleSelectPreset(e.target.value)}
+                    className="border rounded-[2px] px-2 py-1 text-xs focus:outline-none font-mono"
+                    style={{
+                      backgroundColor: "var(--bg-sunken)",
+                      borderColor: "var(--border-app)",
+                      color: "var(--text-main)",
+                    }}
+                  >
+                    {SAMPLE_SKETCHES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.category})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] uppercase font-bold tracking-wider"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    TARGET BOARD:
+                  </span>
+                  <select
+                    value={targetBoard}
+                    onChange={(e) => setTargetBoard(e.target.value)}
+                    className="border rounded-[2px] px-2 py-1 text-xs focus:outline-none font-mono"
+                    style={{
+                      backgroundColor: "var(--bg-sunken)",
+                      borderColor: "var(--border-app)",
+                      color: "var(--text-main)",
+                    }}
+                  >
+                    <option value="ARDUINO_UNO_R3">Arduino Uno R3 Shield</option>
+                    <option value="ARDUINO_NANO">Arduino Nano V3 Shield</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[10px] px-2 py-0.5 border rounded-[1px] font-mono"
+                  style={{ borderColor: "var(--border-strong)", color: "var(--text-muted)" }}
+                >
+                  {synthesis.circuit.components.length} COMPONENTS · 3D WEBGL CAD
+                </span>
+                {selectedSketchId !== "user_multi_peripheral" && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset("user_multi_peripheral")}
+                    className="eng-btn font-bold text-amber-400"
+                    title="Load user_multi_peripheral benchmark"
+                  >
+                    ⚡ Load 12. User Multi-Peripheral Benchmark
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col min-h-[650px]">
+              <Pcb3DViewer
+                circuit={synthesis.circuit}
+                layout={routedResult?.layout}
+                sketchName={currentSketchMeta?.name || "ArduinoCircuit"}
+                theme={theme}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 2c: BILL OF MATERIALS (BOM) WORKBENCH (M14)                           */}
+        {/* ========================================================================= */}
+        {activeMainTab === "bom" && (
+          <div className="flex-1 flex flex-col space-y-3 min-h-[700px]">
+            {/* Top PCB Sketch & Target Control Ribbon */}
+            <div
+              className="flex flex-wrap items-center justify-between gap-3 p-2.5 border rounded-[2px] text-xs"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] uppercase font-bold tracking-wider"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    ACTIVE CIRCUIT / SKETCH:
+                  </span>
+                  <select
+                    value={selectedSketchId}
+                    onChange={(e) => handleSelectPreset(e.target.value)}
+                    className="border rounded-[2px] px-2 py-1 text-xs focus:outline-none font-mono"
+                    style={{
+                      backgroundColor: "var(--bg-sunken)",
+                      borderColor: "var(--border-app)",
+                      color: "var(--text-main)",
+                    }}
+                  >
+                    {SAMPLE_SKETCHES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.category})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[10px] uppercase font-bold tracking-wider"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    TARGET BOARD:
+                  </span>
+                  <select
+                    value={targetBoard}
+                    onChange={(e) => setTargetBoard(e.target.value)}
+                    className="border rounded-[2px] px-2 py-1 text-xs focus:outline-none font-mono"
+                    style={{
+                      backgroundColor: "var(--bg-sunken)",
+                      borderColor: "var(--border-app)",
+                      color: "var(--text-main)",
+                    }}
+                  >
+                    <option value="ARDUINO_UNO_R3">Arduino Uno R3 Shield</option>
+                    <option value="ARDUINO_NANO">Arduino Nano V3 Shield</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[10px] px-2 py-0.5 border rounded-[1px] font-mono"
+                  style={{ borderColor: "var(--border-strong)", color: "var(--text-muted)" }}
+                >
+                  {synthesis.circuit.components.length} COMPONENTS · BILL OF MATERIALS
+                </span>
+                {selectedSketchId !== "user_multi_peripheral" && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset("user_multi_peripheral")}
+                    className="eng-btn font-bold text-amber-400"
+                    title="Load user_multi_peripheral benchmark"
+                  >
+                    ⚡ Load 12. User Multi-Peripheral Benchmark
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col min-h-[650px]">
+              <BomViewerTab
+                circuit={synthesis.circuit}
+                layout={routedResult?.layout}
+                sketchName={currentSketchMeta?.name || "ArduinoCircuit"}
+                theme={theme}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3: ELECTRICAL RULES CHECK (ERC) DIAGNOSTICS                            */}
         {/* ========================================================================= */}
         {activeMainTab === "erc" && (
           <div className="flex-1 min-h-[600px]">

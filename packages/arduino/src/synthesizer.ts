@@ -92,6 +92,144 @@ export function synthesizeSketch(
   // 8. Run Electrical Rules Check (ERC) validation across full 18-rule catalog
   const diagnostics = runErc(circuit);
 
+  // -------------------------------------------------------------------------
+  // Check A: Unrecognized #include Libraries (Doc §1.4 / §12.8 / §16)
+  // -------------------------------------------------------------------------
+  const RECOGNIZED_LIBRARIES = new Set([
+    "servo.h",
+    "wire.h",
+    "spi.h",
+    "adafruit_neopixel.h",
+    "liquidcrystal.h",
+    "liquidcrystal_i2c.h",
+    "dht.h",
+    "softwareserial.h",
+    "arduino.h",
+  ]);
+
+  for (const inc of facts.includes) {
+    const clean = inc.toLowerCase().trim();
+    if (!RECOGNIZED_LIBRARIES.has(clean)) {
+      const incMsg = `Unrecognized library '#include <${inc}>' is outside current synthesizer v1 scope.`;
+      combinedUnresolved.push(incMsg);
+      unresolvedItems.push({
+        expression: `#include <${inc}>`,
+        reason: incMsg,
+        range: { startLine: 1, startCol: 1, endLine: 1, endCol: 1 },
+      });
+      diagnostics.push({
+        ruleId: "synthesis.unrecognized-library",
+        severity: "warning",
+        message: incMsg,
+        explanation: `sketch2circuit v1 targets standard Arduino Uno R3 peripherals. Hardware defined solely through '${inc}' cannot be automatically synthesized without '@s2c:' annotations.`,
+        target: { type: "circuit", id: "circuit" },
+        suggestion: `Annotate circuit peripherals using inline '@s2c: <type>' comments (e.g. '// @s2c: i2c device=oled') or wire components manually.`,
+      });
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check B: Pin Numbers Outside Target Board Valid Range (Doc §12.3 / §12.8)
+  // -------------------------------------------------------------------------
+  const outOfRangePins = new Set<number>();
+  for (const pinUse of pinGraph.values()) {
+    if (pinUse.pinNumber >= 20 || pinUse.pinNumber < 0) {
+      outOfRangePins.add(pinUse.pinNumber);
+    }
+  }
+  for (const call of facts.calls) {
+    for (const arg of call.args) {
+      if (typeof arg === "number" && (arg >= 20 || arg < 0)) {
+        outOfRangePins.add(arg);
+      }
+    }
+  }
+  for (const [k, v] of facts.constants.entries()) {
+    if (typeof v === "number" && (v >= 20 || v < 0)) {
+      if (/pin|gpio|sda|scl|rx|tx|relay|btn|led/i.test(k)) {
+        outOfRangePins.add(v);
+      }
+    }
+  }
+
+  if (outOfRangePins.size > 0 && boardId === "ARDUINO_UNO_R3") {
+    for (const pinNum of Array.from(outOfRangePins).sort((a, b) => a - b)) {
+      const pinMsg = `Pin ${pinNum}: not a valid Arduino Uno pin (0-13, A0-A5). This sketch may target a different board (ESP32?).`;
+      if (!combinedUnresolved.includes(pinMsg)) {
+        combinedUnresolved.push(pinMsg);
+      }
+      unresolvedItems.push({
+        expression: String(pinNum),
+        reason: pinMsg,
+        range: { startLine: 1, startCol: 1, endLine: 1, endCol: 1 },
+      });
+      diagnostics.push({
+        ruleId: "synthesis.pin-out-of-range",
+        severity: "warning",
+        message: pinMsg,
+        explanation: `Arduino Uno R3 only provides digital pins 0-13 and analog pins A0-A5 (14-19). Pin ${pinNum} is outside the microcontroller pin map.`,
+        target: { type: "circuit", id: "circuit" },
+        suggestion: `Remap pin ${pinNum} to an available Uno pin (0-13, A0-A5) or check your target microcontroller architecture.`,
+      });
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check C: Board Architecture Mismatch Heuristic (ESP32 Signals)
+  // -------------------------------------------------------------------------
+  const espSignals: string[] = [];
+  const ESP_INCLUDES = [
+    "wifi.h",
+    "wificlient.h",
+    "wifiserver.h",
+    "webserver.h",
+    "httpclient.h",
+    "preferences.h",
+    "bluetoothserial.h",
+    "esp_wifi.h",
+    "esp_now.h",
+    "esp32servo.h",
+    "driver/gpio.h",
+    "esp_camera.h",
+    "asynctcp.h",
+    "espasyncwebserver.h",
+  ];
+  for (const inc of facts.includes) {
+    const clean = inc.toLowerCase().trim();
+    if (ESP_INCLUDES.some((espInc) => clean.includes(espInc))) {
+      espSignals.push(`#include <${inc}>`);
+    }
+  }
+  for (const p of outOfRangePins) {
+    if (p >= 20) {
+      espSignals.push(`GPIO ${p}`);
+    }
+  }
+
+  if (boardId === "ARDUINO_UNO_R3" && espSignals.length > 0) {
+    const mismatchMsg = `Board Architecture Mismatch: Sketch appears to target ESP32, but target board is Arduino Uno R3.`;
+    const mismatchExp = `Detected ESP32 signatures: ${espSignals.join(", ")}. Arduino Uno R3 operates at 5V logic and only provides 14 digital pins (0-13) and 6 analog inputs (A0-A5). ESP32 GPIOs and network libraries cannot be synthesized onto an Uno shield layout.`;
+    diagnostics.unshift({
+      ruleId: "synthesis.board-architecture-mismatch",
+      severity: "warning",
+      message: mismatchMsg,
+      explanation: mismatchExp,
+      target: { type: "circuit", id: "circuit" },
+      suggestion: "This sketch targets an ESP32 board which is outside sketch2circuit v1 scope (Arduino Uno R3 only). To use with Uno, target standard Uno pins (0-13, A0-A5) and peripherals.",
+    });
+    combinedUnresolved.unshift(`Board Architecture Mismatch: Detected ESP32 signatures (${espSignals.join(", ")}); current target is Arduino Uno R3.`);
+  }
+
+  // -------------------------------------------------------------------------
+  // Check D: Zero Synthesized Components Notice
+  // -------------------------------------------------------------------------
+  if (sortedPeripherals.length === 0) {
+    const zeroMsg = "Zero peripheral components synthesized: Sketch does not contain recognized peripheral hardware signatures or valid Uno pin operations.";
+    if (!combinedUnresolved.includes(zeroMsg)) {
+      combinedUnresolved.push(zeroMsg);
+    }
+  }
+
   // Check for bare motor peripherals driving GPIO directly without driver or flyback
   for (const p of sortedPeripherals) {
     if (p.properties?.isBareMotor) {

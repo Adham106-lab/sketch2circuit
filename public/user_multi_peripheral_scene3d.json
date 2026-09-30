@@ -1,0 +1,6698 @@
+{
+  "metadata": {
+    "title": "3D PCB Scene Representation",
+    "boardWidthMm": 68.58,
+    "boardHeightMm": 53.34,
+    "thicknessMm": 1.6,
+    "componentCount": 16,
+    "padCount": 136,
+    "traceCount": 27,
+    "viaCount": 11,
+    "totalNodeCount": 211
+  },
+  "board": {
+    "id": "pcb-substrate-slab",
+    "name": "FR4 Board Substrate",
+    "kind": "board",
+    "geometry": {
+      "kind": "extruded-polygon",
+      "polygon": [
+        {
+          "x": 0,
+          "y": 2.54
+        },
+        {
+          "x": 2.54,
+          "y": 0
+        },
+        {
+          "x": 66.04,
+          "y": 0
+        },
+        {
+          "x": 68.58,
+          "y": 2.54
+        },
+        {
+          "x": 68.58,
+          "y": 38.1
+        },
+        {
+          "x": 66.04,
+          "y": 40.64
+        },
+        {
+          "x": 66.04,
+          "y": 48.26
+        },
+        {
+          "x": 68.58,
+          "y": 50.8
+        },
+        {
+          "x": 68.58,
+          "y": 53.34
+        },
+        {
+          "x": 15.24,
+          "y": 53.34
+        },
+        {
+          "x": 12.7,
+          "y": 50.8
+        },
+        {
+          "x": 2.54,
+          "y": 50.8
+        },
+        {
+          "x": 0,
+          "y": 48.26
+        }
+      ],
+      "depth": 1.6,
+      "holes": [
+        {
+          "x": 13.97,
+          "y": 2.54,
+          "radius": 1.6
+        },
+        {
+          "x": 15.24,
+          "y": 50.8,
+          "radius": 1.6
+        },
+        {
+          "x": 66.04,
+          "y": 7.62,
+          "radius": 1.6
+        },
+        {
+          "x": 66.04,
+          "y": 35.56,
+          "radius": 1.6
+        }
+      ]
+    },
+    "material": {
+      "color": "#124e28",
+      "roughness": 0.35,
+      "metalness": 0.1
+    },
+    "position": {
+      "x": 0,
+      "y": 0,
+      "z": -1.6
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "metadata": {
+      "thicknessMm": 1.6,
+      "widthMm": 68.58,
+      "heightMm": 53.34
+    }
+  },
+  "traces": [
+    {
+      "id": "TR_5V_1",
+      "name": "Trace 5V (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 39.37,
+            "y": 7.62
+          },
+          {
+            "x": 39.37,
+            "y": 12.7
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "5V",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_5V_1",
+      "name": "Trace 5V (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 39.37,
+            "y": 7.62
+          },
+          {
+            "x": 38.1,
+            "y": 7.62
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "5V",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_5V_2",
+      "name": "Trace 5V (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 38.1,
+            "y": 7.62
+          },
+          {
+            "x": 38.1,
+            "y": 2.54
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "5V",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_5V_1",
+      "name": "Trace 5V (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 39.37,
+            "y": 7.62
+          },
+          {
+            "x": 38.735,
+            "y": 7.62
+          },
+          {
+            "x": 38.735,
+            "y": 8.255
+          },
+          {
+            "x": 33.655,
+            "y": 8.255
+          },
+          {
+            "x": 33.655,
+            "y": 9.525
+          },
+          {
+            "x": 33.02,
+            "y": 9.525
+          },
+          {
+            "x": 33.02,
+            "y": 10.16
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "5V",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_5V_1",
+      "name": "Trace 5V (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 39.37,
+            "y": 12.7
+          },
+          {
+            "x": 40.005,
+            "y": 12.7
+          },
+          {
+            "x": 40.005,
+            "y": 12.065
+          },
+          {
+            "x": 40.64,
+            "y": 12.065
+          },
+          {
+            "x": 40.64,
+            "y": 11.43
+          },
+          {
+            "x": 45.72,
+            "y": 11.43
+          },
+          {
+            "x": 45.72,
+            "y": 12.065
+          },
+          {
+            "x": 46.355,
+            "y": 12.065
+          },
+          {
+            "x": 46.355,
+            "y": 12.7
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "5V",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_GND_1",
+      "name": "Trace GND (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 41.91,
+            "y": 7.62
+          },
+          {
+            "x": 41.91,
+            "y": 12.7
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_GND_1",
+      "name": "Trace GND (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 41.91,
+            "y": 7.62
+          },
+          {
+            "x": 41.275,
+            "y": 7.62
+          },
+          {
+            "x": 41.275,
+            "y": 6.985
+          },
+          {
+            "x": 40.64,
+            "y": 6.985
+          },
+          {
+            "x": 40.64,
+            "y": 6.35
+          },
+          {
+            "x": 26.67,
+            "y": 6.35
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_GND_2",
+      "name": "Trace GND (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 26.67,
+            "y": 6.35
+          },
+          {
+            "x": 26.67,
+            "y": 50.8
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_GND_1",
+      "name": "Trace GND (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 41.91,
+            "y": 7.62
+          },
+          {
+            "x": 42.545,
+            "y": 7.62
+          },
+          {
+            "x": 42.545,
+            "y": 6.985
+          },
+          {
+            "x": 45.72,
+            "y": 6.985
+          },
+          {
+            "x": 45.72,
+            "y": 6.35
+          },
+          {
+            "x": 53.975,
+            "y": 6.35
+          },
+          {
+            "x": 53.975,
+            "y": 6.985
+          },
+          {
+            "x": 54.61,
+            "y": 6.985
+          },
+          {
+            "x": 54.61,
+            "y": 7.62
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_GND_1",
+      "name": "Trace GND (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 41.91,
+            "y": 12.7
+          },
+          {
+            "x": 41.275,
+            "y": 12.7
+          },
+          {
+            "x": 41.275,
+            "y": 13.335
+          },
+          {
+            "x": 40.64,
+            "y": 13.335
+          },
+          {
+            "x": 40.64,
+            "y": 13.97
+          },
+          {
+            "x": 34.29,
+            "y": 13.97
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_GND_2",
+      "name": "Trace GND (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 34.29,
+            "y": 13.97
+          },
+          {
+            "x": 34.29,
+            "y": 19.685
+          },
+          {
+            "x": 33.655,
+            "y": 19.685
+          },
+          {
+            "x": 33.655,
+            "y": 20.32
+          },
+          {
+            "x": 33.02,
+            "y": 20.32
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_GND_1",
+      "name": "Trace GND (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 41.91,
+            "y": 12.7
+          },
+          {
+            "x": 41.91,
+            "y": 13.335
+          },
+          {
+            "x": 45.085,
+            "y": 13.335
+          },
+          {
+            "x": 45.085,
+            "y": 13.97
+          },
+          {
+            "x": 46.99,
+            "y": 13.97
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_GND_2",
+      "name": "Trace GND (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 46.99,
+            "y": 13.97
+          },
+          {
+            "x": 46.99,
+            "y": 25.4
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$12_1",
+      "name": "Trace N$12 (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 41.91,
+            "y": 45.72
+          },
+          {
+            "x": 39.37,
+            "y": 45.72
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$12",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$12_2",
+      "name": "Trace N$12 (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 39.37,
+            "y": 45.72
+          },
+          {
+            "x": 39.37,
+            "y": 25.4
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$12",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$3_1",
+      "name": "Trace N$3 (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 49.53,
+            "y": 45.72
+          },
+          {
+            "x": 53.34,
+            "y": 45.72
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$3",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$3_2",
+      "name": "Trace N$3 (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 53.34,
+            "y": 45.72
+          },
+          {
+            "x": 53.34,
+            "y": 50.8
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$3",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$4_1",
+      "name": "Trace N$4 (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 45.72,
+            "y": 39.37
+          },
+          {
+            "x": 50.8,
+            "y": 39.37
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$4",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$4_2",
+      "name": "Trace N$4 (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 50.8,
+            "y": 39.37
+          },
+          {
+            "x": 50.8,
+            "y": 50.8
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$4",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$6_1",
+      "name": "Trace N$6 (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 34.29,
+            "y": 45.72
+          },
+          {
+            "x": 34.925,
+            "y": 45.72
+          },
+          {
+            "x": 34.925,
+            "y": 46.355
+          },
+          {
+            "x": 40.64,
+            "y": 46.355
+          },
+          {
+            "x": 40.64,
+            "y": 46.99
+          },
+          {
+            "x": 44.45,
+            "y": 46.99
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$6",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$6_2",
+      "name": "Trace N$6 (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 44.45,
+            "y": 46.99
+          },
+          {
+            "x": 44.45,
+            "y": 50.165
+          },
+          {
+            "x": 45.085,
+            "y": 50.165
+          },
+          {
+            "x": 45.085,
+            "y": 50.8
+          },
+          {
+            "x": 45.72,
+            "y": 50.8
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$6",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$8_1",
+      "name": "Trace N$8 (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 33.02,
+            "y": 15.24
+          },
+          {
+            "x": 51.435,
+            "y": 15.24
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$8",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$8_2",
+      "name": "Trace N$8 (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 51.435,
+            "y": 15.24
+          },
+          {
+            "x": 51.435,
+            "y": 2.54
+          },
+          {
+            "x": 50.8,
+            "y": 2.54
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$8",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$9_1",
+      "name": "Trace N$9 (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 50.165,
+            "y": 12.7
+          },
+          {
+            "x": 47.625,
+            "y": 12.7
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$9",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$9_2",
+      "name": "Trace N$9 (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 47.625,
+            "y": 12.7
+          },
+          {
+            "x": 47.625,
+            "y": 7.62
+          },
+          {
+            "x": 46.99,
+            "y": 7.62
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$9",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$9_1",
+      "name": "Trace N$9 (top)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 46.99,
+            "y": 7.62
+          },
+          {
+            "x": 52.705,
+            "y": 7.62
+          }
+        ],
+        "radius": 0.127,
+        "layer": "top"
+      },
+      "material": {
+        "color": "#d97706",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$9",
+        "layer": "top",
+        "widthMm": 0.254
+      }
+    },
+    {
+      "id": "TR_N$9_2",
+      "name": "Trace N$9 (bottom)",
+      "kind": "trace",
+      "geometry": {
+        "kind": "tube",
+        "path": [
+          {
+            "x": 52.705,
+            "y": 7.62
+          },
+          {
+            "x": 52.705,
+            "y": 2.54
+          },
+          {
+            "x": 53.34,
+            "y": 2.54
+          }
+        ],
+        "radius": 0.127,
+        "layer": "bottom"
+      },
+      "material": {
+        "color": "#2563eb",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$9",
+        "layer": "bottom",
+        "widthMm": 0.254
+      }
+    }
+  ],
+  "vias": [
+    {
+      "id": "VIA_5V_1",
+      "name": "Via 5V",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 38.1,
+        "y": 7.62,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "5V",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-0",
+      "name": "Via Drill Core 5V",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 38.1,
+        "y": 7.62,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_GND_1",
+      "name": "Via GND",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 26.67,
+        "y": 6.35,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-1",
+      "name": "Via Drill Core GND",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 26.67,
+        "y": 6.35,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_GND_1",
+      "name": "Via GND",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 34.29,
+        "y": 13.97,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-2",
+      "name": "Via Drill Core GND",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 34.29,
+        "y": 13.97,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_GND_1",
+      "name": "Via GND",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 46.99,
+        "y": 13.97,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "GND",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-3",
+      "name": "Via Drill Core GND",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 46.99,
+        "y": 13.97,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_N$12_1",
+      "name": "Via N$12",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 39.37,
+        "y": 45.72,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$12",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-4",
+      "name": "Via Drill Core N$12",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 39.37,
+        "y": 45.72,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_N$3_1",
+      "name": "Via N$3",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 53.34,
+        "y": 45.72,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$3",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-5",
+      "name": "Via Drill Core N$3",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 53.34,
+        "y": 45.72,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_N$4_1",
+      "name": "Via N$4",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 50.8,
+        "y": 39.37,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$4",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-6",
+      "name": "Via Drill Core N$4",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 50.8,
+        "y": 39.37,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_N$6_1",
+      "name": "Via N$6",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 44.45,
+        "y": 46.99,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$6",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-7",
+      "name": "Via Drill Core N$6",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 44.45,
+        "y": 46.99,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_N$8_1",
+      "name": "Via N$8",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 51.435,
+        "y": 15.24,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$8",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-8",
+      "name": "Via Drill Core N$8",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 51.435,
+        "y": 15.24,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_N$9_1",
+      "name": "Via N$9",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 47.625,
+        "y": 12.7,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$9",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-9",
+      "name": "Via Drill Core N$9",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 47.625,
+        "y": 12.7,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "VIA_N$9_1",
+      "name": "Via N$9",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.5,
+        "radiusBottom": 0.5,
+        "height": 1.6700000000000002,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#f59e0b",
+        "metalness": 0.85,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 52.705,
+        "y": 7.62,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "netId": "N$9",
+        "drillMm": 0.6,
+        "diameterMm": 1
+      }
+    },
+    {
+      "id": "via-drill-10",
+      "name": "Via Drill Core N$9",
+      "kind": "via",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 1.677,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#111827",
+        "roughness": 0.9,
+        "metalness": 0
+      },
+      "position": {
+        "x": 52.705,
+        "y": 7.62,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    }
+  ],
+  "pads": [
+    {
+      "id": "pad-U1-NC-top",
+      "name": "Pad U1.NC [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.6,
+        "depth": 1.6,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 27.94,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "NC",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-NC-bot",
+      "name": "Pad U1.NC [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.6,
+        "depth": 1.6,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 27.94,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-IOREF-top",
+      "name": "Pad U1.IOREF [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 30.48,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "IOREF",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-IOREF-bot",
+      "name": "Pad U1.IOREF [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 30.48,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-RESET-top",
+      "name": "Pad U1.RESET [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 33.02,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "RESET",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-RESET-bot",
+      "name": "Pad U1.RESET [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 33.02,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-3V3-top",
+      "name": "Pad U1.3V3 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 35.56,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "3V3",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-3V3-bot",
+      "name": "Pad U1.3V3 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 35.56,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-5V-top",
+      "name": "Pad U1.5V [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 38.1,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "5V",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-5V-bot",
+      "name": "Pad U1.5V [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 38.1,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-GND.1-top",
+      "name": "Pad U1.GND.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 40.64,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "GND.1",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-GND.1-bot",
+      "name": "Pad U1.GND.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 40.64,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-GND.2-top",
+      "name": "Pad U1.GND.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 43.18,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "GND.2",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-GND.2-bot",
+      "name": "Pad U1.GND.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 43.18,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-VIN-top",
+      "name": "Pad U1.VIN [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 45.72,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "VIN",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-VIN-bot",
+      "name": "Pad U1.VIN [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 45.72,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-A0-top",
+      "name": "Pad U1.A0 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 50.8,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "A0",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-A0-bot",
+      "name": "Pad U1.A0 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 50.8,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-A1-top",
+      "name": "Pad U1.A1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 53.34,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "A1",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-A1-bot",
+      "name": "Pad U1.A1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 53.34,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-A2-top",
+      "name": "Pad U1.A2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 55.88,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "A2",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-A2-bot",
+      "name": "Pad U1.A2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 55.88,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-A3-top",
+      "name": "Pad U1.A3 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 58.42,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "A3",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-A3-bot",
+      "name": "Pad U1.A3 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 58.42,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-A4-top",
+      "name": "Pad U1.A4 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 60.96,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "A4",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-A4-bot",
+      "name": "Pad U1.A4 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 60.96,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-A5-top",
+      "name": "Pad U1.A5 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 63.5,
+        "y": 2.54,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "A5",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-A5-bot",
+      "name": "Pad U1.A5 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 63.5,
+        "y": 2.54,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D7-top",
+      "name": "Pad U1.D7 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 45.72,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D7",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D7-bot",
+      "name": "Pad U1.D7 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 45.72,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D6-top",
+      "name": "Pad U1.D6 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 48.26,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D6",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D6-bot",
+      "name": "Pad U1.D6 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 48.26,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D5-top",
+      "name": "Pad U1.D5 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 50.8,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D5",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D5-bot",
+      "name": "Pad U1.D5 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 50.8,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D4-top",
+      "name": "Pad U1.D4 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 53.34,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D4",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D4-bot",
+      "name": "Pad U1.D4 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 53.34,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D3-top",
+      "name": "Pad U1.D3 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 55.88,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D3",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D3-bot",
+      "name": "Pad U1.D3 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 55.88,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D2-top",
+      "name": "Pad U1.D2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 58.42,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D2",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D2-bot",
+      "name": "Pad U1.D2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 58.42,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D1-top",
+      "name": "Pad U1.D1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 60.96,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D1",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D1-bot",
+      "name": "Pad U1.D1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 60.96,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D0-top",
+      "name": "Pad U1.D0 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 63.5,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D0",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D0-bot",
+      "name": "Pad U1.D0 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 63.5,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D8-top",
+      "name": "Pad U1.D8 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 41.656,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D8",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D8-bot",
+      "name": "Pad U1.D8 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 41.656,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D9-top",
+      "name": "Pad U1.D9 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.116,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D9",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D9-bot",
+      "name": "Pad U1.D9 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.116,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D10-top",
+      "name": "Pad U1.D10 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 36.576,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D10",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D10-bot",
+      "name": "Pad U1.D10 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 36.576,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D11-top",
+      "name": "Pad U1.D11 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 34.036,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D11",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D11-bot",
+      "name": "Pad U1.D11 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 34.036,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D12-top",
+      "name": "Pad U1.D12 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 31.496,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D12",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D12-bot",
+      "name": "Pad U1.D12 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 31.496,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-D13-top",
+      "name": "Pad U1.D13 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 28.956,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "D13",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-D13-bot",
+      "name": "Pad U1.D13 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 28.956,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-GND-top",
+      "name": "Pad U1.GND [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 26.416,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "GND",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-GND-bot",
+      "name": "Pad U1.GND [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 26.416,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-AREF-top",
+      "name": "Pad U1.AREF [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 23.876,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "AREF",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-AREF-bot",
+      "name": "Pad U1.AREF [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 23.876,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-SDA-top",
+      "name": "Pad U1.SDA [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 21.336,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "SDA",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-SDA-bot",
+      "name": "Pad U1.SDA [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 21.336,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-U1-SCL-top",
+      "name": "Pad U1.SCL [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 18.796,
+        "y": 50.8,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "U1",
+        "padNumber": "SCL",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-U1-SCL-bot",
+      "name": "Pad U1.SCL [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 18.796,
+        "y": 50.8,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-C_DECOUPLING-1-top",
+      "name": "Pad C_DECOUPLING.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.37,
+        "y": 7.62,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "C_DECOUPLING",
+        "padNumber": "1",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-C_DECOUPLING-1-bot",
+      "name": "Pad C_DECOUPLING.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.37,
+        "y": 7.62,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-C_DECOUPLING-2-top",
+      "name": "Pad C_DECOUPLING.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 41.910000000000004,
+        "y": 7.62,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "C_DECOUPLING",
+        "padNumber": "2",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-C_DECOUPLING-2-bot",
+      "name": "Pad C_DECOUPLING.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 41.910000000000004,
+        "y": 7.62,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-C_SERVO1-+-top",
+      "name": "Pad C_SERVO1.+ [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.6,
+        "depth": 1.6,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.64,
+        "y": 12.7,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "C_SERVO1",
+        "padNumber": "+",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-C_SERVO1-+-bot",
+      "name": "Pad C_SERVO1.+ [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.6,
+        "depth": 1.6,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.64,
+        "y": 12.7,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-C_SERVO1---top",
+      "name": "Pad C_SERVO1.- [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 41.64,
+        "y": 12.7,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "C_SERVO1",
+        "padNumber": "-",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-C_SERVO1---bot",
+      "name": "Pad C_SERVO1.- [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 41.64,
+        "y": 12.7,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-R1-1-top",
+      "name": "Pad R1.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 49.53,
+        "y": 45.72,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "R1",
+        "padNumber": "1",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-R1-1-bot",
+      "name": "Pad R1.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 49.53,
+        "y": 45.72,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-R1-2-top",
+      "name": "Pad R1.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 57.150000000000006,
+        "y": 45.72,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "R1",
+        "padNumber": "2",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-R1-2-bot",
+      "name": "Pad R1.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 57.150000000000006,
+        "y": 45.72,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-R2-1-top",
+      "name": "Pad R2.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 45.72,
+        "y": 39.37,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "metadata": {
+        "componentId": "R2",
+        "padNumber": "1",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-R2-1-bot",
+      "name": "Pad R2.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 45.72,
+        "y": 39.37,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "pad-R2-2-top",
+      "name": "Pad R2.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 45.72,
+        "y": 46.99,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "metadata": {
+        "componentId": "R2",
+        "padNumber": "2",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-R2-2-bot",
+      "name": "Pad R2.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 45.72,
+        "y": 46.99,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "pad-R3-1-top",
+      "name": "Pad R3.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 34.29,
+        "y": 45.72,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "R3",
+        "padNumber": "1",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-R3-1-bot",
+      "name": "Pad R3.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 34.29,
+        "y": 45.72,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-R3-2-top",
+      "name": "Pad R3.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 41.910000000000004,
+        "y": 45.72,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "R3",
+        "padNumber": "2",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-R3-2-bot",
+      "name": "Pad R3.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 41.910000000000004,
+        "y": 45.72,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-R4-1-top",
+      "name": "Pad R4.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 46.989999999999995,
+        "y": 7.62,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "R4",
+        "padNumber": "1",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-R4-1-bot",
+      "name": "Pad R4.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 46.989999999999995,
+        "y": 7.62,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-R4-2-top",
+      "name": "Pad R4.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 54.61,
+        "y": 7.62,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "R4",
+        "padNumber": "2",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-R4-2-bot",
+      "name": "Pad R4.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 54.61,
+        "y": 7.62,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-D1-1-top",
+      "name": "Pad D1.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.8,
+        "depth": 1.8,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 54.61,
+        "y": 38.1,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "D1",
+        "padNumber": "1",
+        "drillMm": 0.9
+      }
+    },
+    {
+      "id": "pad-D1-1-bot",
+      "name": "Pad D1.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.8,
+        "depth": 1.8,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 54.61,
+        "y": 38.1,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-D1-2-top",
+      "name": "Pad D1.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.9,
+        "radiusBottom": 0.9,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 57.150000000000006,
+        "y": 38.1,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "D1",
+        "padNumber": "2",
+        "drillMm": 0.9
+      }
+    },
+    {
+      "id": "pad-D1-2-bot",
+      "name": "Pad D1.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.9,
+        "radiusBottom": 0.9,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 57.150000000000006,
+        "y": 38.1,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-D2-1-top",
+      "name": "Pad D2.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.8,
+        "depth": 1.8,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 36.83,
+        "y": 38.1,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "D2",
+        "padNumber": "1",
+        "drillMm": 0.9
+      }
+    },
+    {
+      "id": "pad-D2-1-bot",
+      "name": "Pad D2.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.8,
+        "depth": 1.8,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 36.83,
+        "y": 38.1,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-D2-2-top",
+      "name": "Pad D2.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.9,
+        "radiusBottom": 0.9,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.370000000000005,
+        "y": 38.1,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "D2",
+        "padNumber": "2",
+        "drillMm": 0.9
+      }
+    },
+    {
+      "id": "pad-D2-2-bot",
+      "name": "Pad D2.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.9,
+        "radiusBottom": 0.9,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.370000000000005,
+        "y": 38.1,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-LDR1-1-top",
+      "name": "Pad LDR1.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 46.559999999999995,
+        "y": 12.7,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "LDR1",
+        "padNumber": "1",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-LDR1-1-bot",
+      "name": "Pad LDR1.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 46.559999999999995,
+        "y": 12.7,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-LDR1-2-top",
+      "name": "Pad LDR1.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 49.96,
+        "y": 12.7,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "LDR1",
+        "padNumber": "2",
+        "drillMm": 0.8
+      }
+    },
+    {
+      "id": "pad-LDR1-2-bot",
+      "name": "Pad LDR1.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.8,
+        "radiusBottom": 0.8,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 49.96,
+        "y": 12.7,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-POT1-1-top",
+      "name": "Pad POT1.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.1,
+        "radiusBottom": 1.1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 33.02,
+        "y": 10.24,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "metadata": {
+        "componentId": "POT1",
+        "padNumber": "1",
+        "drillMm": 1.2
+      }
+    },
+    {
+      "id": "pad-POT1-1-bot",
+      "name": "Pad POT1.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.1,
+        "radiusBottom": 1.1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 33.02,
+        "y": 10.24,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "pad-POT1-2-top",
+      "name": "Pad POT1.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 2.2,
+        "depth": 2.2,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 33.02,
+        "y": 15.24,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "metadata": {
+        "componentId": "POT1",
+        "padNumber": "2",
+        "drillMm": 1.2
+      }
+    },
+    {
+      "id": "pad-POT1-2-bot",
+      "name": "Pad POT1.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 2.2,
+        "depth": 2.2,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 33.02,
+        "y": 15.24,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "pad-POT1-3-top",
+      "name": "Pad POT1.3 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.1,
+        "radiusBottom": 1.1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 33.02,
+        "y": 20.240000000000002,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "metadata": {
+        "componentId": "POT1",
+        "padNumber": "3",
+        "drillMm": 1.2
+      }
+    },
+    {
+      "id": "pad-POT1-3-bot",
+      "name": "Pad POT1.3 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.1,
+        "radiusBottom": 1.1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 33.02,
+        "y": 20.240000000000002,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "pad-SERVO1-1-top",
+      "name": "Pad SERVO1.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.7,
+        "depth": 1.7,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 30.48,
+        "y": 40.64,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SERVO1",
+        "padNumber": "1",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-SERVO1-1-bot",
+      "name": "Pad SERVO1.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.7,
+        "depth": 1.7,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 30.48,
+        "y": 40.64,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SERVO1-2-top",
+      "name": "Pad SERVO1.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.85,
+        "radiusBottom": 0.85,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 30.48,
+        "y": 43.18,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SERVO1",
+        "padNumber": "2",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-SERVO1-2-bot",
+      "name": "Pad SERVO1.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.85,
+        "radiusBottom": 0.85,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 30.48,
+        "y": 43.18,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SERVO1-3-top",
+      "name": "Pad SERVO1.3 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.85,
+        "radiusBottom": 0.85,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 30.48,
+        "y": 45.72,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SERVO1",
+        "padNumber": "3",
+        "drillMm": 1
+      }
+    },
+    {
+      "id": "pad-SERVO1-3-bot",
+      "name": "Pad SERVO1.3 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.85,
+        "radiusBottom": 0.85,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 30.48,
+        "y": 45.72,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SPK1-+-top",
+      "name": "Pad SPK1.+ [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.8,
+        "depth": 1.8,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.37,
+        "y": 25.4,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SPK1",
+        "padNumber": "+",
+        "drillMm": 0.9
+      }
+    },
+    {
+      "id": "pad-SPK1-+-bot",
+      "name": "Pad SPK1.+ [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 1.8,
+        "depth": 1.8,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.37,
+        "y": 25.4,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SPK1---top",
+      "name": "Pad SPK1.- [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.9,
+        "radiusBottom": 0.9,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 46.99,
+        "y": 25.4,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SPK1",
+        "padNumber": "-",
+        "drillMm": 0.9
+      }
+    },
+    {
+      "id": "pad-SPK1---bot",
+      "name": "Pad SPK1.- [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.9,
+        "radiusBottom": 0.9,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 46.99,
+        "y": 25.4,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SW1-1-top",
+      "name": "Pad SW1.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 52.63,
+        "y": 28.23,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SW1",
+        "padNumber": "1",
+        "drillMm": 1.1
+      }
+    },
+    {
+      "id": "pad-SW1-1-bot",
+      "name": "Pad SW1.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 52.63,
+        "y": 28.23,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SW1-1-top",
+      "name": "Pad SW1.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 59.13,
+        "y": 28.23,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SW1",
+        "padNumber": "1",
+        "drillMm": 1.1
+      }
+    },
+    {
+      "id": "pad-SW1-1-bot",
+      "name": "Pad SW1.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 59.13,
+        "y": 28.23,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SW1-2-top",
+      "name": "Pad SW1.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 52.63,
+        "y": 32.730000000000004,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SW1",
+        "padNumber": "2",
+        "drillMm": 1.1
+      }
+    },
+    {
+      "id": "pad-SW1-2-bot",
+      "name": "Pad SW1.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 52.63,
+        "y": 32.730000000000004,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SW1-2-top",
+      "name": "Pad SW1.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 59.13,
+        "y": 32.730000000000004,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SW1",
+        "padNumber": "2",
+        "drillMm": 1.1
+      }
+    },
+    {
+      "id": "pad-SW1-2-bot",
+      "name": "Pad SW1.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 59.13,
+        "y": 32.730000000000004,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SW2-1-top",
+      "name": "Pad SW2.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 52.63,
+        "y": 18.07,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SW2",
+        "padNumber": "1",
+        "drillMm": 1.1
+      }
+    },
+    {
+      "id": "pad-SW2-1-bot",
+      "name": "Pad SW2.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 52.63,
+        "y": 18.07,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SW2-1-top",
+      "name": "Pad SW2.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 59.13,
+        "y": 18.07,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SW2",
+        "padNumber": "1",
+        "drillMm": 1.1
+      }
+    },
+    {
+      "id": "pad-SW2-1-bot",
+      "name": "Pad SW2.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 59.13,
+        "y": 18.07,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SW2-2-top",
+      "name": "Pad SW2.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 52.63,
+        "y": 22.57,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SW2",
+        "padNumber": "2",
+        "drillMm": 1.1
+      }
+    },
+    {
+      "id": "pad-SW2-2-bot",
+      "name": "Pad SW2.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 52.63,
+        "y": 22.57,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-SW2-2-top",
+      "name": "Pad SW2.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 59.13,
+        "y": 22.57,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      },
+      "metadata": {
+        "componentId": "SW2",
+        "padNumber": "2",
+        "drillMm": 1.1
+      }
+    },
+    {
+      "id": "pad-SW2-2-bot",
+      "name": "Pad SW2.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1,
+        "radiusBottom": 1,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 59.13,
+        "y": 22.57,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "pad-M1-1-top",
+      "name": "Pad M1.1 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 2.4,
+        "depth": 2.4,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 22.86,
+        "y": 38.1,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "metadata": {
+        "componentId": "M1",
+        "padNumber": "1",
+        "drillMm": 1.3
+      }
+    },
+    {
+      "id": "pad-M1-1-bot",
+      "name": "Pad M1.1 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "box",
+        "width": 2.4,
+        "depth": 2.4,
+        "height": 0.035
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 22.86,
+        "y": 38.1,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "pad-M1-2-top",
+      "name": "Pad M1.2 [Top]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.2,
+        "radiusBottom": 1.2,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 22.86,
+        "y": 43.18,
+        "z": 0.0175
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      },
+      "metadata": {
+        "componentId": "M1",
+        "padNumber": "2",
+        "drillMm": 1.3
+      }
+    },
+    {
+      "id": "pad-M1-2-bot",
+      "name": "Pad M1.2 [Bottom]",
+      "kind": "pad",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.2,
+        "radiusBottom": 1.2,
+        "height": 0.035,
+        "radialSegments": 16
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 22.86,
+        "y": 43.18,
+        "z": -1.6175000000000002
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "U1-generic",
+      "name": "U1 Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "box",
+        "width": 6,
+        "depth": 6,
+        "height": 3.5
+      },
+      "material": {
+        "color": "#1e293b",
+        "roughness": 0.6,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 1.75
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "C_DECOUPLING-body",
+      "name": "C_DECOUPLING Housing",
+      "kind": "component",
+      "geometry": {
+        "kind": "box",
+        "width": 5,
+        "depth": 2.5,
+        "height": 6
+      },
+      "material": {
+        "color": "#d97706",
+        "roughness": 0.5,
+        "metalness": 0.2
+      },
+      "position": {
+        "x": 40.64,
+        "y": 7.62,
+        "z": 3
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "C_SERVO1-can",
+      "name": "C_SERVO1 Electrolytic Can",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 2.5,
+        "radiusBottom": 2.5,
+        "height": 11,
+        "radialSegments": 24
+      },
+      "material": {
+        "color": "#1e3a8a",
+        "metalness": 0.4,
+        "roughness": 0.3
+      },
+      "position": {
+        "x": 40.64,
+        "y": 12.7,
+        "z": 5.5
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "R1-resistor-body",
+      "name": "R1 Resistor Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.15,
+        "radiusBottom": 1.15,
+        "height": 6,
+        "radialSegments": 20
+      },
+      "material": {
+        "color": "#c2a378",
+        "roughness": 0.4,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 53.34,
+        "y": 45.72,
+        "z": 1.65
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "R2-resistor-body",
+      "name": "R2 Resistor Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.15,
+        "radiusBottom": 1.15,
+        "height": 6,
+        "radialSegments": 20
+      },
+      "material": {
+        "color": "#c2a378",
+        "roughness": 0.4,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 45.72,
+        "y": 43.18,
+        "z": 1.65
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 3.141592653589793
+      }
+    },
+    {
+      "id": "R3-resistor-body",
+      "name": "R3 Resistor Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.15,
+        "radiusBottom": 1.15,
+        "height": 6,
+        "radialSegments": 20
+      },
+      "material": {
+        "color": "#c2a378",
+        "roughness": 0.4,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 38.1,
+        "y": 45.72,
+        "z": 1.65
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "R4-resistor-body",
+      "name": "R4 Resistor Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 1.15,
+        "radiusBottom": 1.15,
+        "height": 6,
+        "radialSegments": 20
+      },
+      "material": {
+        "color": "#c2a378",
+        "roughness": 0.4,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 50.8,
+        "y": 7.62,
+        "z": 1.65
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "D1-rim",
+      "name": "D1 LED 5mm Rim Base",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 2.9,
+        "radiusBottom": 2.9,
+        "height": 1,
+        "radialSegments": 24
+      },
+      "material": {
+        "color": "#ef4444",
+        "roughness": 0.2,
+        "metalness": 0.1,
+        "opacity": 0.9,
+        "transparent": true
+      },
+      "position": {
+        "x": 55.88,
+        "y": 38.1,
+        "z": 0.5
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "D1-dome",
+      "name": "D1 LED 5mm Dome",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 2.5,
+        "radiusBottom": 2.5,
+        "height": 6.5,
+        "radialSegments": 24
+      },
+      "material": {
+        "color": "#ef4444",
+        "roughness": 0.15,
+        "metalness": 0.1,
+        "opacity": 0.88,
+        "transparent": true,
+        "emissive": "#ef4444"
+      },
+      "position": {
+        "x": 55.88,
+        "y": 38.1,
+        "z": 4.25
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "D1-lead-1",
+      "name": "D1 Lead 1",
+      "kind": "pin",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 3.6,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#cbd5e1",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 54.61,
+        "y": 38.1,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "D1-lead-2",
+      "name": "D1 Lead 2",
+      "kind": "pin",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 3.6,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#cbd5e1",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 57.150000000000006,
+        "y": 38.1,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "D2-rim",
+      "name": "D2 LED 5mm Rim Base",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 2.9,
+        "radiusBottom": 2.9,
+        "height": 1,
+        "radialSegments": 24
+      },
+      "material": {
+        "color": "#ef4444",
+        "roughness": 0.2,
+        "metalness": 0.1,
+        "opacity": 0.9,
+        "transparent": true
+      },
+      "position": {
+        "x": 38.1,
+        "y": 38.1,
+        "z": 0.5
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "D2-dome",
+      "name": "D2 LED 5mm Dome",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 2.5,
+        "radiusBottom": 2.5,
+        "height": 6.5,
+        "radialSegments": 24
+      },
+      "material": {
+        "color": "#ef4444",
+        "roughness": 0.15,
+        "metalness": 0.1,
+        "opacity": 0.88,
+        "transparent": true,
+        "emissive": "#ef4444"
+      },
+      "position": {
+        "x": 38.1,
+        "y": 38.1,
+        "z": 4.25
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "D2-lead-1",
+      "name": "D2 Lead 1",
+      "kind": "pin",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 3.6,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#cbd5e1",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 36.83,
+        "y": 38.1,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "D2-lead-2",
+      "name": "D2 Lead 2",
+      "kind": "pin",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 0.3,
+        "radiusBottom": 0.3,
+        "height": 3.6,
+        "radialSegments": 12
+      },
+      "material": {
+        "color": "#cbd5e1",
+        "metalness": 0.9,
+        "roughness": 0.2
+      },
+      "position": {
+        "x": 39.370000000000005,
+        "y": 38.1,
+        "z": -0.8
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "LDR1-resistor-body",
+      "name": "LDR1 Resistor Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 2.5,
+        "radiusBottom": 2.5,
+        "height": 2,
+        "radialSegments": 20
+      },
+      "material": {
+        "color": "#b45309",
+        "roughness": 0.4,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 48.26,
+        "y": 12.7,
+        "z": 3
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "POT1-generic",
+      "name": "POT1 Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "box",
+        "width": 6,
+        "depth": 6,
+        "height": 3.5
+      },
+      "material": {
+        "color": "#1e293b",
+        "roughness": 0.6,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 33.02,
+        "y": 15.24,
+        "z": 1.75
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    },
+    {
+      "id": "SERVO1-shroud",
+      "name": "SERVO1 Header Insulator",
+      "kind": "component",
+      "geometry": {
+        "kind": "box",
+        "width": 2.54,
+        "depth": 7.62,
+        "height": 2.54
+      },
+      "material": {
+        "color": "#1e293b",
+        "roughness": 0.6,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 30.48,
+        "y": 43.18,
+        "z": 1.27
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "SERVO1-pin-1",
+      "name": "SERVO1 Pin 1",
+      "kind": "pin",
+      "geometry": {
+        "kind": "box",
+        "width": 0.64,
+        "depth": 0.64,
+        "height": 11.5
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 30.48,
+        "y": 40.64,
+        "z": 3
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "SERVO1-pin-2",
+      "name": "SERVO1 Pin 2",
+      "kind": "pin",
+      "geometry": {
+        "kind": "box",
+        "width": 0.64,
+        "depth": 0.64,
+        "height": 11.5
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 30.48,
+        "y": 43.18,
+        "z": 3
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "SERVO1-pin-3",
+      "name": "SERVO1 Pin 3",
+      "kind": "pin",
+      "geometry": {
+        "kind": "box",
+        "width": 0.64,
+        "depth": 0.64,
+        "height": 11.5
+      },
+      "material": {
+        "color": "#eab308",
+        "metalness": 0.85,
+        "roughness": 0.25
+      },
+      "position": {
+        "x": 30.48,
+        "y": 45.72,
+        "z": 3
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "SPK1-piezo",
+      "name": "SPK1 Buzzer Casing",
+      "kind": "component",
+      "geometry": {
+        "kind": "cylinder",
+        "radiusTop": 6,
+        "radiusBottom": 6,
+        "height": 9.5,
+        "radialSegments": 28
+      },
+      "material": {
+        "color": "#0f172a",
+        "roughness": 0.5,
+        "metalness": 0.2
+      },
+      "position": {
+        "x": 43.18,
+        "y": 25.4,
+        "z": 4.75
+      },
+      "rotation": {
+        "x": 1.5707963267948966,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "SW1-generic",
+      "name": "SW1 Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "box",
+        "width": 6,
+        "depth": 6,
+        "height": 3.5
+      },
+      "material": {
+        "color": "#1e293b",
+        "roughness": 0.6,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 55.88,
+        "y": 30.48,
+        "z": 1.75
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "SW2-generic",
+      "name": "SW2 Body",
+      "kind": "component",
+      "geometry": {
+        "kind": "box",
+        "width": 6,
+        "depth": 6,
+        "height": 3.5
+      },
+      "material": {
+        "color": "#1e293b",
+        "roughness": 0.6,
+        "metalness": 0.1
+      },
+      "position": {
+        "x": 55.88,
+        "y": 20.32,
+        "z": 1.75
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "M1-body",
+      "name": "M1 Housing",
+      "kind": "component",
+      "geometry": {
+        "kind": "box",
+        "width": 12.16,
+        "depth": 8,
+        "height": 10
+      },
+      "material": {
+        "color": "#166534",
+        "roughness": 0.5,
+        "metalness": 0.2
+      },
+      "position": {
+        "x": 22.86,
+        "y": 40.64,
+        "z": 5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 1.5707963267948966
+      }
+    }
+  ]
+}

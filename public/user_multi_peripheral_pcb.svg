@@ -1,0 +1,1560 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6.00 -6.00 80.58 65.34" width="100%" height="100%" class="pcb-svg" style="background-color: #050505;">
+<defs>
+
+      <pattern id="pcb-grid" width="2.54" height="2.54" patternUnits="userSpaceOnUse">
+        <circle cx="1.27" cy="1.27" r="0.12" fill="#166534" opacity="0.65" />
+      </pattern>
+    
+
+    <filter id="net-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  
+</defs>
+<rect x="-6" y="-6" width="80.58" height="65.34" fill="#050505" />
+<rect x="-6" y="-6" width="80.58" height="65.34" fill="url(#pcb-grid)" pointer-events="none" />
+
+      <g id="origin-crosshair" class="origin-crosshair" stroke="#22c55e" stroke-width="0.18" pointer-events="none">
+        <line x1="-3" y1="0" x2="3" y2="0" />
+        <line x1="0" y1="-3" x2="0" y2="3" />
+        <circle cx="0" cy="0" r="1.2" fill="none" stroke="#22c55e" stroke-width="0.15" />
+        <circle cx="0" cy="0" r="0.3" fill="#22c55e" />
+        <text x="1.5" y="-1.5" fill="#22c55e" font-size="1.1" font-family="monospace" font-weight="bold">(0,0)</text>
+      </g>
+    
+
+      <polygon id="board-substrate" points="0.000,2.540 2.540,0.000 66.040,0.000 68.580,2.540 68.580,38.100 66.040,40.640 66.040,48.260 68.580,50.800 68.580,53.340 15.240,53.340 12.700,50.800 2.540,50.800 0.000,48.260" fill="#0a110a" stroke="#15803d" stroke-width="0.4" />
+    
+<g id="pcb-keepouts" class="pcb-keepouts" pointer-events="none">
+
+          <polygon points="0.000,31.000 18.000,31.000 18.000,47.000 0.000,47.000" fill="rgba(234, 88, 12, 0.15)" stroke="#ea580c" stroke-width="0.2" stroke-dasharray="1,1">
+            <title>Keepout: USB Type-B Receptacle Metal Shell Keepout</title>
+          </polygon>
+        
+
+          <polygon points="0.000,3.000 16.000,3.000 16.000,17.000 0.000,17.000" fill="rgba(234, 88, 12, 0.15)" stroke="#ea580c" stroke-width="0.2" stroke-dasharray="1,1">
+            <title>Keepout: DC Barrel Power Jack Metal Shell Keepout</title>
+          </polygon>
+        
+
+          <polygon points="17.470,2.540 16.445,5.015 13.970,6.040 11.495,5.015 10.470,2.540 11.495,0.065 13.970,-0.960 16.445,0.065" fill="rgba(234, 88, 12, 0.15)" stroke="#ea580c" stroke-width="0.2" stroke-dasharray="1,1">
+            <title>Keepout: Mounting Hole 1 Clearance</title>
+          </polygon>
+        
+
+          <polygon points="18.740,50.800 17.715,53.275 15.240,54.300 12.765,53.275 11.740,50.800 12.765,48.325 15.240,47.300 17.715,48.325" fill="rgba(234, 88, 12, 0.15)" stroke="#ea580c" stroke-width="0.2" stroke-dasharray="1,1">
+            <title>Keepout: Mounting Hole 2 Clearance</title>
+          </polygon>
+        
+
+          <polygon points="69.540,7.620 68.515,10.095 66.040,11.120 63.565,10.095 62.540,7.620 63.565,5.145 66.040,4.120 68.515,5.145" fill="rgba(234, 88, 12, 0.15)" stroke="#ea580c" stroke-width="0.2" stroke-dasharray="1,1">
+            <title>Keepout: Mounting Hole 3 Clearance</title>
+          </polygon>
+        
+
+          <polygon points="69.540,35.560 68.515,38.035 66.040,39.060 63.565,38.035 62.540,35.560 63.565,33.085 66.040,32.060 68.515,33.085" fill="rgba(234, 88, 12, 0.15)" stroke="#ea580c" stroke-width="0.2" stroke-dasharray="1,1">
+            <title>Keepout: Mounting Hole 4 Clearance</title>
+          </polygon>
+        
+</g>
+<g id="layer-copper-bottom" class="layer-copper-bottom">
+
+        <path d="M 39.370 7.620 L 39.370 12.700" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="5V" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net 5V (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 38.100 7.620 L 38.100 2.540" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="5V" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net 5V (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 41.910 7.620 L 41.910 12.700" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="GND" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net GND (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 26.670 6.350 L 26.670 50.800" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="GND" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net GND (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 34.290 13.970 L 34.290 19.685 L 33.655 19.685 L 33.655 20.320 L 33.020 20.320" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="GND" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net GND (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 46.990 13.970 L 46.990 25.400" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="GND" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net GND (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 39.370 45.720 L 39.370 25.400" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$12" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net N$12 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 53.340 45.720 L 53.340 50.800" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$3" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net N$3 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 50.800 39.370 L 50.800 50.800" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$4" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net N$4 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 44.450 46.990 L 44.450 50.165 L 45.085 50.165 L 45.085 50.800 L 45.720 50.800" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$6" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net N$6 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 51.435 15.240 L 51.435 2.540 L 50.800 2.540" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$8" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net N$8 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 47.625 12.700 L 47.625 7.620 L 46.990 7.620" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$9" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net N$9 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 52.705 7.620 L 52.705 2.540 L 53.340 2.540" fill="none" stroke="#3b82f6" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$9" class="pcb-trace trace-bottom">
+          <title>Trace [Bottom]: Net N$9 (Width: 0.254mm)</title>
+        </path>
+      
+</g>
+<g id="layer-copper-top" class="layer-copper-top">
+
+        <path d="M 39.370 7.620 L 38.100 7.620" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="5V" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net 5V (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 39.370 7.620 L 38.735 7.620 L 38.735 8.255 L 33.655 8.255 L 33.655 9.525 L 33.020 9.525 L 33.020 10.160" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="5V" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net 5V (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 39.370 12.700 L 40.005 12.700 L 40.005 12.065 L 40.640 12.065 L 40.640 11.430 L 45.720 11.430 L 45.720 12.065 L 46.355 12.065 L 46.355 12.700" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="5V" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net 5V (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 41.910 7.620 L 41.275 7.620 L 41.275 6.985 L 40.640 6.985 L 40.640 6.350 L 26.670 6.350" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="GND" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net GND (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 41.910 7.620 L 42.545 7.620 L 42.545 6.985 L 45.720 6.985 L 45.720 6.350 L 53.975 6.350 L 53.975 6.985 L 54.610 6.985 L 54.610 7.620" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="GND" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net GND (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 41.910 12.700 L 41.275 12.700 L 41.275 13.335 L 40.640 13.335 L 40.640 13.970 L 34.290 13.970" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="GND" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net GND (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 41.910 12.700 L 41.910 13.335 L 45.085 13.335 L 45.085 13.970 L 46.990 13.970" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="GND" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net GND (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 41.910 45.720 L 39.370 45.720" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$12" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net N$12 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 49.530 45.720 L 53.340 45.720" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$3" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net N$3 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 45.720 39.370 L 50.800 39.370" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$4" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net N$4 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 34.290 45.720 L 34.925 45.720 L 34.925 46.355 L 40.640 46.355 L 40.640 46.990 L 44.450 46.990" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$6" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net N$6 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 33.020 15.240 L 51.435 15.240" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$8" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net N$8 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 50.165 12.700 L 47.625 12.700" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$9" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net N$9 (Width: 0.254mm)</title>
+        </path>
+      
+
+        <path d="M 46.990 7.620 L 52.705 7.620" fill="none" stroke="#ef4444" stroke-width="0.254" stroke-linecap="round" stroke-linejoin="round" opacity="1"  data-net="N$9" class="pcb-trace trace-top">
+          <title>Trace [Top]: Net N$9 (Width: 0.254mm)</title>
+        </path>
+      
+</g>
+<g id="layer-vias" class="layer-vias">
+
+        <g class="pcb-via" opacity="1"  data-net="5V">
+          <circle cx="38.100" cy="7.620" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="38.100" cy="7.620" r="0.300" fill="#050505" />
+          <title>Via: Net 5V (Dia: 1mm, Drill: 0.6mm) at (38.10, 7.62)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="GND">
+          <circle cx="26.670" cy="6.350" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="26.670" cy="6.350" r="0.300" fill="#050505" />
+          <title>Via: Net GND (Dia: 1mm, Drill: 0.6mm) at (26.67, 6.35)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="GND">
+          <circle cx="34.290" cy="13.970" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="34.290" cy="13.970" r="0.300" fill="#050505" />
+          <title>Via: Net GND (Dia: 1mm, Drill: 0.6mm) at (34.29, 13.97)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="GND">
+          <circle cx="46.990" cy="13.970" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="46.990" cy="13.970" r="0.300" fill="#050505" />
+          <title>Via: Net GND (Dia: 1mm, Drill: 0.6mm) at (46.99, 13.97)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="N$12">
+          <circle cx="39.370" cy="45.720" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="39.370" cy="45.720" r="0.300" fill="#050505" />
+          <title>Via: Net N$12 (Dia: 1mm, Drill: 0.6mm) at (39.37, 45.72)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="N$3">
+          <circle cx="53.340" cy="45.720" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="53.340" cy="45.720" r="0.300" fill="#050505" />
+          <title>Via: Net N$3 (Dia: 1mm, Drill: 0.6mm) at (53.34, 45.72)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="N$4">
+          <circle cx="50.800" cy="39.370" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="50.800" cy="39.370" r="0.300" fill="#050505" />
+          <title>Via: Net N$4 (Dia: 1mm, Drill: 0.6mm) at (50.80, 39.37)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="N$6">
+          <circle cx="44.450" cy="46.990" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="44.450" cy="46.990" r="0.300" fill="#050505" />
+          <title>Via: Net N$6 (Dia: 1mm, Drill: 0.6mm) at (44.45, 46.99)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="N$8">
+          <circle cx="51.435" cy="15.240" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="51.435" cy="15.240" r="0.300" fill="#050505" />
+          <title>Via: Net N$8 (Dia: 1mm, Drill: 0.6mm) at (51.44, 15.24)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="N$9">
+          <circle cx="47.625" cy="12.700" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="47.625" cy="12.700" r="0.300" fill="#050505" />
+          <title>Via: Net N$9 (Dia: 1mm, Drill: 0.6mm) at (47.63, 12.70)</title>
+        </g>
+      
+
+        <g class="pcb-via" opacity="1"  data-net="N$9">
+          <circle cx="52.705" cy="7.620" r="0.500" fill="#f59e0b" stroke="#ffffff" stroke-width="0.08" />
+          <circle cx="52.705" cy="7.620" r="0.300" fill="#050505" />
+          <title>Via: Net N$9 (Dia: 1mm, Drill: 0.6mm) at (52.70, 7.62)</title>
+        </g>
+      
+</g>
+<g id="layer-pads" class="layer-pads">
+
+          <g class="pcb-pad" data-component="U1" data-pad="NC">
+        
+
+            <rect x="27.140" y="1.740" width="1.600" height="1.600" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" rx="0.1" />
+          
+
+            <circle cx="27.940" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.NC (rect, 1.6x1.6mm) at (27.94, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="IOREF">
+        
+
+            <circle cx="30.480" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="30.480" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.IOREF (oval, 1.6x1.6mm) at (30.48, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="RESET">
+        
+
+            <circle cx="33.020" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="33.020" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.RESET (oval, 1.6x1.6mm) at (33.02, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="3V3">
+        
+
+            <circle cx="35.560" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="35.560" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.3V3 (oval, 1.6x1.6mm) at (35.56, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="5V">
+        
+
+            <circle cx="38.100" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="38.100" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.5V (oval, 1.6x1.6mm) at (38.10, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="GND.1">
+        
+
+            <circle cx="40.640" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="40.640" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.GND.1 (oval, 1.6x1.6mm) at (40.64, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="GND.2">
+        
+
+            <circle cx="43.180" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="43.180" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.GND.2 (oval, 1.6x1.6mm) at (43.18, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="VIN">
+        
+
+            <circle cx="45.720" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="45.720" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.VIN (oval, 1.6x1.6mm) at (45.72, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="A0">
+        
+
+            <circle cx="50.800" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="50.800" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.A0 (oval, 1.6x1.6mm) at (50.80, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="A1">
+        
+
+            <circle cx="53.340" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="53.340" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.A1 (oval, 1.6x1.6mm) at (53.34, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="A2">
+        
+
+            <circle cx="55.880" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="55.880" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.A2 (oval, 1.6x1.6mm) at (55.88, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="A3">
+        
+
+            <circle cx="58.420" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="58.420" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.A3 (oval, 1.6x1.6mm) at (58.42, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="A4">
+        
+
+            <circle cx="60.960" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="60.960" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.A4 (oval, 1.6x1.6mm) at (60.96, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="A5">
+        
+
+            <circle cx="63.500" cy="2.540" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="63.500" cy="2.540" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.A5 (oval, 1.6x1.6mm) at (63.50, 2.54)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D7">
+        
+
+            <circle cx="45.720" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="45.720" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D7 (oval, 1.6x1.6mm) at (45.72, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D6">
+        
+
+            <circle cx="48.260" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="48.260" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D6 (oval, 1.6x1.6mm) at (48.26, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D5">
+        
+
+            <circle cx="50.800" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="50.800" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D5 (oval, 1.6x1.6mm) at (50.80, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D4">
+        
+
+            <circle cx="53.340" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="53.340" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D4 (oval, 1.6x1.6mm) at (53.34, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D3">
+        
+
+            <circle cx="55.880" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="55.880" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D3 (oval, 1.6x1.6mm) at (55.88, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D2">
+        
+
+            <circle cx="58.420" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="58.420" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D2 (oval, 1.6x1.6mm) at (58.42, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D1">
+        
+
+            <circle cx="60.960" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="60.960" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D1 (oval, 1.6x1.6mm) at (60.96, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D0">
+        
+
+            <circle cx="63.500" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="63.500" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D0 (oval, 1.6x1.6mm) at (63.50, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D8">
+        
+
+            <circle cx="41.656" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="41.656" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D8 (oval, 1.6x1.6mm) at (41.66, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D9">
+        
+
+            <circle cx="39.116" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="39.116" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D9 (oval, 1.6x1.6mm) at (39.12, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D10">
+        
+
+            <circle cx="36.576" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="36.576" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D10 (oval, 1.6x1.6mm) at (36.58, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D11">
+        
+
+            <circle cx="34.036" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="34.036" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D11 (oval, 1.6x1.6mm) at (34.04, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D12">
+        
+
+            <circle cx="31.496" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="31.496" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D12 (oval, 1.6x1.6mm) at (31.50, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="D13">
+        
+
+            <circle cx="28.956" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="28.956" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.D13 (oval, 1.6x1.6mm) at (28.96, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="GND">
+        
+
+            <circle cx="26.416" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="26.416" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.GND (oval, 1.6x1.6mm) at (26.42, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="AREF">
+        
+
+            <circle cx="23.876" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="23.876" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.AREF (oval, 1.6x1.6mm) at (23.88, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="SDA">
+        
+
+            <circle cx="21.336" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="21.336" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.SDA (oval, 1.6x1.6mm) at (21.34, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="U1" data-pad="SCL">
+        
+
+            <circle cx="18.796" cy="50.800" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="18.796" cy="50.800" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: U1.SCL (oval, 1.6x1.6mm) at (18.80, 50.80)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="C_DECOUPLING" data-pad="1">
+        
+
+            <circle cx="39.370" cy="7.620" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="39.370" cy="7.620" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: C_DECOUPLING.1 (circle, 1.6x1.6mm) at (39.37, 7.62)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="C_DECOUPLING" data-pad="2">
+        
+
+            <circle cx="41.910" cy="7.620" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="41.910" cy="7.620" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: C_DECOUPLING.2 (circle, 1.6x1.6mm) at (41.91, 7.62)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="C_SERVO1" data-pad="+">
+        
+
+            <rect x="38.840" y="11.900" width="1.600" height="1.600" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" rx="0.1" />
+          
+
+            <circle cx="39.640" cy="12.700" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: C_SERVO1.+ (rect, 1.6x1.6mm) at (39.64, 12.70)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="C_SERVO1" data-pad="-">
+        
+
+            <circle cx="41.640" cy="12.700" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="41.640" cy="12.700" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: C_SERVO1.- (circle, 1.6x1.6mm) at (41.64, 12.70)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="R1" data-pad="1">
+        
+
+            <circle cx="49.530" cy="45.720" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="49.530" cy="45.720" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: R1.1 (circle, 1.6x1.6mm) at (49.53, 45.72)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="R1" data-pad="2">
+        
+
+            <circle cx="57.150" cy="45.720" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="57.150" cy="45.720" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: R1.2 (oval, 1.6x1.6mm) at (57.15, 45.72)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="R2" data-pad="1">
+        
+
+            <circle cx="45.720" cy="39.370" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="45.720" cy="39.370" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: R2.1 (circle, 1.6x1.6mm) at (45.72, 39.37)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="R2" data-pad="2">
+        
+
+            <circle cx="45.720" cy="46.990" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="45.720" cy="46.990" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: R2.2 (oval, 1.6x1.6mm) at (45.72, 46.99)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="R3" data-pad="1">
+        
+
+            <circle cx="34.290" cy="45.720" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="34.290" cy="45.720" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: R3.1 (circle, 1.6x1.6mm) at (34.29, 45.72)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="R3" data-pad="2">
+        
+
+            <circle cx="41.910" cy="45.720" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="41.910" cy="45.720" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: R3.2 (oval, 1.6x1.6mm) at (41.91, 45.72)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="R4" data-pad="1">
+        
+
+            <circle cx="46.990" cy="7.620" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="46.990" cy="7.620" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: R4.1 (circle, 1.6x1.6mm) at (46.99, 7.62)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="R4" data-pad="2">
+        
+
+            <circle cx="54.610" cy="7.620" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="54.610" cy="7.620" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: R4.2 (oval, 1.6x1.6mm) at (54.61, 7.62)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="D1" data-pad="1">
+        
+
+            <rect x="53.710" y="37.200" width="1.800" height="1.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" rx="0.1" />
+          
+
+            <circle cx="54.610" cy="38.100" r="0.450" fill="#050505" />
+          
+
+            <title>Pad: D1.1 (rect, 1.8x1.8mm) at (54.61, 38.10)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="D1" data-pad="2">
+        
+
+            <circle cx="57.150" cy="38.100" r="0.900" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="57.150" cy="38.100" r="0.450" fill="#050505" />
+          
+
+            <title>Pad: D1.2 (circle, 1.8x1.8mm) at (57.15, 38.10)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="D2" data-pad="1">
+        
+
+            <rect x="35.930" y="37.200" width="1.800" height="1.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" rx="0.1" />
+          
+
+            <circle cx="36.830" cy="38.100" r="0.450" fill="#050505" />
+          
+
+            <title>Pad: D2.1 (rect, 1.8x1.8mm) at (36.83, 38.10)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="D2" data-pad="2">
+        
+
+            <circle cx="39.370" cy="38.100" r="0.900" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="39.370" cy="38.100" r="0.450" fill="#050505" />
+          
+
+            <title>Pad: D2.2 (circle, 1.8x1.8mm) at (39.37, 38.10)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="LDR1" data-pad="1">
+        
+
+            <circle cx="46.560" cy="12.700" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="46.560" cy="12.700" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: LDR1.1 (circle, 1.6x1.6mm) at (46.56, 12.70)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="LDR1" data-pad="2">
+        
+
+            <circle cx="49.960" cy="12.700" r="0.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="49.960" cy="12.700" r="0.400" fill="#050505" />
+          
+
+            <title>Pad: LDR1.2 (circle, 1.6x1.6mm) at (49.96, 12.70)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="POT1" data-pad="1">
+        
+
+            <circle cx="33.020" cy="10.240" r="1.100" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="33.020" cy="10.240" r="0.600" fill="#050505" />
+          
+
+            <title>Pad: POT1.1 (circle, 2.2x2.2mm) at (33.02, 10.24)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="POT1" data-pad="2">
+        
+
+            <rect x="31.920" y="14.140" width="2.200" height="2.200" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" rx="0.1" />
+          
+
+            <circle cx="33.020" cy="15.240" r="0.600" fill="#050505" />
+          
+
+            <title>Pad: POT1.2 (rect, 2.2x2.2mm) at (33.02, 15.24)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="POT1" data-pad="3">
+        
+
+            <circle cx="33.020" cy="20.240" r="1.100" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="33.020" cy="20.240" r="0.600" fill="#050505" />
+          
+
+            <title>Pad: POT1.3 (circle, 2.2x2.2mm) at (33.02, 20.24)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SERVO1" data-pad="1">
+        
+
+            <rect x="29.630" y="39.790" width="1.700" height="1.700" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" rx="0.1" />
+          
+
+            <circle cx="30.480" cy="40.640" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: SERVO1.1 (rect, 1.7x1.7mm) at (30.48, 40.64)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SERVO1" data-pad="2">
+        
+
+            <circle cx="30.480" cy="43.180" r="0.850" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="30.480" cy="43.180" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: SERVO1.2 (oval, 1.7x1.7mm) at (30.48, 43.18)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SERVO1" data-pad="3">
+        
+
+            <circle cx="30.480" cy="45.720" r="0.850" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="30.480" cy="45.720" r="0.500" fill="#050505" />
+          
+
+            <title>Pad: SERVO1.3 (oval, 1.7x1.7mm) at (30.48, 45.72)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SPK1" data-pad="+">
+        
+
+            <rect x="38.470" y="24.500" width="1.800" height="1.800" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" rx="0.1" />
+          
+
+            <circle cx="39.370" cy="25.400" r="0.450" fill="#050505" />
+          
+
+            <title>Pad: SPK1.+ (rect, 1.8x1.8mm) at (39.37, 25.40)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SPK1" data-pad="-">
+        
+
+            <circle cx="46.990" cy="25.400" r="0.900" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="46.990" cy="25.400" r="0.450" fill="#050505" />
+          
+
+            <title>Pad: SPK1.- (circle, 1.8x1.8mm) at (46.99, 25.40)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SW1" data-pad="1">
+        
+
+            <circle cx="52.630" cy="28.230" r="1.000" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="52.630" cy="28.230" r="0.550" fill="#050505" />
+          
+
+            <title>Pad: SW1.1 (circle, 2x2mm) at (52.63, 28.23)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SW1" data-pad="1">
+        
+
+            <circle cx="59.130" cy="28.230" r="1.000" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="59.130" cy="28.230" r="0.550" fill="#050505" />
+          
+
+            <title>Pad: SW1.1 (circle, 2x2mm) at (59.13, 28.23)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SW1" data-pad="2">
+        
+
+            <circle cx="52.630" cy="32.730" r="1.000" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="52.630" cy="32.730" r="0.550" fill="#050505" />
+          
+
+            <title>Pad: SW1.2 (circle, 2x2mm) at (52.63, 32.73)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SW1" data-pad="2">
+        
+
+            <circle cx="59.130" cy="32.730" r="1.000" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="59.130" cy="32.730" r="0.550" fill="#050505" />
+          
+
+            <title>Pad: SW1.2 (circle, 2x2mm) at (59.13, 32.73)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SW2" data-pad="1">
+        
+
+            <circle cx="52.630" cy="18.070" r="1.000" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="52.630" cy="18.070" r="0.550" fill="#050505" />
+          
+
+            <title>Pad: SW2.1 (circle, 2x2mm) at (52.63, 18.07)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SW2" data-pad="1">
+        
+
+            <circle cx="59.130" cy="18.070" r="1.000" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="59.130" cy="18.070" r="0.550" fill="#050505" />
+          
+
+            <title>Pad: SW2.1 (circle, 2x2mm) at (59.13, 18.07)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SW2" data-pad="2">
+        
+
+            <circle cx="52.630" cy="22.570" r="1.000" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="52.630" cy="22.570" r="0.550" fill="#050505" />
+          
+
+            <title>Pad: SW2.2 (circle, 2x2mm) at (52.63, 22.57)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="SW2" data-pad="2">
+        
+
+            <circle cx="59.130" cy="22.570" r="1.000" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="59.130" cy="22.570" r="0.550" fill="#050505" />
+          
+
+            <title>Pad: SW2.2 (circle, 2x2mm) at (59.13, 22.57)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="M1" data-pad="1">
+        
+
+            <rect x="21.660" y="36.900" width="2.400" height="2.400" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" rx="0.1" />
+          
+
+            <circle cx="22.860" cy="38.100" r="0.650" fill="#050505" />
+          
+
+            <title>Pad: M1.1 (rect, 2.4x2.4mm) at (22.86, 38.10)</title>
+          </g>
+        
+
+          <g class="pcb-pad" data-component="M1" data-pad="2">
+        
+
+            <circle cx="22.860" cy="43.180" r="1.200" fill="#d946ef" stroke="#ffffff" stroke-width="0.1" />
+          
+
+            <circle cx="22.860" cy="43.180" r="0.650" fill="#050505" />
+          
+
+            <title>Pad: M1.2 (circle, 2.4x2.4mm) at (22.86, 43.18)</title>
+          </g>
+        
+</g>
+<g id="layer-silkscreen" class="layer-silkscreen" pointer-events="none">
+
+          <polygon points="0.000,2.540 2.540,0.000 66.040,0.000 68.580,2.540 68.580,38.100 66.040,40.640 66.040,48.260 68.580,50.800 68.580,53.340 15.240,53.340 12.700,50.800 2.540,50.800 0.000,48.260" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+        <text x="0.000" y="-0.200" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">U1</text>
+      
+
+          <polygon points="37.640,5.870 43.640,5.870 43.640,9.370 37.640,9.370" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="38.140" y="6.370" width="5.000" height="2.500" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="40.640" y="7.420" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">C_DECOUPLING</text>
+      
+
+          <polygon points="37.640,9.700 43.640,9.700 43.640,15.700 37.640,15.700" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <circle cx="40.640" cy="12.700" r="2.500" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="38.040" y1="12.700" x2="38.640" y2="12.700" stroke="#facc15" stroke-width="0.2" />
+          
+
+            <line x1="38.340" y1="12.400" x2="38.340" y2="13.000" stroke="#facc15" stroke-width="0.2" />
+          
+
+        <text x="40.640" y="12.500" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">C_SERVO1</text>
+      
+
+          <polygon points="48.230,44.070 58.450,44.070 58.450,47.370 48.230,47.370" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="50.340" y="44.570" width="6.000" height="2.300" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="50.530" y1="45.720" x2="50.340" y2="45.720" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="56.340" y1="45.720" x2="56.150" y2="45.720" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="53.340" y="45.520" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">R1</text>
+      
+
+          <polygon points="47.370,38.070 47.370,48.290 44.070,48.290 44.070,38.070" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="46.870" y="40.180" width="6.000" height="2.300" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="45.720" y1="40.370" x2="45.720" y2="40.180" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="45.720" y1="46.180" x2="45.720" y2="45.990" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="45.720" y="42.980" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">R2</text>
+      
+
+          <polygon points="32.990,44.070 43.210,44.070 43.210,47.370 32.990,47.370" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="35.100" y="44.570" width="6.000" height="2.300" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="35.290" y1="45.720" x2="35.100" y2="45.720" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="41.100" y1="45.720" x2="40.910" y2="45.720" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="38.100" y="45.520" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">R3</text>
+      
+
+          <polygon points="45.690,5.970 55.910,5.970 55.910,9.270 45.690,9.270" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="47.800" y="6.470" width="6.000" height="2.300" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="47.990" y1="7.620" x2="47.800" y2="7.620" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="53.800" y1="7.620" x2="53.610" y2="7.620" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="50.800" y="7.420" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">R4</text>
+      
+
+          <polygon points="52.480,34.700 59.280,34.700 59.280,41.500 52.480,41.500" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <circle cx="55.880" cy="38.100" r="2.900" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="53.480" y1="36.070" x2="53.480" y2="40.130" stroke="#facc15" stroke-width="0.25" />
+          
+
+        <text x="55.880" y="37.900" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">D1</text>
+      
+
+          <polygon points="34.700,34.700 41.500,34.700 41.500,41.500 34.700,41.500" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <circle cx="38.100" cy="38.100" r="2.900" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="35.700" y1="36.070" x2="35.700" y2="40.130" stroke="#facc15" stroke-width="0.25" />
+          
+
+        <text x="38.100" y="37.900" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">D2</text>
+      
+
+          <polygon points="45.260,9.700 51.260,9.700 51.260,15.700 45.260,15.700" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <circle cx="48.260" cy="12.700" r="2.500" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="47.060" y1="11.900" x2="47.860" y2="13.500" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="47.860" y1="13.500" x2="48.660" y2="11.900" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="48.660" y1="11.900" x2="49.460" y2="13.500" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="48.260" y="12.500" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">LDR1</text>
+      
+
+          <polygon points="35.020,6.240 35.020,24.240 16.020,24.240 16.020,6.240" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <circle cx="25.020" cy="15.240" r="8.000" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="33.020" y="15.040" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">POT1</text>
+      
+
+          <polygon points="28.710,38.870 32.250,38.870 32.250,47.490 28.710,47.490" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="29.210" y="39.370" width="2.540" height="7.620" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="29.210" y1="39.390" x2="31.750" y2="39.390" stroke="#facc15" stroke-width="0.25" />
+          
+
+        <text x="30.480" y="42.980" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">SERVO1</text>
+      
+
+          <polygon points="36.680,18.900 49.680,18.900 49.680,31.900 36.680,31.900" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <circle cx="43.180" cy="25.400" r="6.000" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <line x1="37.770" y1="25.400" x2="38.270" y2="25.400" stroke="#facc15" stroke-width="0.2" />
+          
+
+            <line x1="38.020" y1="25.150" x2="38.020" y2="25.650" stroke="#facc15" stroke-width="0.2" />
+          
+
+        <text x="43.180" y="25.200" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">SPK1</text>
+      
+
+          <polygon points="51.130,26.730 60.630,26.730 60.630,34.230 51.130,34.230" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="52.880" y="27.480" width="6.000" height="6.000" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <circle cx="55.880" cy="30.480" r="1.750" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="55.880" y="30.280" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">SW1</text>
+      
+
+          <polygon points="51.130,16.570 60.630,16.570 60.630,24.070 51.130,24.070" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="52.880" y="17.320" width="6.000" height="6.000" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+            <circle cx="55.880" cy="20.320" r="1.750" fill="none" stroke="#facc15" stroke-width="0.15" />
+          
+
+        <text x="55.880" y="20.120" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">SW2</text>
+      
+
+          <polygon points="27.360,34.060 27.360,47.220 18.360,47.220 18.360,34.060" fill="none" stroke="#facc15" stroke-width="0.15" opacity="0.75" />
+        
+
+            <rect x="26.860" y="34.560" width="12.160" height="8.000" fill="none" stroke="#facc15" stroke-width="0.2" />
+          
+
+        <text x="22.860" y="40.440" fill="#facc15" font-size="1.4" font-family="monospace" font-weight="bold" text-anchor="middle" dominant-baseline="middle">M1</text>
+      
+</g>
+<g id="layer-ratsnest" class="layer-ratsnest">
+
+          <line x1="39.640" y1="12.700" x2="30.480" y2="43.180" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="5V">
+            <title>Unrouted Net '5V': C_SERVO1.+ -> SERVO1.VCC</title>
+          </line>
+        
+
+          <line x1="36.830" y1="38.100" x2="30.480" y2="45.720" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="GND">
+            <title>Unrouted Net 'GND': D2.K -> SERVO1.GND</title>
+          </line>
+        
+
+          <line x1="30.480" y1="45.720" x2="22.860" y2="43.180" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="GND">
+            <title>Unrouted Net 'GND': SERVO1.GND -> M1.-</title>
+          </line>
+        
+
+          <line x1="46.990" y1="25.400" x2="52.630" y2="22.570" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="GND">
+            <title>Unrouted Net 'GND': SPK1.- -> SW2.2#1</title>
+          </line>
+        
+
+          <line x1="46.990" y1="25.400" x2="52.630" y2="32.730" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="GND">
+            <title>Unrouted Net 'GND': SPK1.- -> SW1.2#1</title>
+          </line>
+        
+
+          <line x1="46.990" y1="25.400" x2="36.830" y2="38.100" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="GND">
+            <title>Unrouted Net 'GND': SPK1.- -> D2.K</title>
+          </line>
+        
+
+          <line x1="52.630" y1="32.730" x2="54.610" y2="38.100" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="GND">
+            <title>Unrouted Net 'GND': SW1.2#1 -> D1.K</title>
+          </line>
+        
+
+          <line x1="59.130" y1="28.230" x2="58.420" y2="50.800" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="N$1">
+            <title>Unrouted Net 'N$1': SW1.1#2 -> U1.D2</title>
+          </line>
+        
+
+          <line x1="57.150" y1="38.100" x2="57.150" y2="45.720" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="N$10">
+            <title>Unrouted Net 'N$10': D1.A -> R1.2</title>
+          </line>
+        
+
+          <line x1="39.370" y1="38.100" x2="45.720" y2="46.990" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="N$11">
+            <title>Unrouted Net 'N$11': D2.A -> R2.2</title>
+          </line>
+        
+
+          <line x1="52.630" y1="18.070" x2="55.880" y2="50.800" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="N$2">
+            <title>Unrouted Net 'N$2': SW2.1#1 -> U1.D3</title>
+          </line>
+        
+
+          <line x1="22.860" y1="38.100" x2="48.260" y2="50.800" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="N$5">
+            <title>Unrouted Net 'N$5': M1.+ -> U1.D6</title>
+          </line>
+        
+
+          <line x1="30.480" y1="40.640" x2="39.116" y2="50.800" stroke="#06b6d4" stroke-width="0.22" stroke-dasharray="1.5,1.0" opacity="1" class="pcb-ratsnest" data-net="N$7">
+            <title>Unrouted Net 'N$7': SERVO1.PWM -> U1.D9</title>
+          </line>
+        
+</g>
+<g id="layer-drc-violations" class="layer-drc-violations">
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="39.640,11.500 40.840,12.700 39.640,13.900 38.440,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;5V&apos; and pad C_SERVO1.+ at (39.640, 12.700)</title>
+          </polygon>
+          <circle cx="39.640" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="39.640,11.500 40.840,12.700 39.640,13.900 38.440,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;5V&apos; and pad C_SERVO1.+ at (39.640, 12.700)</title>
+          </polygon>
+          <circle cx="39.640" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="33.020,9.040 34.220,10.240 33.020,11.440 31.820,10.240" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;5V&apos; and pad POT1.1 at (33.020, 10.240)</title>
+          </polygon>
+          <circle cx="33.020" cy="10.240" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="46.560,11.500 47.760,12.700 46.560,13.900 45.360,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.126mm &lt; 0.254mm) between trace &apos;5V&apos; and pad LDR1.1 at (46.560, 12.700)</title>
+          </polygon>
+          <circle cx="46.560" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="41.640,11.500 42.840,12.700 41.640,13.900 40.440,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;GND&apos; and pad C_SERVO1.- at (41.640, 12.700)</title>
+          </polygon>
+          <circle cx="41.640" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="41.640,11.500 42.840,12.700 41.640,13.900 40.440,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;GND&apos; and pad C_SERVO1.- at (41.640, 12.700)</title>
+          </polygon>
+          <circle cx="41.640" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="41.640,11.500 42.840,12.700 41.640,13.900 40.440,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;GND&apos; and pad C_SERVO1.- at (41.640, 12.700)</title>
+          </polygon>
+          <circle cx="41.640" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="26.416,49.600 27.616,50.800 26.416,52.000 25.216,50.800" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;GND&apos; and pad U1.GND at (26.416, 50.800)</title>
+          </polygon>
+          <circle cx="26.416" cy="50.800" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="33.020,14.040 34.220,15.240 33.020,16.440 31.820,15.240" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.043mm &lt; 0.254mm) between trace &apos;GND&apos; and pad POT1.2 at (33.020, 15.240)</title>
+          </polygon>
+          <circle cx="33.020" cy="15.240" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="33.020,19.040 34.220,20.240 33.020,21.440 31.820,20.240" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.159mm &lt; 0.254mm) between trace &apos;GND&apos; and pad POT1.3 at (33.020, 20.240)</title>
+          </polygon>
+          <circle cx="33.020" cy="20.240" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="39.370,36.900 40.570,38.100 39.370,39.300 38.170,38.100" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;N$12&apos; and pad D2.2 at (39.370, 38.100)</title>
+          </polygon>
+          <circle cx="39.370" cy="38.100" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="49.960,11.500 51.160,12.700 49.960,13.900 48.760,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.000mm &lt; 0.254mm) between trace &apos;N$9&apos; and pad LDR1.2 at (49.960, 12.700)</title>
+          </polygon>
+          <circle cx="49.960" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="46.560,11.500 47.760,12.700 46.560,13.900 45.360,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.138mm &lt; 0.254mm) between trace &apos;N$9&apos; and pad LDR1.1 at (46.560, 12.700)</title>
+          </polygon>
+          <circle cx="46.560" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_TRACE_PAD">
+          <polygon points="46.560,11.500 47.760,12.700 46.560,13.900 45.360,12.700" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_TRACE_PAD] Clearance violation (0.138mm &lt; 0.254mm) between trace &apos;N$9&apos; and pad LDR1.1 at (46.560, 12.700)</title>
+          </polygon>
+          <circle cx="46.560" cy="12.700" r="0.25" fill="#ffffff" />
+        </g>
+      
+
+        <g class="pcb-drc-marker" data-code="DRC_CLEARANCE_VIA_TRACE">
+          <polygon points="39.370,44.520 40.570,45.720 39.370,46.920 38.170,45.720" fill="#dc2626" stroke="#ffffff" stroke-width="0.2" filter="url(#net-glow)">
+            <title>[DRC_CLEARANCE_VIA_TRACE] Via-to-trace clearance violation (0.008mm &lt; 0.254mm) between via &apos;N$12&apos; and trace &apos;N$6&apos; on top at (39.370, 45.720)</title>
+          </polygon>
+          <circle cx="39.370" cy="45.720" r="0.25" fill="#ffffff" />
+        </g>
+      
+</g>
+</svg>

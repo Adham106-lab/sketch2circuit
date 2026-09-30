@@ -145,6 +145,14 @@ export function inferPeripherals(
   for (const pinUse of pinGraph.values()) {
     if (claimedPins.has(pinUse.pin)) continue;
 
+    // Check if pin is outside the target board's valid pin set (e.g. Arduino Uno: 0-13, A0-A5)
+    if (pinUse.pinNumber >= 20 || pinUse.pinNumber < 0) {
+      unresolved.push(
+        `Pin ${pinUse.pinNumber}: not a valid Arduino Uno pin (0-13, A0-A5). This sketch may target a different board (ESP32?).`,
+      );
+      continue;
+    }
+
     const hints = pinUse.nameHints.join(" ").toLowerCase();
 
     // 1. Piezo Buzzer / Speaker: tone(), noTone(), or buzzer/piezo name hint with PWM/digital output

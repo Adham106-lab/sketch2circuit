@@ -1,0 +1,173 @@
+{
+  "blink": {
+    "name": "01. Blink (LED on D13)",
+    "totalConnections": 5,
+    "routedConnections": 3,
+    "unroutedConnections": 2,
+    "completionRatePercent": 60,
+    "totalTraces": 6,
+    "totalVias": 3,
+    "wirelengthMm": 74.93,
+    "drcErrorCount": 2,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 2
+    }
+  },
+  "button_pullup": {
+    "name": "02. Button (INPUT_PULLUP)",
+    "totalConnections": 7,
+    "routedConnections": 3,
+    "unroutedConnections": 4,
+    "completionRatePercent": 42.9,
+    "totalTraces": 6,
+    "totalVias": 3,
+    "wirelengthMm": 74.93,
+    "drcErrorCount": 2,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 2
+    }
+  },
+  "button_pulldown": {
+    "name": "03. Button (External 10kΩ Pull-down)",
+    "totalConnections": 9,
+    "routedConnections": 4,
+    "unroutedConnections": 5,
+    "completionRatePercent": 44.4,
+    "totalTraces": 8,
+    "totalVias": 4,
+    "wirelengthMm": 83.82,
+    "drcErrorCount": 2,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 2
+    }
+  },
+  "servo_sweep": {
+    "name": "04. Servo Motor Sweep",
+    "totalConnections": 7,
+    "routedConnections": 4,
+    "unroutedConnections": 3,
+    "completionRatePercent": 57.1,
+    "totalTraces": 6,
+    "totalVias": 2,
+    "wirelengthMm": 74.93,
+    "drcErrorCount": 3,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 3
+    }
+  },
+  "hc_sr04": {
+    "name": "05. Ultrasonic Rangefinder (HC-SR04)",
+    "totalConnections": 6,
+    "routedConnections": 6,
+    "unroutedConnections": 0,
+    "completionRatePercent": 100,
+    "totalTraces": 10,
+    "totalVias": 4,
+    "wirelengthMm": 166.37,
+    "drcErrorCount": 3,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 3
+    }
+  },
+  "pot_analog": {
+    "name": "06. Potentiometer / Analog Input",
+    "totalConnections": 8,
+    "routedConnections": 6,
+    "unroutedConnections": 2,
+    "completionRatePercent": 75,
+    "totalTraces": 10,
+    "totalVias": 4,
+    "wirelengthMm": 113.03,
+    "drcErrorCount": 6,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 6
+    }
+  },
+  "piezo_tone": {
+    "name": "07. Piezo Buzzer Melody",
+    "totalConnections": 5,
+    "routedConnections": 5,
+    "unroutedConnections": 0,
+    "completionRatePercent": 100,
+    "totalTraces": 10,
+    "totalVias": 5,
+    "wirelengthMm": 123.19,
+    "drcErrorCount": 4,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 2,
+      "DRC_CLEARANCE_VIA_TRACE": 2
+    }
+  },
+  "dynamic_loop": {
+    "name": "08. Dynamic Loop (Unresolved Diagnostic)",
+    "totalConnections": 2,
+    "routedConnections": 2,
+    "unroutedConnections": 0,
+    "completionRatePercent": 100,
+    "totalTraces": 4,
+    "totalVias": 2,
+    "wirelengthMm": 64.77,
+    "drcErrorCount": 1,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 1
+    }
+  },
+  "annotated_rgb": {
+    "name": "09. User-Annotated Circuit (@s2c)",
+    "totalConnections": 10,
+    "routedConnections": 4,
+    "unroutedConnections": 6,
+    "completionRatePercent": 40,
+    "totalTraces": 8,
+    "totalVias": 4,
+    "wirelengthMm": 90.17,
+    "drcErrorCount": 1,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 1
+    }
+  },
+  "multi_peripheral_benchmark": {
+    "name": "10. Multi-Peripheral Stress Test",
+    "totalConnections": 29,
+    "routedConnections": 16,
+    "unroutedConnections": 13,
+    "completionRatePercent": 55.2,
+    "totalTraces": 28,
+    "totalVias": 12,
+    "wirelengthMm": 266.065,
+    "drcErrorCount": 18,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 17,
+      "DRC_CLEARANCE_VIA_TRACE": 1
+    }
+  },
+  "erc_hazards": {
+    "name": "11. ERC Hazards (Flyback Diode & Pin Over-Current)",
+    "totalConnections": 7,
+    "routedConnections": 3,
+    "unroutedConnections": 4,
+    "completionRatePercent": 42.9,
+    "totalTraces": 6,
+    "totalVias": 3,
+    "wirelengthMm": 73.66,
+    "drcErrorCount": 1,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 1
+    }
+  },
+  "user_multi_peripheral": {
+    "name": "12. User Multi-Peripheral Sketch",
+    "totalConnections": 29,
+    "routedConnections": 16,
+    "unroutedConnections": 13,
+    "completionRatePercent": 55.2,
+    "totalTraces": 27,
+    "totalVias": 11,
+    "wirelengthMm": 261.62,
+    "drcErrorCount": 15,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 14,
+      "DRC_CLEARANCE_VIA_TRACE": 1
+    }
+  }
+}

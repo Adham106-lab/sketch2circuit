@@ -298,6 +298,18 @@ export class CircuitBuilder {
   }
 
   /**
+   * Checks whether a port reference (e.g. "U1.D13", "R1.1") exists on a registered component.
+   */
+  hasPort(portRef: string): boolean {
+    try {
+      this.resolvePortId(portRef);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Resolves a port reference string to a canonical port ID (e.g. "R1.1").
    * Throws actionable error with closest candidate suggestion if component or port not found.
    */

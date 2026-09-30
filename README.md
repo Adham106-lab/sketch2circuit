@@ -99,18 +99,21 @@ A complete 3-minute video presentation storyboard and screen-recording timeline 
 
 ---
 
-## Known Limitations (Milestone 8)
+## Known Limitations & Tracked Technical Gaps
 
-Transparent engineering constraints and documented limitations:
+All project constraints, benchmark metrics, and operational rules are strictly tracked in [`docs/KNOWN_GAPS.md`](docs/KNOWN_GAPS.md) and [`docs/INTEGRITY_NOTES.md`](docs/INTEGRITY_NOTES.md):
 
 1. **KiCad Golden-File Fixture (GAP-01)**:
    > **Golden KiCad netlist fixture is hand-written per the S-expr spec, not exported from real KiCad, due to no KiCad binary in this sandbox. Needs a real export to fully close.**  
    The recursive-descent S-expression AST validator (`parseSExpr`) and test suite verify compliance against the official KiCad Version "E" specification. Once an authentic KiCad 7/8 desktop export is provided, the reference fixture will be updated.
 2. **Physical Hardware Bench Testing (Doc §15 Point 7)**:
    Physical assembly and electrical verification with test instruments (oscilloscope, multimeter, breadboards) requires physical hardware bench testing by a human engineer. It cannot be performed or measured directly within this headless software development sandbox.
-3. **Runtime-Computed Pin Expressions**: Pins must be statically resolvable (literals, `#define`, `const`, basic arithmetic, or static arrays). Dynamic pointer arithmetic or pins computed from runtime sensor inputs are flagged as `unresolved` items rather than silently guessed.
-4. **Analog Front-End Design**: `s2c` does not synthesize multi-stage active op-amp filters or RF matching networks from code alone.
-5. **Target Hardware**: Version 1.0 targets the canonical **Arduino Uno R3** (ATmega328P, 5V logic). Support for 3.3V boards (ESP32, RP2040) is planned for future releases.
+3. **2-Layer Grid Router Density & Completion (GAP-03)**:
+   The deterministic 2-layer orthogonal grid router achieves **55.2% routing completion** (16/29 routed, 13 unrouted ratsnest lines, 15 DRC violations) on dense multi-peripheral circuits (`user_multi_peripheral.ino`). A coarse 0.635 mm (25 mil) grid pitch and single-pass ordering without rip-up/reroute create corridor bottlenecks. Simple circuits achieve 100% completion.
+4. **Arduino Uno Shield Board Outline Polygon Simplification (GAP-04)**:
+   The canonical shield outline in `@s2c/footprints` models the outer board boundary as a 13-point polygon with symmetric bevels rather than the full asymmetric profile with USB Type-B deep relief notches.
+5. **No AI-Synthesized Images for Application Screenshots (INC-001)**:
+   Under **INC-001**, using image-generation models to simulate application screenshots or EDA canvas renders is strictly prohibited. All UI verification is performed via direct code paths, pure headless scene descriptions, raw SVG outputs, and binary file byte counts.
 
 ---
 
@@ -125,6 +128,12 @@ Transparent engineering constraints and documented limitations:
 - [x] **M6: Exporters & CLI** — Breadboard wiring guides, BOM, KiCad netlists, and `s2c` CLI.
 - [x] **M7: Interactive Playground** — Browser-based IDE with live schematic preview, AST evidence inspection, and ERC diagnostics.
 - [x] **M8: Polish** — Documentation site, ecosystem comparisons, demo walkthrough script, and open gap tracking.
+- [x] **M9: PCB IR & Footprints** — `@s2c/pcb-json` schema, footprint library with 3D metadata (`body3d`), keepouts, and Uno/Nano shield outlines.
+- [x] **M10: Auto-Placement Engine** — Constrained force-directed placer with header pin anchoring and keepout preservation.
+- [x] **M11: 2-Layer Grid Router & DRC** — Orthogonal A* maze router, plated through-hole via generator, and 7 DRC validation checks.
+- [x] **M12: 2D PCB Layout Workbench** — Dark oscilloscope vector canvas, multi-layer toggles, ratsnest lines, and honest routing status badge.
+- [x] **M13: 3D PCB CAD Viewer** — Pure 3D scene description generator, Three.js WebGL renderer, OrbitControls, interactive View-Cube widget, and GLB export.
+- [x] **M14: Multi-Domain Playground Polish** — Integrated Schematic | PCB | 3D | BOM workbench sharing debounced synthesis, routing/DRC badges, dual themes, and documentation.
 
 ---
 

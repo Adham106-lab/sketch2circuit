@@ -96,7 +96,7 @@ function hashCircuit(circuit: Circuit): string {
 /**
  * Resolves verified part definition, footprint ID, and pinMap for a circuit component.
  */
-function resolvePartAndFootprint(comp: Component): {
+export function resolvePartAndFootprint(comp: Component): {
   partDef?: ReturnType<typeof getPartDefinition>;
   fpId?: string;
   pinMap?: Record<string, string>;
