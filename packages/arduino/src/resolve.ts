@@ -11,12 +11,15 @@ export interface ResolvedPinRef {
   nameHint?: string; // identifier name: e.g. "ledPin", "trigPin"
 }
 
-// Built-in Arduino environment constants
+// Built-in Arduino & MATLAB Simulink environment constants
 const ARDUINO_BUILTINS: Record<string, number | string> = {
   LED_BUILTIN: 13,
   INPUT: "INPUT",
   OUTPUT: "OUTPUT",
   INPUT_PULLUP: "INPUT_PULLUP",
+  MW_INPUT: "INPUT",
+  MW_OUTPUT: "OUTPUT",
+  MW_INPUT_PULLUP: "INPUT_PULLUP",
   HIGH: 1,
   LOW: 0,
   A0: "A0",
@@ -167,8 +170,9 @@ export function resolveMode(
   facts: SketchFacts,
 ): "INPUT" | "OUTPUT" | "INPUT_PULLUP" {
   const resolved = String(resolveValue(rawMode, facts)).toUpperCase();
-  if (resolved === "OUTPUT" || resolved === "1") return "OUTPUT";
-  if (resolved === "INPUT_PULLUP" || resolved === "2") return "INPUT_PULLUP";
+  if (resolved === "OUTPUT" || resolved === "1" || resolved === "MW_OUTPUT") return "OUTPUT";
+  if (resolved === "INPUT_PULLUP" || resolved === "2" || resolved === "MW_INPUT_PULLUP")
+    return "INPUT_PULLUP";
   return "INPUT";
 }
 

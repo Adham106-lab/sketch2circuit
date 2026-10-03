@@ -148,7 +148,8 @@ function buildComponentBodyNodes(
     // Cylindrical rim base (5.8mm dia, 1mm height)
     // Main cylinder body (5mm dia, 5mm height)
     // Hemispherical dome top (radius 2.5mm)
-    const ledColor = b3d.color ?? (compIdLower.includes("d2") ? PCB_3D_PALETTE.ledRed : PCB_3D_PALETTE.ledGreen);
+    const ledColor =
+      b3d.color ?? (compIdLower.includes("d2") ? PCB_3D_PALETTE.ledRed : PCB_3D_PALETTE.ledGreen);
 
     // Rim Base
     nodes.push({

@@ -53,13 +53,38 @@ export function buildPinUsageGraph(
     }
   };
 
+  const getCommentHintForCall = (line: number): string | undefined => {
+    if (!facts.commentHints) return undefined;
+    for (let l = line; l >= Math.max(1, line - 3); l--) {
+      const hint = facts.commentHints.get(l);
+      if (hint) {
+        // Extract Simulink block names: '<Root>/Digital Output' -> "Digital Output"
+        const blockMatch = hint.match(/<Root>\/([^'>]+)/i) || hint.match(/<S\d+>\/([^'>]+)/i);
+        if (blockMatch) {
+          return blockMatch[1].trim();
+        }
+        return hint.trim();
+      }
+    }
+    return undefined;
+  };
+
   // 1. Process function calls
   for (const call of facts.calls) {
+    const commentHint = getCommentHintForCall(call.range.startLine);
+
     if (call.name === "pinMode") {
       const [rawPin, rawMode] = call.args;
       const resolved = resolvePin(rawPin, facts);
       if (resolved) {
-        const pinUse = getOrCreatePin(resolved.pinId, resolved.pinNumber, resolved.nameHint);
+        const pinUse = getOrCreatePin(
+          resolved.pinId,
+          resolved.pinNumber,
+          resolved.nameHint || commentHint,
+        );
+        if (commentHint && !pinUse.nameHints.includes(commentHint)) {
+          pinUse.nameHints.push(commentHint);
+        }
         const mode = resolveMode(rawMode, facts);
         pinUse.modes.add(mode);
         pinUse.ranges.push(call.range);
@@ -70,7 +95,14 @@ export function buildPinUsageGraph(
       const [rawPin] = call.args;
       const resolved = resolvePin(rawPin, facts);
       if (resolved) {
-        const pinUse = getOrCreatePin(resolved.pinId, resolved.pinNumber, resolved.nameHint);
+        const pinUse = getOrCreatePin(
+          resolved.pinId,
+          resolved.pinNumber,
+          resolved.nameHint || commentHint,
+        );
+        if (commentHint && !pinUse.nameHints.includes(commentHint)) {
+          pinUse.nameHints.push(commentHint);
+        }
         pinUse.ops.add("digitalWrite");
         pinUse.ranges.push(call.range);
       } else {
@@ -80,7 +112,14 @@ export function buildPinUsageGraph(
       const [rawPin] = call.args;
       const resolved = resolvePin(rawPin, facts);
       if (resolved) {
-        const pinUse = getOrCreatePin(resolved.pinId, resolved.pinNumber, resolved.nameHint);
+        const pinUse = getOrCreatePin(
+          resolved.pinId,
+          resolved.pinNumber,
+          resolved.nameHint || commentHint,
+        );
+        if (commentHint && !pinUse.nameHints.includes(commentHint)) {
+          pinUse.nameHints.push(commentHint);
+        }
         pinUse.ops.add("digitalRead");
         pinUse.ranges.push(call.range);
       } else {
@@ -90,7 +129,14 @@ export function buildPinUsageGraph(
       const [rawPin] = call.args;
       const resolved = resolvePin(rawPin, facts);
       if (resolved) {
-        const pinUse = getOrCreatePin(resolved.pinId, resolved.pinNumber, resolved.nameHint);
+        const pinUse = getOrCreatePin(
+          resolved.pinId,
+          resolved.pinNumber,
+          resolved.nameHint || commentHint,
+        );
+        if (commentHint && !pinUse.nameHints.includes(commentHint)) {
+          pinUse.nameHints.push(commentHint);
+        }
         pinUse.ops.add("analogWrite");
         pinUse.ranges.push(call.range);
       } else {
@@ -100,7 +146,14 @@ export function buildPinUsageGraph(
       const [rawPin] = call.args;
       const resolved = resolvePin(rawPin, facts);
       if (resolved) {
-        const pinUse = getOrCreatePin(resolved.pinId, resolved.pinNumber, resolved.nameHint);
+        const pinUse = getOrCreatePin(
+          resolved.pinId,
+          resolved.pinNumber,
+          resolved.nameHint || commentHint,
+        );
+        if (commentHint && !pinUse.nameHints.includes(commentHint)) {
+          pinUse.nameHints.push(commentHint);
+        }
         pinUse.ops.add("analogRead");
         pinUse.ranges.push(call.range);
       } else {

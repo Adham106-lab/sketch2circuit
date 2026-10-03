@@ -21,6 +21,7 @@
     "@s2c/rules": "workspace:*",
     "@s2c/render-schematic": "workspace:*",
     "@s2c/arduino": "workspace:*",
-    "@s2c/export": "workspace:*"
+    "@s2c/export": "workspace:*",
+    "@s2c/export-ato": "workspace:*"
   }
 }

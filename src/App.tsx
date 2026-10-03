@@ -4,7 +4,10 @@
  */
 
 import { type SynthesisResult, synthesizeSketch } from "@s2c/arduino";
+import { ARDUINO_UNO_R3_SHIELD_OUTLINE } from "@s2c/footprints";
+import { placeCircuit, type RoutingResult, routeCircuit } from "@s2c/pcb-layout";
 import {
+  Activity,
   AlertTriangle,
   BookOpen,
   Boxes,
@@ -17,10 +20,10 @@ import {
   Share2,
   ShieldAlert,
   Sparkles,
+  Workflow,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { placeCircuit, routeCircuit, type RoutingResult } from "@s2c/pcb-layout";
-import { ARDUINO_UNO_R3_SHIELD_OUTLINE } from "@s2c/footprints";
+import { BlockDiagramTab } from "./components/BlockDiagramTab.js";
 import { BomViewerTab } from "./components/BomViewerTab.js";
 import { CalculatorsTab } from "./components/CalculatorsTab.js";
 import { DocumentationTab } from "./components/DocumentationTab.js";
@@ -30,15 +33,26 @@ import { PartsCatalogBrowser } from "./components/PartsCatalogBrowser.js";
 import { Pcb3DViewer } from "./components/Pcb3DViewer.js";
 import { PcbViewer } from "./components/PcbViewer.js";
 import { SchematicViewer } from "./components/SchematicViewer.js";
+import { SimulationTab } from "./components/SimulationTab.js";
 import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
 
 export default function App() {
   // Theme state: "dark" (Oscilloscope) vs "light" (Drafting Sheet)
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
-  // Main Tab Navigation: Schematic (Studio) | PCB (2D) | 3D | BOM | ERC | Export | Catalog | Calculators | Docs
+  // Main Tab Navigation: Schematic (Studio) | PCB (2D) | 3D | BOM | ERC | Simulate | Export | Catalog | Calculators | Docs
   const [activeMainTab, setActiveMainTab] = useState<
-    "studio" | "pcb" | "pcb3d" | "bom" | "erc" | "export" | "catalog" | "calculators" | "docs"
+    | "studio"
+    | "pcb"
+    | "pcb3d"
+    | "bom"
+    | "erc"
+    | "simulate"
+    | "blockdiagram"
+    | "export"
+    | "catalog"
+    | "calculators"
+    | "docs"
   >("studio");
 
   // Studio Sub-view: Schematic vs. PCB vs. PCB 3D vs. Facts/Inference vs. Pin Graph
@@ -133,11 +147,11 @@ export default function App() {
         drcErrors: 0,
       };
     }
-    const total = routedResult.totalConnections ?? 0;
     const routed = routedResult.routedConnections ?? 0;
     const unrouted = routedResult.unroutedConnections ?? 0;
+    const total = routed + unrouted;
     const pct = total > 0 ? ((routed / total) * 100).toFixed(1) : "100.0";
-    const drcErrors = routedResult.drcErrors?.length ?? 0;
+    const drcErrors = routedResult.layout.drc?.filter((d) => d.severity === "error").length ?? 0;
     return {
       total,
       routed,
@@ -304,6 +318,28 @@ export default function App() {
           </button>
 
           <button
+            id="tab-simulate"
+            type="button"
+            onClick={() => setActiveMainTab("simulate")}
+            className={`folder-tab ${activeMainTab === "simulate" ? "active" : ""}`}
+            title="In-Browser Numerical Simulation Engine & Circuit Dynamics (M17)"
+          >
+            <Activity className="w-3.5 h-3.5 text-sky-400" />
+            <span className="font-bold">SIMULATE</span>
+          </button>
+
+          <button
+            id="tab-blockdiagram"
+            type="button"
+            onClick={() => setActiveMainTab("blockdiagram")}
+            className={`folder-tab ${activeMainTab === "blockdiagram" ? "active" : ""}`}
+            title="General Block-Diagram Simulation Editor & Wiring Canvas (M18)"
+          >
+            <Workflow className="w-3.5 h-3.5 text-sky-400" />
+            <span className="font-bold">BLOCK DIAGRAM</span>
+          </button>
+
+          <button
             id="tab-export"
             type="button"
             onClick={() => setActiveMainTab("export")}
@@ -353,7 +389,9 @@ export default function App() {
             className="px-2 py-1 border rounded-[2px] font-bold text-[10px] tracking-wide flex items-center gap-1.5 transition hover:brightness-110 cursor-pointer"
             style={{
               backgroundColor:
-                routingBadgeStats.unrouted > 0 ? "rgba(234, 88, 12, 0.16)" : "rgba(34, 197, 94, 0.16)",
+                routingBadgeStats.unrouted > 0
+                  ? "rgba(234, 88, 12, 0.16)"
+                  : "rgba(34, 197, 94, 0.16)",
               borderColor: routingBadgeStats.unrouted > 0 ? "#ea580c" : "#22c55e",
               color: routingBadgeStats.unrouted > 0 ? "#fdba74" : "#86efac",
             }}
@@ -361,8 +399,8 @@ export default function App() {
           >
             <Layers className="w-3.5 h-3.5" />
             <span>
-              {routingBadgeStats.routed}/{routingBadgeStats.total} routed ({routingBadgeStats.pct}%) ·{" "}
-              {routingBadgeStats.drcErrors} DRC
+              {routingBadgeStats.routed}/{routingBadgeStats.total} routed ({routingBadgeStats.pct}%)
+              · {routingBadgeStats.drcErrors} DRC
             </span>
           </button>
 
@@ -388,7 +426,9 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 p-4 max-w-[1800px] w-full mx-auto flex flex-col space-y-3">
         {/* Upfront Board-Target Scope Notice & Architecture Mismatch Alert */}
-        {synthesis.diagnostics.some((d) => d.ruleId === "synthesis.board-architecture-mismatch") && (
+        {synthesis.diagnostics.some(
+          (d) => d.ruleId === "synthesis.board-architecture-mismatch",
+        ) && (
           <div
             className="p-3 border rounded-[2px] flex items-start gap-3 text-xs"
             style={{
@@ -401,7 +441,8 @@ export default function App() {
             <div className="flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-amber-400 tracking-wide uppercase">
-                  BOARD TARGET SCOPE NOTICE: Sketch appears to target ESP32, but target board is Arduino Uno R3.
+                  BOARD TARGET SCOPE NOTICE: Sketch appears to target ESP32, but target board is
+                  Arduino Uno R3.
                 </span>
                 <span className="px-1.5 py-0.2 text-[9px] border rounded-[1px] bg-amber-950/40 border-amber-600/50 text-amber-300 font-mono">
                   v1 Scope: Uno Only
@@ -409,12 +450,14 @@ export default function App() {
               </div>
               <div className="text-[11px] opacity-90 leading-relaxed">
                 {
-                  synthesis.diagnostics.find((d) => d.ruleId === "synthesis.board-architecture-mismatch")
-                    ?.explanation
+                  synthesis.diagnostics.find(
+                    (d) => d.ruleId === "synthesis.board-architecture-mismatch",
+                  )?.explanation
                 }
               </div>
               <div className="text-[10px] text-amber-300 font-mono mt-0.5">
-                💡 Only Arduino Uno R3 is supported in v1. Out-of-range GPIOs (≥20) and network libraries cannot be synthesized to Uno shields without @s2c annotations.
+                💡 Only Arduino Uno R3 is supported in v1. Out-of-range GPIOs (≥20) and network
+                libraries cannot be synthesized to Uno shields without @s2c annotations.
               </div>
             </div>
           </div>
@@ -1028,8 +1071,12 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[10px] px-2 py-0.5 border rounded-[1px] font-mono" style={{ borderColor: "var(--border-strong)", color: "var(--text-muted)" }}>
-                  {synthesis.circuit.components.length} COMPONENTS · {synthesis.circuit.nets.length} NETS
+                <span
+                  className="text-[10px] px-2 py-0.5 border rounded-[1px] font-mono"
+                  style={{ borderColor: "var(--border-strong)", color: "var(--text-muted)" }}
+                >
+                  {synthesis.circuit.components.length} COMPONENTS · {synthesis.circuit.nets.length}{" "}
+                  NETS
                 </span>
                 {selectedSketchId !== "user_multi_peripheral" && (
                   <button
@@ -1247,6 +1294,32 @@ export default function App() {
         {activeMainTab === "erc" && (
           <div className="flex-1 min-h-[600px]">
             <ErcDiagnostics diagnostics={synthesis.diagnostics} />
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3b: IN-BROWSER SIMULATION ENGINE & ODE SOLVER (M17)                   */}
+        {/* ========================================================================= */}
+        {activeMainTab === "simulate" && (
+          <div className="flex-1 min-h-[650px] flex flex-col">
+            <SimulationTab
+              circuit={synthesis.circuit}
+              sketchName={currentSketchMeta?.name || "SynthesizedCircuit"}
+              theme={theme}
+            />
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3c: GENERAL BLOCK-DIAGRAM SIMULATION EDITOR & CANVAS (M18)            */}
+        {/* ========================================================================= */}
+        {activeMainTab === "blockdiagram" && (
+          <div className="flex-1 min-h-[700px] flex flex-col">
+            <BlockDiagramTab
+              circuit={synthesis.circuit}
+              sketchName={currentSketchMeta?.name || "SynthesizedCircuit"}
+              theme={theme}
+            />
           </div>
         )}
 

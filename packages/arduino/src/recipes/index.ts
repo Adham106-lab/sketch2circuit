@@ -34,7 +34,9 @@ export function applyRecipes(
 
   for (const p of peripherals) {
     // If the peripheral specifies a microcontroller pin, verify it exists on boardRef before synthesizing
-    const testPins = [p.pins.pin, p.pins.wiper, p.pins.trig, p.pins.echo].filter(Boolean) as string[];
+    const testPins = [p.pins.pin, p.pins.wiper, p.pins.trig, p.pins.echo].filter(
+      Boolean,
+    ) as string[];
     const hasInvalidPin = testPins.some((pinName) => !builder.hasPort(`${boardRef}.${pinName}`));
     if (hasInvalidPin) {
       continue;

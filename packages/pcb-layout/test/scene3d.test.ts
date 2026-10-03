@@ -4,10 +4,10 @@
  * Unit-testable without WebGL or browser APIs.
  */
 
-import fs from "fs";
-import path from "path";
 import { synthesizeSketch } from "@s2c/arduino";
 import { ARDUINO_UNO_R3_SHIELD_OUTLINE } from "@s2c/footprints";
+import fs from "fs";
+import path from "path";
 import { describe, expect, it } from "vitest";
 import { placeCircuit } from "../src/placer.js";
 import { routeCircuit } from "../src/router.js";

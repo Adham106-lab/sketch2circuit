@@ -307,7 +307,7 @@ export function inferPeripherals(
     // 6. LED (PWM dimmed): analogWrite on LED pin
     if (pinUse.ops.has("analogWrite")) {
       claimedPins.add(pinUse.pin);
-      const isLedHint = /led|light|fade|bright/i.test(hints);
+      const isLedHint = /led|light|fade|bright|pwm/i.test(hints);
       list.push({
         id: `LED_${pinUse.pin}`,
         kind: "led",
@@ -323,7 +323,7 @@ export function inferPeripherals(
     // 7. LED: OUTPUT + digitalWrite
     if (pinUse.modes.has("OUTPUT") || pinUse.ops.has("digitalWrite")) {
       claimedPins.add(pinUse.pin);
-      const isLedHint = /led|lamp|light/i.test(hints);
+      const isLedHint = /led|lamp|light|digital\s*output/i.test(hints);
       list.push({
         id: `LED_${pinUse.pin}`,
         kind: "led",

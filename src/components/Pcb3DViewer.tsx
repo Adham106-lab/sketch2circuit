@@ -13,12 +13,12 @@ import type { Circuit } from "@s2c/circuit-json";
 import { ARDUINO_UNO_R3_SHIELD_OUTLINE } from "@s2c/footprints";
 import type { PcbLayout } from "@s2c/pcb-json";
 import {
-  type PcbScene3D,
-  type ThreePcbHierarchy,
   buildPcbScene3D,
   buildThreePcbGroup,
+  type PcbScene3D,
   placeCircuit,
   routeCircuit,
+  type ThreePcbHierarchy,
 } from "@s2c/pcb-layout";
 import {
   Box,
@@ -310,9 +310,11 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
         if (Array.isArray(mesh.material)) {
-          for (const m of mesh.material) m.wireframe = wireframe;
-        } else if (mesh.material) {
-          mesh.material.wireframe = wireframe;
+          for (const m of mesh.material) {
+            if ("wireframe" in m) (m as THREE.MeshStandardMaterial).wireframe = wireframe;
+          }
+        } else if (mesh.material && "wireframe" in mesh.material) {
+          (mesh.material as THREE.MeshStandardMaterial).wireframe = wireframe;
         }
       }
     });
@@ -397,19 +399,17 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
         {/* View-Cube Presets Toolbar */}
         <div className="flex items-center gap-1 bg-black/40 p-0.5 rounded border border-white/10 text-[10px]">
           <span className="px-1 text-slate-400 font-bold">VIEW:</span>
-          {(["iso", "top", "bottom", "front", "back", "left", "right"] as ViewPreset[]).map(
-            (p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setCameraPreset(p)}
-                className="px-1.5 py-0.5 rounded hover:bg-white/20 transition uppercase font-mono font-bold"
-                title={`Set camera to ${p} view`}
-              >
-                {p}
-              </button>
-            ),
-          )}
+          {(["iso", "top", "bottom", "front", "back", "left", "right"] as ViewPreset[]).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setCameraPreset(p)}
+              className="px-1.5 py-0.5 rounded hover:bg-white/20 transition uppercase font-mono font-bold"
+              title={`Set camera to ${p} view`}
+            >
+              {p}
+            </button>
+          ))}
         </div>
 
         {/* Actions: Export JSON & GLB */}

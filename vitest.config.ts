@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["packages/**/test/**/*.test.ts", "apps/**/test/**/*.test.ts"],
+    include: ["packages/**/test/**/*.test.ts", "apps/**/test/**/*.test.ts", "test/**/*.test.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
@@ -26,6 +26,10 @@ export default defineConfig({
       "@s2c/cli": path.resolve(rootDir, "packages/cli/src"),
       "@s2c/pcb-json": path.resolve(rootDir, "packages/pcb-json/src"),
       "@s2c/footprints": path.resolve(rootDir, "packages/footprints/src"),
+      "@s2c/pcb-layout": path.resolve(rootDir, "packages/pcb-layout/src"),
+      "@s2c/export-ato": path.resolve(rootDir, "packages/export-ato/src"),
+      "@s2c/sim-engine": path.resolve(rootDir, "packages/sim-engine/src"),
+      "@s2c/block-diagram": path.resolve(rootDir, "packages/block-diagram/src"),
     },
   },
 });

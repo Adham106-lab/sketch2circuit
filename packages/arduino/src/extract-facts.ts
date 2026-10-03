@@ -86,6 +86,7 @@ export function extractFacts(source: string, tree?: Tree): SketchFacts {
     serialEnabled,
     wireEnabled,
     spiEnabled,
+    commentHints: pre.commentHints,
   };
 }
 
@@ -241,6 +242,59 @@ function handleCallExpressionNode(node: Node, state: WalkerState): void {
         args,
         range,
       });
+    } else if (fnName === "MW_pinMode" || fnName === "MW_digitalIO_open") {
+      state.calls.push({
+        name: "pinMode",
+        args,
+        range,
+      });
+    } else if (fnName === "MW_pinModeInput") {
+      state.calls.push({
+        name: "pinMode",
+        args: [args[0], "INPUT"],
+        range,
+      });
+    } else if (fnName === "MW_pinModeOutput") {
+      state.calls.push({
+        name: "pinMode",
+        args: [args[0], "OUTPUT"],
+        range,
+      });
+    } else if (fnName === "MW_digitalIO_write") {
+      state.calls.push({
+        name: "digitalWrite",
+        args,
+        range,
+      });
+    } else if (fnName === "MW_digitalIO_read") {
+      state.calls.push({
+        name: "digitalRead",
+        args,
+        range,
+      });
+    } else if (fnName === "MW_PWM_write" || fnName === "MW_analogWrite") {
+      state.calls.push({
+        name: "analogWrite",
+        args,
+        range,
+      });
+    } else if (fnName === "MW_analogRead" || fnName === "MW_analogInput_read") {
+      state.calls.push({
+        name: "analogRead",
+        args,
+        range,
+      });
+    } else if (fnName === "MW_PWM_open") {
+      state.calls.push({
+        name: "pinMode",
+        args: [args[0], "OUTPUT"],
+        range,
+      });
+      state.calls.push({
+        name: "analogWrite",
+        args: [args[0], args[2] ?? 0],
+        range,
+      });
     }
   }
 
@@ -342,14 +396,59 @@ function extractFallbackFacts(source: string, state: WalkerState): void {
       "noTone",
       "pulseIn",
       "attachInterrupt",
+      "MW_pinMode",
+      "MW_digitalIO_open",
+      "MW_pinModeInput",
+      "MW_pinModeOutput",
+      "MW_digitalIO_write",
+      "MW_digitalIO_read",
+      "MW_PWM_write",
+      "MW_analogWrite",
+      "MW_analogRead",
+      "MW_analogInput_read",
+      "MW_PWM_open",
     ];
     for (const name of callPatterns) {
       const regex = new RegExp(`${name}\\s*\\(([^)]*)\\)`, "g");
       for (const m of line.matchAll(regex)) {
         const rawArgs = m[1].split(",").map((s) => cleanArg(s.trim()));
+        let mappedName = name;
+        let mappedArgs = rawArgs;
+
+        if (name === "MW_pinMode" || name === "MW_digitalIO_open") {
+          mappedName = "pinMode";
+        } else if (name === "MW_pinModeInput") {
+          mappedName = "pinMode";
+          mappedArgs = [rawArgs[0], "INPUT"];
+        } else if (name === "MW_pinModeOutput") {
+          mappedName = "pinMode";
+          mappedArgs = [rawArgs[0], "OUTPUT"];
+        } else if (name === "MW_digitalIO_write") {
+          mappedName = "digitalWrite";
+        } else if (name === "MW_digitalIO_read") {
+          mappedName = "digitalRead";
+        } else if (name === "MW_PWM_write" || name === "MW_analogWrite") {
+          mappedName = "analogWrite";
+        } else if (name === "MW_analogRead" || name === "MW_analogInput_read") {
+          mappedName = "analogRead";
+        } else if (name === "MW_PWM_open") {
+          mappedName = "pinMode";
+          mappedArgs = [rawArgs[0], "OUTPUT"];
+          state.calls.push({
+            name: "analogWrite",
+            args: [rawArgs[0], rawArgs[2] ?? 0],
+            range: {
+              startLine: lineNumber,
+              startCol: m.index ?? 0,
+              endLine: lineNumber,
+              endCol: (m.index ?? 0) + m[0].length,
+            },
+          });
+        }
+
         state.calls.push({
-          name,
-          args: rawArgs,
+          name: mappedName,
+          args: mappedArgs,
           range: {
             startLine: lineNumber,
             startCol: m.index ?? 0,

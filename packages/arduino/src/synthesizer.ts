@@ -109,6 +109,10 @@ export function synthesizeSketch(
 
   for (const inc of facts.includes) {
     const clean = inc.toLowerCase().trim();
+    // MathWorks / Simulink generated wrapper headers (MW_*) or model header files
+    if (clean.startsWith("mw_") || clean.includes("simulink") || clean.endsWith("_mock.h")) {
+      continue;
+    }
     if (!RECOGNIZED_LIBRARIES.has(clean)) {
       const incMsg = `Unrecognized library '#include <${inc}>' is outside current synthesizer v1 scope.`;
       combinedUnresolved.push(incMsg);
@@ -137,10 +141,23 @@ export function synthesizeSketch(
       outOfRangePins.add(pinUse.pinNumber);
     }
   }
+  const PIN_FUNCS = new Set([
+    "pinmode",
+    "digitalwrite",
+    "digitalread",
+    "analogread",
+    "analogwrite",
+    "attach",
+    "mw_pinmodeoutput",
+    "mw_pinmodeinput",
+    "mw_digitalio_open",
+    "mw_digitalio_write",
+  ]);
   for (const call of facts.calls) {
-    for (const arg of call.args) {
-      if (typeof arg === "number" && (arg >= 20 || arg < 0)) {
-        outOfRangePins.add(arg);
+    if (PIN_FUNCS.has(call.name.toLowerCase())) {
+      const pinArg = call.args[0];
+      if (typeof pinArg === "number" && (pinArg >= 20 || pinArg < 0)) {
+        outOfRangePins.add(pinArg);
       }
     }
   }
@@ -215,16 +232,20 @@ export function synthesizeSketch(
       message: mismatchMsg,
       explanation: mismatchExp,
       target: { type: "circuit", id: "circuit" },
-      suggestion: "This sketch targets an ESP32 board which is outside sketch2circuit v1 scope (Arduino Uno R3 only). To use with Uno, target standard Uno pins (0-13, A0-A5) and peripherals.",
+      suggestion:
+        "This sketch targets an ESP32 board which is outside sketch2circuit v1 scope (Arduino Uno R3 only). To use with Uno, target standard Uno pins (0-13, A0-A5) and peripherals.",
     });
-    combinedUnresolved.unshift(`Board Architecture Mismatch: Detected ESP32 signatures (${espSignals.join(", ")}); current target is Arduino Uno R3.`);
+    combinedUnresolved.unshift(
+      `Board Architecture Mismatch: Detected ESP32 signatures (${espSignals.join(", ")}); current target is Arduino Uno R3.`,
+    );
   }
 
   // -------------------------------------------------------------------------
   // Check D: Zero Synthesized Components Notice
   // -------------------------------------------------------------------------
   if (sortedPeripherals.length === 0) {
-    const zeroMsg = "Zero peripheral components synthesized: Sketch does not contain recognized peripheral hardware signatures or valid Uno pin operations.";
+    const zeroMsg =
+      "Zero peripheral components synthesized: Sketch does not contain recognized peripheral hardware signatures or valid Uno pin operations.";
     if (!combinedUnresolved.includes(zeroMsg)) {
       combinedUnresolved.push(zeroMsg);
     }

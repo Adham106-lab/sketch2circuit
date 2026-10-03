@@ -5,24 +5,25 @@
  * footprint categorization, costing metrics, and multi-format export.
  */
 
-import React, { useState, useMemo } from "react";
-import type { Circuit, CircuitComponent } from "@s2c/circuit-json";
-import type { PcbLayout } from "@s2c/pcb-layout";
+import type { Circuit, Component } from "@s2c/circuit-json";
 import { getPartDefinition } from "@s2c/parts";
+import type { PcbLayout } from "@s2c/pcb-json";
 import {
-  FileSpreadsheet,
-  Download,
-  Search,
-  Filter,
-  Layers,
-  DollarSign,
-  Cpu,
   Boxes,
-  ExternalLink,
+  Check,
   CheckCircle2,
   Copy,
-  Check,
+  Cpu,
+  DollarSign,
+  Download,
+  ExternalLink,
+  FileSpreadsheet,
+  Filter,
+  Layers,
+  Search,
 } from "lucide-react";
+import type React from "react";
+import { useMemo, useState } from "react";
 
 export interface BomViewerTabProps {
   circuit: Circuit;
@@ -61,7 +62,12 @@ export interface EnrichedBomItem {
 
 export function classifyComponentCategory(kind: string): BomCategory {
   const k = kind.toLowerCase();
-  if (k.includes("mcu") || k.includes("atmega") || k.includes("microcontroller") || k.includes("arduino")) {
+  if (
+    k.includes("mcu") ||
+    k.includes("atmega") ||
+    k.includes("microcontroller") ||
+    k.includes("arduino")
+  ) {
     return "mcu";
   }
   if (k.includes("resistor") || k.includes("capacitor") || k.includes("inductor")) {
@@ -80,13 +86,31 @@ export function classifyComponentCategory(kind: string): BomCategory {
   ) {
     return "semiconductor";
   }
-  if (k.includes("sensor") || k.includes("ldr") || k.includes("photocell") || k.includes("thermistor") || k.includes("ultrasonic")) {
+  if (
+    k.includes("sensor") ||
+    k.includes("ldr") ||
+    k.includes("photocell") ||
+    k.includes("thermistor") ||
+    k.includes("ultrasonic")
+  ) {
     return "sensor";
   }
-  if (k.includes("motor") || k.includes("servo") || k.includes("relay") || k.includes("buzzer") || k.includes("switch") || k.includes("button")) {
+  if (
+    k.includes("motor") ||
+    k.includes("servo") ||
+    k.includes("relay") ||
+    k.includes("buzzer") ||
+    k.includes("switch") ||
+    k.includes("button")
+  ) {
     return "electromechanical";
   }
-  if (k.includes("header") || k.includes("jack") || k.includes("terminal") || k.includes("connector")) {
+  if (
+    k.includes("header") ||
+    k.includes("jack") ||
+    k.includes("terminal") ||
+    k.includes("connector")
+  ) {
     return "connector";
   }
   return "passive";
@@ -148,7 +172,7 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
     if (!circuit || !circuit.components || circuit.components.length === 0) return [];
 
     // Grouping key: kind + value + footprint + partNumber
-    const groups = new Map<string, CircuitComponent[]>();
+    const groups = new Map<string, Component[]>();
     for (const comp of circuit.components) {
       const val = comp.value ? String(comp.value) : "—";
       const fp = comp.footprint ?? placementMap.get(comp.id)?.footprintId ?? "DEFAULT";
@@ -168,13 +192,16 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
       const category = classifyComponentCategory(kind);
       const catDef = getPartDefinition(first.partNumber || kind);
 
-      let desc = catDef?.description;
-      if (!desc || desc === kind) {
-        if (kind === "resistor") desc = `${val} Carbon Film / Metal Film Resistor`;
-        else if (kind === "led") desc = `${val !== "—" ? val : "5mm"} Indicator LED`;
-        else if (kind === "capacitor") desc = `${val} Decoupling / Filter Capacitor`;
-        else desc = first.name || `${kind.toUpperCase()} Component`;
-      }
+      const desc =
+        catDef?.description && catDef.description !== kind
+          ? catDef.description
+          : kind === "resistor"
+            ? `${val} Carbon Film / Metal Film Resistor`
+            : kind === "led"
+              ? `${val !== "—" ? val : "5mm"} Indicator LED`
+              : kind === "capacitor"
+                ? `${val} Decoupling / Filter Capacitor`
+                : first.name || `${kind.toUpperCase()} Component`;
 
       const footprint =
         first.footprint ??
@@ -219,7 +246,8 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
         coordinates: coords,
         unitCostEstimate: unitCost,
         extendedCostEstimate: extCost,
-        supplierPartNumber: first.partNumber ?? catDef?.partNumber ?? `GENERIC-${kind.toUpperCase()}`,
+        supplierPartNumber:
+          first.partNumber ?? catDef?.partNumber ?? `GENERIC-${kind.toUpperCase()}`,
         datasheetUrl: catDef?.datasheetUrl,
         verified: catDef?.verified ?? first.verified ?? false,
       });
@@ -399,7 +427,10 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
             borderColor: "var(--border-app)",
           }}
         >
-          <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--text-muted)" }}>
+          <span
+            className="text-[10px] uppercase font-bold tracking-wider"
+            style={{ color: "var(--text-muted)" }}
+          >
             TOTAL PARTS
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -417,7 +448,10 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
             borderColor: "var(--border-app)",
           }}
         >
-          <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--text-muted)" }}>
+          <span
+            className="text-[10px] uppercase font-bold tracking-wider"
+            style={{ color: "var(--text-muted)" }}
+          >
             LINE ITEMS
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -435,7 +469,10 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
             borderColor: "var(--border-app)",
           }}
         >
-          <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--text-muted)" }}>
+          <span
+            className="text-[10px] uppercase font-bold tracking-wider"
+            style={{ color: "var(--text-muted)" }}
+          >
             THROUGH-HOLE
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -453,7 +490,10 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
             borderColor: "var(--border-app)",
           }}
         >
-          <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--text-muted)" }}>
+          <span
+            className="text-[10px] uppercase font-bold tracking-wider"
+            style={{ color: "var(--text-muted)" }}
+          >
             SURFACE-MOUNT
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -471,7 +511,10 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
             borderColor: "var(--border-app)",
           }}
         >
-          <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--text-muted)" }}>
+          <span
+            className="text-[10px] uppercase font-bold tracking-wider"
+            style={{ color: "var(--text-muted)" }}
+          >
             PLACED ON PCB
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -489,7 +532,10 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
             borderColor: "var(--border-app)",
           }}
         >
-          <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--text-muted)" }}>
+          <span
+            className="text-[10px] uppercase font-bold tracking-wider"
+            style={{ color: "var(--text-muted)" }}
+          >
             EST. TOTAL COST
           </span>
           <div className="flex items-baseline justify-between mt-1">
@@ -644,7 +690,11 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
             <tbody className="divide-y font-mono" style={{ borderColor: "var(--border-app)" }}>
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                  <td
+                    colSpan={10}
+                    className="py-8 text-center text-sm"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     NO BILL OF MATERIALS ITEMS MATCH CURRENT FILTER CRITERIA
                   </td>
                 </tr>
@@ -667,10 +717,9 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
                       <div className="flex items-center gap-1.5">
                         <span>{item.description}</span>
                         {item.verified && (
-                          <CheckCircle2
-                            className="w-3.5 h-3.5 text-emerald-400 shrink-0"
-                            title="Verified against hardware datasheet"
-                          />
+                          <span title="Verified against hardware datasheet">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          </span>
                         )}
                       </div>
                       <div className="text-[10px] opacity-60 flex items-center gap-2 mt-0.5">
@@ -705,7 +754,8 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
                         <div className="space-y-0.5">
                           {item.coordinates.slice(0, 3).map((c) => (
                             <div key={c.id}>
-                              <span className="font-bold text-amber-300">{c.id}</span>: ({c.x}, {c.y}) mm @ {c.rotation}°
+                              <span className="font-bold text-amber-300">{c.id}</span>: ({c.x},{" "}
+                              {c.y}) mm @ {c.rotation}°
                             </div>
                           ))}
                           {item.coordinates.length > 3 && (
@@ -716,8 +766,13 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
                         <span className="opacity-50">—</span>
                       )}
                     </td>
-                    <td className="py-2 px-3 text-right opacity-80">${item.unitCostEstimate.toFixed(2)}</td>
-                    <td className="py-2 px-3 text-right font-bold" style={{ color: "var(--text-main)" }}>
+                    <td className="py-2 px-3 text-right opacity-80">
+                      ${item.unitCostEstimate.toFixed(2)}
+                    </td>
+                    <td
+                      className="py-2 px-3 text-right font-bold"
+                      style={{ color: "var(--text-main)" }}
+                    >
                       ${item.extendedCostEstimate.toFixed(2)}
                     </td>
                   </tr>
@@ -737,7 +792,8 @@ export const BomViewerTab: React.FC<BomViewerTabProps> = ({
           }}
         >
           <span>
-            SHOWING {filteredItems.length} OF {bomItems.length} LINE ITEMS ({stats.totalComponents} TOTAL COMPONENTS)
+            SHOWING {filteredItems.length} OF {bomItems.length} LINE ITEMS ({stats.totalComponents}{" "}
+            TOTAL COMPONENTS)
           </span>
           <span className="font-bold" style={{ color: "var(--text-main)" }}>
             ESTIMATED BOM SUM: ${stats.totalCost} USD

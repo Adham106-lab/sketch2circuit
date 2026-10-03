@@ -29,9 +29,45 @@ export function preprocessSketch(source: string): PreprocessResult {
   const lines = source.split(/\r?\n/);
   const cleanedLines: string[] = [];
 
+  let inBlockComment = false;
+  let currentBlockComment = "";
+
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
     const originalLine = lines[lineIdx];
     const lineNumber = lineIdx + 1;
+
+    // Check multi-line block comments
+    if (inBlockComment) {
+      const endIdx = originalLine.indexOf("*/");
+      if (endIdx !== -1) {
+        currentBlockComment += " " + originalLine.slice(0, endIdx).trim();
+        commentHints.set(lineNumber, currentBlockComment.trim());
+        inBlockComment = false;
+        currentBlockComment = "";
+      } else {
+        currentBlockComment += " " + originalLine.trim();
+        commentHints.set(lineNumber, currentBlockComment.trim());
+      }
+      cleanedLines.push(originalLine);
+      continue;
+    }
+
+    const startIdx = originalLine.indexOf("/*");
+    if (startIdx !== -1) {
+      const endIdx = originalLine.indexOf("*/", startIdx + 2);
+      if (endIdx !== -1) {
+        // Single line block comment
+        const comment = originalLine.slice(startIdx + 2, endIdx).trim();
+        commentHints.set(lineNumber, comment);
+      } else {
+        // Multi-line block comment starting
+        inBlockComment = true;
+        currentBlockComment = originalLine.slice(startIdx + 2).trim();
+        commentHints.set(lineNumber, currentBlockComment);
+        cleanedLines.push(originalLine);
+        continue;
+      }
+    }
 
     // 1. Check for @s2c: annotations
     const s2cMatch = originalLine.match(/\/\/\s*@s2c:\s*(.+)$/);
@@ -42,7 +78,7 @@ export function preprocessSketch(source: string): PreprocessResult {
       }
     }
 
-    // 2. Check for general comments as hints
+    // 2. Check for general single-line comments as hints
     const commentMatch = originalLine.match(/\/\/\s*(?!@s2c:)(.+)$/);
     if (commentMatch) {
       commentHints.set(lineNumber, commentMatch[1].trim());

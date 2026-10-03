@@ -271,7 +271,7 @@ describe("M11 2-Layer Grid Router & DRC Engine", () => {
       },
     ];
 
-    const report: Record<string, any> = {};
+    const report: Record<string, unknown> = {};
 
     for (const item of allCircuits) {
       const syn = synthesizeSketch(item.code, { boardId: "ARDUINO_UNO_R3" });

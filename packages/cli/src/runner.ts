@@ -6,6 +6,7 @@
 import { buildCommand } from "./commands/build.js";
 import { checkCommand } from "./commands/check.js";
 import { explainCommand } from "./commands/explain.js";
+import { exportCommand } from "./commands/export.js";
 import { sketchCommand } from "./commands/sketch.js";
 
 export const CLI_VERSION = "0.1.0";
@@ -99,6 +100,28 @@ export async function runCli(args: string[]): Promise<CliResult> {
       return buildCommand(filePath, { out, format });
     }
 
+    case "export": {
+      let filePath = "";
+      let out: string | undefined;
+      let format: "ato" | "netlist" | "kicad" | "bom" | "wiring" | undefined = "ato";
+      let board = "uno";
+
+      for (let i = 0; i < subArgs.length; i++) {
+        const arg = subArgs[i];
+        if ((arg === "-o" || arg === "--out") && i + 1 < subArgs.length) {
+          out = subArgs[++i];
+        } else if (arg === "--format" && i + 1 < subArgs.length) {
+          format = subArgs[++i] as "ato" | "netlist" | "kicad" | "bom" | "wiring";
+        } else if (arg === "--board" && i + 1 < subArgs.length) {
+          board = subArgs[++i];
+        } else if (!arg.startsWith("-") && !filePath) {
+          filePath = arg;
+        }
+      }
+
+      return exportCommand(filePath, { out, format, board });
+    }
+
     default:
       return {
         code: 3,
@@ -114,6 +137,11 @@ USAGE:
   s2c <command> [options]
 
 COMMANDS:
+  export <sketch|circuit>   Export circuit to target format (ato, netlist, bom, wiring)
+    --format <fmt>          Output format: ato (default) | netlist | bom | wiring
+    -o, --out <file>        Write output to file (prints to stdout if omitted)
+    --board <mcu>           Target microcontroller (default: uno)
+
   sketch <sketch.ino>       Synthesize verified circuit from an Arduino sketch
     --board uno             Target microcontroller board (default: uno)
     --format <fmt>          Output format: json | svg | report | wiring | bom | netlist

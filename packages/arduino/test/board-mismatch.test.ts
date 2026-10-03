@@ -58,9 +58,7 @@ void loop() {
     expect(libMessages).toContain("Adafruit_SSD1306.h");
 
     // 4. Must detect pins outside Uno range (21, 22, 27)
-    const pinDiags = result.diagnostics.filter(
-      (d) => d.ruleId === "synthesis.pin-out-of-range",
-    );
+    const pinDiags = result.diagnostics.filter((d) => d.ruleId === "synthesis.pin-out-of-range");
     expect(pinDiags.length).toBeGreaterThanOrEqual(3);
     const pinMessages = pinDiags.map((d) => d.message).join(" ");
     expect(pinMessages).toContain("Pin 21");
@@ -99,9 +97,9 @@ void loop() {
 
     // Must NOT silently pass — must report unresolved items explaining why
     expect(result.unresolved.length).toBeGreaterThan(0);
-    expect(result.unresolved.some((u) => u.includes("Zero peripheral components synthesized"))).toBe(
-      true,
-    );
+    expect(
+      result.unresolved.some((u) => u.includes("Zero peripheral components synthesized")),
+    ).toBe(true);
     expect(
       result.diagnostics.some((d) => d.ruleId === "synthesis.board-architecture-mismatch"),
     ).toBe(true);

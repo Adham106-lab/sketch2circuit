@@ -9,5 +9,22 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@s2c/arduino": "workspace:*",
+    "@s2c/circuit-json": "workspace:*",
+    "@s2c/cli": "workspace:*",
+    "@s2c/core": "workspace:*",
+    "@s2c/export": "workspace:*",
+    "@s2c/export-ato": "workspace:*",
+    "@s2c/footprints": "workspace:*",
+    "@s2c/parts": "workspace:*",
+    "@s2c/pcb-json": "workspace:*",
+    "@s2c/pcb-layout": "workspace:*",
+    "@s2c/render-schematic": "workspace:*",
+    "@s2c/rules": "workspace:*",
+    "@s2c/sim-engine": "workspace:*",
+    "@s2c/block-diagram": "workspace:*",
+    "@s2c/units": "workspace:*"
   }
 }

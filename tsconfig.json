@@ -59,6 +59,15 @@
       ],
       "@s2c/pcb-layout": [
         "./packages/pcb-layout/src/index.ts"
+      ],
+      "@s2c/export-ato": [
+        "./packages/export-ato/src/index.ts"
+      ],
+      "@s2c/sim-engine": [
+        "./packages/sim-engine/src/index.ts"
+      ],
+      "@s2c/block-diagram": [
+        "./packages/block-diagram/src/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,

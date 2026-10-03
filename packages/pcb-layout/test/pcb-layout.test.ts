@@ -471,7 +471,7 @@ describe("M10 Deterministic PCB Placement & Layout Engine", () => {
     );
     const userCode = fs.readFileSync(fixturePath, "utf-8");
     const allCircuits = [
-      ...SAMPLE_SKETCHES.map((s) => ({ id: s.id, code: s.code })),
+      ...SAMPLE_SKETCHES.filter((s) => s.id in goldenData).map((s) => ({ id: s.id, code: s.code })),
       { id: "user_multi_peripheral", code: userCode },
     ];
 

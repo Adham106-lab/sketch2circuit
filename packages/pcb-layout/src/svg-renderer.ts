@@ -11,7 +11,7 @@
  */
 
 import type { Circuit } from "@s2c/circuit-json";
-import type { FootprintDef, PcbLayout, Point, Trace, Via } from "@s2c/pcb-json";
+import type { FootprintDef, PcbLayout, Placement, Point, Trace, Via } from "@s2c/pcb-json";
 import { distance, getBoundingBox, transformPoint, transformPolygon } from "./geometry.js";
 import { ARDUINO_UNO_R3_KEEPOUTS } from "./keepouts.js";
 import { calculateTerminalLocations, computeRatsnest } from "./ratsnest.js";
@@ -203,8 +203,10 @@ export function renderPcbSvg(
       else if (targetPadNum === "PWM") targetPadNum = "1";
       else if (targetPadNum === "VCC") targetPadNum = "2";
       else if (targetPadNum === "GND") targetPadNum = "3";
-      else if (targetPadNum === "+") targetPadNum = fp.pads.some((p) => p.number === "+") ? "+" : "1";
-      else if (targetPadNum === "-") targetPadNum = fp.pads.some((p) => p.number === "-") ? "-" : "2";
+      else if (targetPadNum === "+")
+        targetPadNum = fp.pads.some((p) => p.number === "+") ? "+" : "1";
+      else if (targetPadNum === "-")
+        targetPadNum = fp.pads.some((p) => p.number === "-") ? "-" : "2";
     }
 
     const matchingPads = fp.pads.filter((p) => p.number === targetPadNum);
@@ -356,7 +358,12 @@ export function renderPcbSvg(
   };
 
   // Layer 6: Bottom Copper (Blue)
-  if (showBottomCopper && (options.activeLayer === undefined || options.activeLayer === "all" || options.activeLayer === "bottom")) {
+  if (
+    showBottomCopper &&
+    (options.activeLayer === undefined ||
+      options.activeLayer === "all" ||
+      options.activeLayer === "bottom")
+  ) {
     svgParts.push(`<g id="layer-copper-bottom" class="layer-copper-bottom">`);
     for (const trace of layout.traces) {
       if (trace.layer !== "bottom") continue;
@@ -379,7 +386,12 @@ export function renderPcbSvg(
   }
 
   // Layer 7: Top Copper (Red)
-  if (showTopCopper && (options.activeLayer === undefined || options.activeLayer === "all" || options.activeLayer === "top")) {
+  if (
+    showTopCopper &&
+    (options.activeLayer === undefined ||
+      options.activeLayer === "all" ||
+      options.activeLayer === "top")
+  ) {
     svgParts.push(`<g id="layer-copper-top" class="layer-copper-top">`);
     for (const trace of layout.traces) {
       if (trace.layer !== "top") continue;

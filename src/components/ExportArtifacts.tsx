@@ -19,6 +19,7 @@ import {
   generateWiringTable,
   type WiringRow,
 } from "@s2c/export";
+import { circuitToAto } from "@s2c/export-ato";
 import { getPartDefinition } from "@s2c/parts";
 import {
   Check,
@@ -136,7 +137,7 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
   sourceCode = "",
 }) => {
   const [activeExportTab, setActiveExportTab] = useState<
-    "bom" | "wiring" | "kicad" | "report" | "circuit_json"
+    "bom" | "wiring" | "kicad" | "report" | "circuit_json" | "ato"
   >("bom");
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -284,6 +285,13 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
     return JSON.stringify(circuit, null, 2);
   }, [circuit]);
 
+  // 6. Atopile (.ato) Declarative Code
+  const atoCode = useMemo(() => {
+    const cleanModName =
+      sketchName.replace(/[^a-zA-Z0-9_]/g, "_").replace(/^[^a-zA-Z_]+/, "") || "SynthesizedCircuit";
+    return circuitToAto(circuit, { moduleName: cleanModName });
+  }, [circuit, sketchName]);
+
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
@@ -394,6 +402,20 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>CIRCUIT JSON IR</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveExportTab("ato")}
+            className="px-3 py-1.5 border rounded-none flex items-center gap-1.5 transition font-bold uppercase text-[11px]"
+            style={{
+              backgroundColor: activeExportTab === "ato" ? "var(--bg-panel)" : "transparent",
+              borderColor: activeExportTab === "ato" ? "var(--border-strong)" : "var(--border-app)",
+              color: activeExportTab === "ato" ? "var(--text-main)" : "var(--text-muted)",
+            }}
+          >
+            <FileCode className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="text-cyan-400 font-bold">ATOPILE (.ATO)</span>
           </button>
         </div>
 
@@ -557,6 +579,33 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
               >
                 <Download className="w-3 h-3" />
                 <span>DOWNLOAD JSON</span>
+              </button>
+            </div>
+          )}
+
+          {activeExportTab === "ato" && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => copyToClipboard(atoCode, "ato_clip")}
+                className="eng-btn"
+                title="Copy generated Atopile source code to clipboard"
+              >
+                {copiedKey === "ato_clip" ? (
+                  <Check className="w-3 h-3" style={{ color: "var(--accent-valid)" }} />
+                ) : (
+                  <ClipboardCopy className="w-3 h-3" />
+                )}
+                <span>COPY .ATO</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadFile(atoCode, `${sketchName}.ato`, "text/plain")}
+                className="eng-btn primary"
+                title="Download .ato file to use in atopile project"
+              >
+                <Download className="w-3 h-3" />
+                <span>DOWNLOAD .ATO</span>
               </button>
             </div>
           )}
@@ -1233,6 +1282,54 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
               }}
             >
               {circuitJsonFormatted}
+            </pre>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB: ATOPILE (.ATO) HARDWARE DESCRIPTION LANGUAGE (M15)                   */}
+        {/* ========================================================================= */}
+        {activeExportTab === "ato" && (
+          <div className="h-full flex flex-col space-y-2">
+            <div
+              className="p-3 border rounded-none text-[11px] space-y-1.5"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+                color: "var(--text-muted)",
+              }}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-bold text-cyan-400 uppercase tracking-wide">
+                  ATOPILE (.ATO) COMPILER-READY HARDWARE MODULE (M15)
+                </span>
+                <span className="px-1.5 py-0.2 border rounded-none text-[10px] bg-cyan-950/40 border-cyan-500/50 text-cyan-300 font-mono">
+                  atopile DSL v0.3+ Compliant
+                </span>
+              </div>
+              <p className="leading-relaxed text-[11px]" style={{ color: "var(--text-main)" }}>
+                Exported declarative atopile module using verified stdlib parts (Resistor,
+                Capacitor, LED, Diode) and JLCPCB/LCSC part numbers. To use in an atopile project:
+                save as{" "}
+                <code className="px-1 py-0.5 border rounded-none bg-black/40 text-cyan-300 font-mono">
+                  elec/src/{sketchName.toLowerCase().replace(/[^a-z0-9_]/g, "_")}.ato
+                </code>{" "}
+                and import into your atopile top-level module, or run{" "}
+                <code className="px-1 py-0.5 border rounded-none bg-black/40 text-cyan-300 font-mono">
+                  s2c export --format ato sketch.ino -o circuit.ato
+                </code>
+                .
+              </p>
+            </div>
+            <pre
+              className="flex-1 p-4 border rounded-none font-mono text-[11px] overflow-auto whitespace-pre leading-relaxed"
+              style={{
+                backgroundColor: "var(--bg-sunken)",
+                borderColor: "var(--border-app)",
+                color: "#67e8f9",
+              }}
+            >
+              {atoCode}
             </pre>
           </div>
         )}

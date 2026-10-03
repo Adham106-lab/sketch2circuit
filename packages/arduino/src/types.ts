@@ -76,6 +76,7 @@ export interface SketchFacts {
   serialEnabled: boolean;
   wireEnabled: boolean;
   spiEnabled: boolean;
+  commentHints: Map<number, string>;
 }
 
 export type PeripheralKind =

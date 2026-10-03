@@ -675,6 +675,21 @@ standalone ATmega328P output (Level B), `.ato` export, SPICE-lite checks, revers
 
 ---
 
+## 19. Numerical Simulation & Block-Diagram Engine
+
+`@s2c/sim-engine` and `@s2c/block-diagram` provide deterministic continuous-time numerical simulation inside the browser:
+- **Classical Fixed-Step Runge-Kutta 4th Order (RK4)**: Ideal for smooth, continuous differential equations (e.g. harmonic oscillators, RC charge dynamics with steady sources).
+- **Adaptive Runge-Kutta-Fehlberg (RKF45)**: Embeds 4th and 5th order approximations for dynamic step-size selection based on local truncation error estimates (`relTol`, `absTol`).
+
+### Numerical Integration with Discontinuous Step Sources
+Evaluating discontinuous Heaviside step functions (`Step` block) with fixed-step RK4 produces an $O(dt)$ error at interior transition times ($t = t_{\text{step}}$). In RK4, stage $k_4 = f(t_n + dt, y_n + dt \cdot k_3)$ samples across the discontinuity boundary during the step immediately preceding the transition ($[t_{\text{step}} - dt, t_{\text{step}}]$), introducing an artificial initial offset of $\frac{dt}{6} \cdot \Delta u$.
+
+**Recommended Practice**:
+- When simulating diagrams containing `Step` blocks or discrete switching events, **RKF45 (adaptive)** is the default recommended solver. RKF45 detects local truncation error at the discontinuity, refines step size near $t = t_{\text{step}}$, and recovers full accuracy ($< 10^{-6}$).
+- If fixed-step RK4 is chosen, step times should either be aligned with $t = 0.0$ or grid multiples with sufficiently fine $dt$.
+
+---
+
 ## Appendix A — Worked example
 
 Sketch:

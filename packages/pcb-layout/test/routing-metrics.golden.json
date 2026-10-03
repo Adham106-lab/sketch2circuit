@@ -169,5 +169,19 @@
       "DRC_CLEARANCE_TRACE_PAD": 14,
       "DRC_CLEARANCE_VIA_TRACE": 1
     }
+  },
+  "esp32_board_mismatch": {
+    "name": "13. ESP32 Sketch (Board Mismatch Diagnostic)",
+    "totalConnections": 5,
+    "routedConnections": 3,
+    "unroutedConnections": 2,
+    "completionRatePercent": 60,
+    "totalTraces": 6,
+    "totalVias": 3,
+    "wirelengthMm": 73.66,
+    "drcErrorCount": 1,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 1
+    }
   }
 }

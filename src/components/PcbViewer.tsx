@@ -245,14 +245,16 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
             onClick={() => setShowDrcDrawer(!showDrcDrawer)}
             className="px-2 py-0.5 border rounded-[2px] font-bold text-[10px] tracking-wide flex items-center gap-1.5 transition hover:brightness-110 cursor-pointer"
             style={{
-              backgroundColor: stats.unroutedConnections > 0 ? "rgba(234, 88, 12, 0.2)" : "rgba(34, 197, 94, 0.2)",
+              backgroundColor:
+                stats.unroutedConnections > 0 ? "rgba(234, 88, 12, 0.2)" : "rgba(34, 197, 94, 0.2)",
               borderColor: stats.unroutedConnections > 0 ? "#ea580c" : "#22c55e",
               color: stats.unroutedConnections > 0 ? "#fdba74" : "#86efac",
             }}
             title="Click to view detailed routing and DRC violation breakdown"
           >
             <span>
-              {stats.routedConnections}/{stats.totalConnections} routed ({stats.completionRatePercent}%) · {stats.drcErrorCount} DRC issues
+              {stats.routedConnections}/{stats.totalConnections} routed (
+              {stats.completionRatePercent}%) · {stats.drcErrorCount} DRC issues
             </span>
             <Info className="w-3 h-3 opacity-75" />
           </button>
@@ -467,7 +469,10 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
 
         {/* Net Highlight Selector */}
         <div className="flex items-center gap-1.5">
-          <label htmlFor="net-highlight-select" className="text-neutral-400 font-bold uppercase text-[9px]">
+          <label
+            htmlFor="net-highlight-select"
+            className="text-neutral-400 font-bold uppercase text-[9px]"
+          >
             NET HIGHLIGHT:
           </label>
           <select
@@ -497,8 +502,9 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
       </div>
 
       {/* Main Canvas Viewport */}
-      <div
+      <section
         ref={containerRef}
+        aria-label="PCB Canvas Viewport"
         className="flex-1 relative overflow-hidden select-none bg-black flex items-center justify-center cursor-grab active:cursor-grabbing min-h-[500px]"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -510,7 +516,6 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
           style={{
             transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
           }}
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: Trusted SVG generated from internal circuit IR
           dangerouslySetInnerHTML={{ __html: renderResult.svg }}
         />
 
@@ -551,9 +556,12 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
 
             <div className="space-y-2.5">
               <div className="bg-neutral-950 p-2 rounded-[2px] border border-neutral-800 space-y-1">
-                <div className="text-neutral-400 text-[10px] uppercase font-bold">COMPLETION STATUS:</div>
+                <div className="text-neutral-400 text-[10px] uppercase font-bold">
+                  COMPLETION STATUS:
+                </div>
                 <div className="text-sm font-bold text-emerald-400">
-                  {stats.routedConnections} of {stats.totalConnections} Connections Routed ({stats.completionRatePercent}%)
+                  {stats.routedConnections} of {stats.totalConnections} Connections Routed (
+                  {stats.completionRatePercent}%)
                 </div>
                 <div className="text-[10px] text-orange-400">
                   {stats.unroutedConnections} Connections Unrouted (Visible as dashed ratsnest)
@@ -561,7 +569,9 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
               </div>
 
               <div>
-                <div className="text-neutral-400 text-[10px] uppercase font-bold mb-1">DRC ERROR BREAKDOWN ({stats.drcErrorCount}):</div>
+                <div className="text-neutral-400 text-[10px] uppercase font-bold mb-1">
+                  DRC ERROR BREAKDOWN ({stats.drcErrorCount}):
+                </div>
                 <div className="space-y-1">
                   {Object.entries(stats.drcBreakdown).map(([code, count]) => (
                     <div
@@ -569,7 +579,9 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
                       className="flex items-center justify-between px-2 py-1 bg-red-950/40 border border-red-900/60 rounded-[2px] text-[10px]"
                     >
                       <span className="text-red-300 font-bold">{code}</span>
-                      <span className="text-red-200 bg-red-900/80 px-1.5 py-0.2 rounded-[1px]">{count}</span>
+                      <span className="text-red-200 bg-red-900/80 px-1.5 py-0.2 rounded-[1px]">
+                        {count}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -578,13 +590,15 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
               <div className="border-t border-neutral-800 pt-2 text-[10px] text-neutral-400 leading-relaxed">
                 <p className="font-bold text-neutral-300 mb-1">GAP-03 Tracked Limitations:</p>
                 <p>
-                  14 Trace-to-Pad clearance issues near dense headers. Red diamond markers indicate exact coordinates. Multi-pitch routing and escape doglegs are scheduled in follow-up pass.
+                  14 Trace-to-Pad clearance issues near dense headers. Red diamond markers indicate
+                  exact coordinates. Multi-pitch routing and escape doglegs are scheduled in
+                  follow-up pass.
                 </p>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

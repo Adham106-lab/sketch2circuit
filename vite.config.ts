@@ -22,6 +22,10 @@ export default defineConfig(() => {
         "@s2c/pcb-json": path.resolve(rootDir, "packages/pcb-json/src/index.ts"),
         "@s2c/footprints": path.resolve(rootDir, "packages/footprints/src/index.ts"),
         "@s2c/pcb-layout": path.resolve(rootDir, "packages/pcb-layout/src/index.ts"),
+        "@s2c/export-ato": path.resolve(rootDir, "packages/export-ato/src/index.ts"),
+        "@s2c/cli": path.resolve(rootDir, "packages/cli/src/index.ts"),
+        "@s2c/sim-engine": path.resolve(rootDir, "packages/sim-engine/src/index.ts"),
+        "@s2c/block-diagram": path.resolve(rootDir, "packages/block-diagram/src/index.ts"),
       },
     },
     server: {
