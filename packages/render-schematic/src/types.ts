@@ -69,3 +69,29 @@ export interface PlacedNet {
   isPower: boolean;
   label?: string;
 }
+
+export interface ElementBoundingBox {
+  id: string;
+  type: "component-body" | "component-text" | "net-label" | "ground-glyph" | "power-glyph";
+  componentId?: string;
+  portId?: string;
+  netId?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface SchematicCollision {
+  elementA: ElementBoundingBox;
+  elementB: ElementBoundingBox;
+  overlapBox: { x: number; y: number; width: number; height: number };
+}
+
+export interface SchematicCollisionReport {
+  valid: boolean;
+  collisionCount: number;
+  collisions: SchematicCollision[];
+  boundingBoxes: ElementBoundingBox[];
+}
+

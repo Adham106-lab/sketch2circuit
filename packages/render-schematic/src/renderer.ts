@@ -71,14 +71,31 @@ function resolveDisplayNetName(netId: string, circuit: Circuit): string {
         (n: Net) => n.id !== netId && n.portIds.some((p: string) => p.startsWith(`${compId}.`)),
       );
       for (const on of otherNetsOfComp) {
+        const onUpper = on.id.toUpperCase();
+        if (
+          on.kind === "ground" ||
+          on.kind === "power" ||
+          onUpper === "GND" ||
+          onUpper === "5V" ||
+          onUpper === "3V3" ||
+          onUpper === "VCC" ||
+          onUpper === "VIN"
+        ) {
+          continue;
+        }
+
         const mcuPort = on.portIds.find((p: string) => {
           const cid = p.split(".")[0];
           const c = circuit.components.find((comp: Component) => comp.id === cid);
           return c && (c.kind === "mcu" || c.kind === "ic");
         });
         if (mcuPort) {
-          relatedMcuPinName = mcuPort.split(".")[1] ?? "";
-          break;
+          const pName = mcuPort.split(".")[1] ?? "";
+          const pUpper = pName.toUpperCase();
+          if (pUpper !== "GND" && pUpper !== "5V" && pUpper !== "3V3" && pUpper !== "VIN") {
+            relatedMcuPinName = pName;
+            break;
+          }
         }
       }
       if (relatedMcuPinName) break;
@@ -154,7 +171,7 @@ function resolveDisplayNetName(netId: string, circuit: Circuit): string {
       c.id.toUpperCase().startsWith("BTN"),
   );
   if (hasButton) {
-    if (pinUpper) return `BUTTON_${pinUpper}`;
+    if (pinUpper && pinUpper !== "GND" && pinUpper !== "5V") return `BUTTON_${pinUpper}`;
     return "BUTTON_1";
   }
 
@@ -165,7 +182,7 @@ function resolveDisplayNetName(netId: string, circuit: Circuit): string {
       c.id.toUpperCase().startsWith("D"),
   );
   if (hasLed) {
-    if (pinUpper) return `LED_${pinUpper}`;
+    if (pinUpper && pinUpper !== "GND" && pinUpper !== "5V") return `LED_${pinUpper}`;
     const led = otherComps.find((c) => c.kind === "led");
     return led ? `${led.id}_ANODE` : "LED_1";
   }

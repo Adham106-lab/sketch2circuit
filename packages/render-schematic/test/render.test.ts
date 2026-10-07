@@ -1,6 +1,11 @@
+import fs from "fs";
+import path from "path";
+import { synthesizeSketch } from "@s2c/arduino";
 import { createCircuit } from "@s2c/core";
 import { describe, expect, it } from "vitest";
 import {
+  checkSchematicCollisions,
+  computeElementBoundingBoxes,
   computeSchematicLayout,
   RENDER_SCHEMATIC_VERSION,
   renderResistor,
@@ -131,5 +136,52 @@ describe("@s2c/render-schematic package (M3)", () => {
 
     expect(experimentalNets.length).toBeGreaterThan(0);
     expect(experimentalNets[0].pathData).toContain("M ");
+  });
+
+  // (d) Zero-collision invariant: automated post-layout bounding-box overlap verification
+  it("(d) asserts zero bounding-box overlaps on the multi-peripheral circuit (user_multi_peripheral.ino)", () => {
+    const fixturePath = path.resolve(__dirname, "../../../fixtures/sketches/user_multi_peripheral.ino");
+    expect(fs.existsSync(fixturePath)).toBe(true);
+
+    const sketchCode = fs.readFileSync(fixturePath, "utf-8");
+    const { circuit } = synthesizeSketch(sketchCode, { boardId: "ARDUINO_UNO_R3" });
+
+    const report = checkSchematicCollisions(circuit);
+    if (!report.valid) {
+      console.error(
+        "Collisions detected in user_multi_peripheral:",
+        report.collisions.map(
+          (c) => `${c.elementA.id} (${c.elementA.type}) vs ${c.elementB.id} (${c.elementB.type})`,
+        ),
+      );
+    }
+    expect(report.valid).toBe(true);
+    expect(report.collisionCount).toBe(0);
+    expect(report.collisions).toHaveLength(0);
+
+    // Verify SVG renders properly
+    const svgResult = renderSchematicSvg(circuit);
+    expect(svgResult.svg).toContain("<svg");
+    expect(svgResult.svg).toContain("TowerPro SG90 Micro Servo 9g");
+    expect(svgResult.svg).toContain("Passive Piezo Buzzer");
+  });
+
+  it("(e) asserts zero bounding-box overlaps on every sketch in the fixture corpus", () => {
+    const fixturesDir = path.resolve(__dirname, "../../../fixtures/sketches");
+    const files = fs.readdirSync(fixturesDir).filter((f) => f.endsWith(".ino"));
+    expect(files.length).toBeGreaterThanOrEqual(2);
+
+    for (const file of files) {
+      const sketchCode = fs.readFileSync(path.join(fixturesDir, file), "utf-8");
+      const { circuit } = synthesizeSketch(sketchCode, { boardId: "ARDUINO_UNO_R3" });
+      const report = checkSchematicCollisions(circuit);
+      expect(
+        report.valid,
+        `Expected 0 collisions in ${file}, found ${report.collisionCount}: ${report.collisions
+          .map((c) => `${c.elementA.id} vs ${c.elementB.id}`)
+          .join(", ")}`,
+      ).toBe(true);
+      expect(report.collisionCount).toBe(0);
+    }
   });
 });

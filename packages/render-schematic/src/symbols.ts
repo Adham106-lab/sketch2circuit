@@ -312,6 +312,20 @@ export function renderMcuOrModule(
   // Header band height
   const headerHeight = 32;
 
+  const maxTitleWidth = width - 16;
+  const estimatedTitleWidth = title.length * 7.5;
+  const titleFontSize =
+    estimatedTitleWidth > maxTitleWidth
+      ? Math.max(8, Math.min(12, Math.floor(((maxTitleWidth / Math.max(1, title.length)) * 1.35) * 10) / 10))
+      : 12;
+
+  const maxPartWidth = width - 16;
+  const estimatedPartWidth = partNum.length * 6.5;
+  const partFontSize =
+    estimatedPartWidth > maxPartWidth
+      ? Math.max(7, Math.min(9, Math.floor(((maxPartWidth / Math.max(1, partNum.length)) * 1.35) * 10) / 10))
+      : 9;
+
   return `
     <g id="comp-${component.id}" class="component component-mcu" data-component-id="${component.id}">
       <!-- Outer chip body -->
@@ -321,8 +335,8 @@ export function renderMcuOrModule(
       <path d="M ${x} ${y + headerHeight} L ${x + width} ${y + headerHeight}" stroke="${colors.stroke}" stroke-width="1.5" />
       
       <!-- IC Title and Part Number -->
-      <text x="${x + width / 2}" y="${y + 18}" fill="${colors.text}" font-size="12" font-family="sans-serif" font-weight="700" text-anchor="middle">${title}</text>
-      <text x="${x + width / 2}" y="${y + 28}" fill="${colors.accent}" font-size="9" font-family="monospace" text-anchor="middle">${partNum}</text>
+      <text x="${x + width / 2}" y="${y + 18}" fill="${colors.text}" font-size="${titleFontSize}" font-family="sans-serif" font-weight="700" text-anchor="middle" ${estimatedTitleWidth > maxTitleWidth ? `textLength="${maxTitleWidth}" lengthAdjust="spacingAndGlyphs"` : ""}>${title}</text>
+      <text x="${x + width / 2}" y="${y + 28}" fill="${colors.accent}" font-size="${partFontSize}" font-family="monospace" text-anchor="middle" ${estimatedPartWidth > maxPartWidth ? `textLength="${maxPartWidth}" lengthAdjust="spacingAndGlyphs"` : ""}>${partNum}</text>
       
       <!-- Pin stubs and labels -->
       ${pinElements.join("\n")}
@@ -335,19 +349,19 @@ export function renderMcuOrModule(
  */
 export function renderGroundGlyph(pos: PinPosition, colors: SymbolColors): string {
   const { x, y } = pos.worldPos;
-  // Stub downwards 14px then draw 3 horizontal lines
-  const stubEndY = y + 14;
+  // Compact stub downwards 8px then draw 3 horizontal lines
+  const stubEndY = y + 8;
   const path = [
     `M ${x} ${y} L ${x} ${stubEndY}`,
-    `M ${x - 12} ${stubEndY} L ${x + 12} ${stubEndY}`,
-    `M ${x - 7} ${stubEndY + 4} L ${x + 7} ${stubEndY + 4}`,
-    `M ${x - 2} ${stubEndY + 8} L ${x + 2} ${stubEndY + 8}`,
+    `M ${x - 9} ${stubEndY} L ${x + 9} ${stubEndY}`,
+    `M ${x - 5} ${stubEndY + 3} L ${x + 5} ${stubEndY + 3}`,
+    `M ${x - 2} ${stubEndY + 6} L ${x + 2} ${stubEndY + 6}`,
   ].join(" ");
 
   return `
     <g class="symbol-ground" data-port="${pos.portId}">
-      <path d="${path}" fill="none" stroke="${colors.ground}" stroke-width="2" stroke-linecap="round" />
-      <text x="${x}" y="${stubEndY + 20}" fill="${colors.ground}" font-size="10" font-family="monospace" font-weight="600" text-anchor="middle">GND</text>
+      <path d="${path}" fill="none" stroke="${colors.ground}" stroke-width="1.8" stroke-linecap="round" />
+      <text x="${x}" y="${stubEndY + 16}" fill="${colors.ground}" font-size="8.5" font-family="monospace" font-weight="600" text-anchor="middle">GND</text>
     </g>
   `;
 }
@@ -357,19 +371,37 @@ export function renderGroundGlyph(pos: PinPosition, colors: SymbolColors): strin
  */
 export function renderPowerGlyph(pos: PinPosition, label: string, colors: SymbolColors): string {
   const { x, y } = pos.worldPos;
-  const stubEndY = y - 14;
+  const stubEndY = y - 8;
   const path = [
     `M ${x} ${y} L ${x} ${stubEndY}`,
-    `M ${x - 10} ${stubEndY} L ${x + 10} ${stubEndY}`,
-    `M ${x - 6} ${stubEndY} L ${x} ${stubEndY - 7} L ${x + 6} ${stubEndY}`,
+    `M ${x - 7} ${stubEndY} L ${x + 7} ${stubEndY}`,
+    `M ${x - 4} ${stubEndY} L ${x} ${stubEndY - 5} L ${x + 4} ${stubEndY}`,
   ].join(" ");
 
   return `
     <g class="symbol-power" data-port="${pos.portId}">
-      <path d="${path}" fill="${colors.power}" stroke="${colors.power}" stroke-width="1.8" stroke-linejoin="round" />
-      <text x="${x}" y="${stubEndY - 11}" fill="${colors.power}" font-size="10" font-family="monospace" font-weight="700" text-anchor="middle">${escapeXml(label)}</text>
+      <path d="${path}" fill="${colors.power}" stroke="${colors.power}" stroke-width="1.5" stroke-linejoin="round" />
+      <text x="${x}" y="${stubEndY - 7}" fill="${colors.power}" font-size="8.5" font-family="monospace" font-weight="700" text-anchor="middle">${escapeXml(label)}</text>
     </g>
   `;
+}
+
+/**
+ * Computes exact dynamic badge dimensions based on label text length.
+ */
+export function computeNetLabelBadgeDimensions(label: string): {
+  badgeWidth: number;
+  badgeHeight: number;
+  textWidth: number;
+  tipDepth: number;
+} {
+  const charWidth = 6.8;
+  const paddingX = 7;
+  const tipDepth = 5;
+  const textWidth = Math.max(30, label.length * charWidth);
+  const badgeWidth = Math.ceil(textWidth + paddingX * 2 + tipDepth);
+  const badgeHeight = 16;
+  return { badgeWidth, badgeHeight, textWidth, tipDepth };
 }
 
 /**
@@ -382,12 +414,7 @@ export function renderNetLabelBadge(
   label: string,
   colors: SymbolColors,
 ): string {
-  const charWidth = 6.5;
-  const paddingX = 8;
-  const textWidth = Math.max(34, label.length * charWidth);
-  const badgeWidth = textWidth + paddingX * 2;
-  const badgeHeight = 16;
-  const tipDepth = 5;
+  const { badgeWidth, badgeHeight, textWidth, tipDepth } = computeNetLabelBadgeDimensions(label);
 
   let path = "";
   let textX = 0;
@@ -402,7 +429,7 @@ export function renderNetLabelBadge(
       `L ${x + tipDepth} ${y + badgeHeight / 2}`,
       "Z",
     ].join(" ");
-    textX = x + tipDepth + textWidth / 2 + 3;
+    textX = x + tipDepth + (badgeWidth - tipDepth) / 2;
   } else {
     // Points toward the pin on right, extending to left
     path = [
@@ -413,7 +440,7 @@ export function renderNetLabelBadge(
       `L ${x - tipDepth} ${y + badgeHeight / 2}`,
       "Z",
     ].join(" ");
-    textX = x - tipDepth - textWidth / 2 - 3;
+    textX = x - tipDepth - (badgeWidth - tipDepth) / 2;
   }
 
   return `
