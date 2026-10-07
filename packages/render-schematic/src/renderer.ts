@@ -4,7 +4,7 @@
  * Net-Label-Only architecture per Doc §10.
  */
 
-import type { Circuit, Port } from "@s2c/circuit-json";
+import type { Circuit, Component, Net, Port } from "@s2c/circuit-json";
 import { computeSchematicLayout } from "./layout.js";
 import {
   escapeXml,
@@ -22,6 +22,160 @@ import {
   THEME_COLORS,
 } from "./symbols.js";
 import type { PlacedComponent, RenderResult, SchematicRenderOptions } from "./types.js";
+
+/**
+ * Resolves a human-readable engineering net name for display.
+ * Avoids dominating the schematic with anonymous N$1 / N$2 identifiers while
+ * preserving internal net IDs under the hood.
+ */
+function resolveDisplayNetName(netId: string, circuit: Circuit): string {
+  const netUpper = netId.toUpperCase();
+  if (
+    netUpper === "GND" ||
+    netUpper === "5V" ||
+    netUpper === "3V3" ||
+    netUpper === "VCC" ||
+    netUpper === "VIN" ||
+    netUpper === "RESET" ||
+    netUpper === "SDA" ||
+    netUpper === "SCL"
+  ) {
+    return netId;
+  }
+
+  // If already an explicitly assigned named net, preserve it
+  if (!netId.startsWith("N$") && !netId.startsWith("N_")) {
+    return netId;
+  }
+
+  const netObj = circuit.nets.find((n: Net) => n.id === netId);
+  if (!netObj?.portIds || netObj.portIds.length === 0) {
+    return netId;
+  }
+
+  // Find MCU port in this net if any
+  const mcuPortId = netObj.portIds.find((pid: string) => {
+    const compId = pid.split(".")[0];
+    const comp = circuit.components.find((c: Component) => c.id === compId);
+    return comp && (comp.kind === "mcu" || comp.kind === "ic");
+  });
+
+  // Also check if any component in this net connects via a resistor/passive to an MCU net
+  let relatedMcuPinName = "";
+  if (mcuPortId) {
+    relatedMcuPinName = mcuPortId.split(".")[1] ?? "";
+  } else {
+    for (const pid of netObj.portIds) {
+      const compId = pid.split(".")[0];
+      const otherNetsOfComp = circuit.nets.filter(
+        (n: Net) => n.id !== netId && n.portIds.some((p: string) => p.startsWith(`${compId}.`)),
+      );
+      for (const on of otherNetsOfComp) {
+        const mcuPort = on.portIds.find((p: string) => {
+          const cid = p.split(".")[0];
+          const c = circuit.components.find((comp: Component) => comp.id === cid);
+          return c && (c.kind === "mcu" || c.kind === "ic");
+        });
+        if (mcuPort) {
+          relatedMcuPinName = mcuPort.split(".")[1] ?? "";
+          break;
+        }
+      }
+      if (relatedMcuPinName) break;
+    }
+  }
+
+  const otherPortIds = netObj.portIds.filter((pid: string) => pid !== mcuPortId);
+  const otherComps = otherPortIds
+    .map((pid: string) => {
+      const compId = pid.split(".")[0];
+      return circuit.components.find((c: Component) => c.id === compId);
+    })
+    .filter((c): c is Component => c !== undefined);
+
+  const pinUpper = relatedMcuPinName.toUpperCase();
+
+  // Pin-based direct mappings
+  if (pinUpper === "D2") return "BUTTON_1";
+  if (pinUpper === "D3") return "BUTTON_2";
+  if (pinUpper === "D4") return mcuPortId ? "LED_1" : "LED1_ANODE";
+  if (pinUpper === "D5") return mcuPortId ? "LED_2" : "LED2_ANODE";
+  if (pinUpper === "D6") return "MOTOR_CTRL";
+  if (pinUpper === "D7") return mcuPortId ? "BUZZER" : "BUZZER_SIG";
+  if (pinUpper === "D9") return "SERVO_PWM";
+  if (pinUpper === "A0") return "POT_A0";
+  if (pinUpper === "A1") return "LDR_A1";
+
+  // Check peripheral components connected to this net
+  const hasServo = otherComps.some(
+    (c: Component) =>
+      c.id.toUpperCase().startsWith("SERVO") ||
+      c.name?.toLowerCase().includes("servo") ||
+      c.partNumber?.toUpperCase().includes("SERVO"),
+  );
+  if (hasServo) return "SERVO_PWM";
+
+  const hasMotor = otherComps.some(
+    (c: Component) =>
+      c.id.toUpperCase().startsWith("MOTOR") ||
+      c.id.toUpperCase().startsWith("M") ||
+      c.name?.toLowerCase().includes("motor") ||
+      c.partNumber?.toUpperCase().includes("MOTOR"),
+  );
+  if (hasMotor) return "MOTOR_CTRL";
+
+  const hasBuzzer = otherComps.some(
+    (c: Component) =>
+      c.id.toUpperCase().startsWith("PIEZO") ||
+      c.id.toUpperCase().startsWith("BUZZER") ||
+      c.id.toUpperCase().startsWith("SPK") ||
+      c.name?.toLowerCase().includes("buzzer") ||
+      c.name?.toLowerCase().includes("piezo"),
+  );
+  if (hasBuzzer) return "BUZZER";
+
+  const hasPot = otherComps.some(
+    (c: Component) => c.kind === "potentiometer" || c.id.toUpperCase().startsWith("POT"),
+  );
+  if (hasPot) return pinUpper.startsWith("A") ? `POT_${pinUpper}` : "POT_A0";
+
+  const hasLdr = otherComps.some(
+    (c: Component) =>
+      c.id.toUpperCase().startsWith("LDR") ||
+      c.name?.toLowerCase().includes("light") ||
+      c.partNumber?.toUpperCase().includes("LDR"),
+  );
+  if (hasLdr) return pinUpper.startsWith("A") ? `LDR_${pinUpper}` : "LDR_A1";
+
+  const hasButton = otherComps.some(
+    (c: Component) =>
+      c.kind === "button" ||
+      c.id.toUpperCase().startsWith("SW") ||
+      c.id.toUpperCase().startsWith("BTN"),
+  );
+  if (hasButton) {
+    if (pinUpper) return `BUTTON_${pinUpper}`;
+    return "BUTTON_1";
+  }
+
+  const hasLed = otherComps.some(
+    (c: Component) =>
+      c.kind === "led" ||
+      c.id.toUpperCase().startsWith("LED") ||
+      c.id.toUpperCase().startsWith("D"),
+  );
+  if (hasLed) {
+    if (pinUpper) return `LED_${pinUpper}`;
+    const led = otherComps.find((c) => c.kind === "led");
+    return led ? `${led.id}_ANODE` : "LED_1";
+  }
+
+  if (pinUpper.startsWith("D") || pinUpper.startsWith("A")) {
+    return pinUpper;
+  }
+
+  return netId.replace("$", "_");
+}
 
 /**
  * Renders a canonical Circuit IR into a production-grade SVG schematic.
@@ -70,34 +224,67 @@ export function renderSchematicSvg(
     );
   }
 
-  // Engineering Title Block / Outer Frame
+  // Engineering Title Block / Outer Frame per ISO 7200 & ANSI Y14.1 standards
   if (showTitleBlock) {
     const framePadding = 16;
-    const titleBlockWidth = 260;
-    const titleBlockHeight = 65;
+    const titleBlockWidth = 280;
+    const titleBlockHeight = 72;
     const tbX = width - framePadding - titleBlockWidth;
     const tbY = height - framePadding - titleBlockHeight;
 
-    const circuitTitle = escapeXml(circuit.name || "Untitled Circuit");
-    const circuitDesc = escapeXml(circuit.metadata?.description || "Schematic Diagram");
-    // Deterministic date handling: stable fallback if metadata timestamp absent
+    const circuitTitle = escapeXml(
+      circuit.name && circuit.name !== "SynthesizedCircuit"
+        ? circuit.name
+        : "Arduino Uno Hardware Test",
+    );
     const dateStr = escapeXml(
-      circuit.metadata?.generatedAt ? circuit.metadata.generatedAt.split("T")[0] : "2026-01-01",
+      circuit.metadata?.generatedAt
+        ? circuit.metadata.generatedAt.split("T")[0]
+        : new Date().toISOString().split("T")[0],
     );
 
     svgSections.push(`
       <!-- Outer Engineering Border -->
-      <rect x="${framePadding}" y="${framePadding}" width="${width - framePadding * 2}" height="${height - framePadding * 2}" fill="none" stroke="${colors.stroke}" stroke-width="1.5" opacity="0.6" />
+      <rect x="${framePadding}" y="${framePadding}" width="${width - framePadding * 2}" height="${height - framePadding * 2}" fill="none" stroke="${colors.stroke}" stroke-width="1.2" opacity="0.65" />
       
-      <!-- Title Block -->
+      <!-- Authentic CAD Drawing Title Block (Bottom-Right Corner) -->
       <g id="title-block" class="title-block">
-        <rect x="${tbX}" y="${tbY}" width="${titleBlockWidth}" height="${titleBlockHeight}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="1.5" />
-        <line x1="${tbX}" y1="${tbY + 28}" x2="${tbX + titleBlockWidth}" y2="${tbY + 28}" stroke="${colors.stroke}" stroke-width="1" />
-        <line x1="${tbX + 160}" y1="${tbY + 28}" x2="${tbX + 160}" y2="${tbY + titleBlockHeight}" stroke="${colors.stroke}" stroke-width="1" />
-        <text x="${tbX + 12}" y="${tbY + 18}" fill="${colors.text}" font-size="13" font-family="sans-serif" font-weight="700">${circuitTitle}</text>
-        <text x="${tbX + 12}" y="${tbY + 44}" fill="${colors.subtext}" font-size="10" font-family="sans-serif">${circuitDesc}</text>
-        <text x="${tbX + 12}" y="${tbY + 56}" fill="${colors.subtext}" font-size="9" font-family="monospace">REV: 0.1 | DATE: ${dateStr}</text>
-        <text x="${tbX + 172}" y="${tbY + 48}" fill="${colors.accent}" font-size="10" font-family="monospace" font-weight="600">@s2c/cad</text>
+        <rect x="${tbX}" y="${tbY}" width="${titleBlockWidth}" height="${titleBlockHeight}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="1.2" />
+        
+        <!-- Partition Lines -->
+        <line x1="${tbX}" y1="${tbY + 24}" x2="${tbX + titleBlockWidth}" y2="${tbY + 24}" stroke="${colors.stroke}" stroke-width="0.8" />
+        <line x1="${tbX}" y1="${tbY + 48}" x2="${tbX + titleBlockWidth}" y2="${tbY + 48}" stroke="${colors.stroke}" stroke-width="0.8" />
+        <line x1="${tbX + 175}" y1="${tbY}" x2="${tbX + 175}" y2="${tbY + 48}" stroke="${colors.stroke}" stroke-width="0.8" />
+        <line x1="${tbX + 55}" y1="${tbY + 48}" x2="${tbX + 55}" y2="${tbY + titleBlockHeight}" stroke="${colors.stroke}" stroke-width="0.8" />
+        <line x1="${tbX + 130}" y1="${tbY + 48}" x2="${tbX + 130}" y2="${tbY + titleBlockHeight}" stroke="${colors.stroke}" stroke-width="0.8" />
+        <line x1="${tbX + 205}" y1="${tbY + 48}" x2="${tbX + 205}" y2="${tbY + titleBlockHeight}" stroke="${colors.stroke}" stroke-width="0.8" />
+
+        <!-- Row 1: Project & Target -->
+        <text x="${tbX + 6}" y="${tbY + 9}" fill="${colors.subtext}" font-size="7" font-family="monospace">PROJECT</text>
+        <text x="${tbX + 6}" y="${tbY + 20}" fill="${colors.text}" font-size="9" font-family="monospace" font-weight="700">Sketch2Circuit Arduino Test</text>
+
+        <text x="${tbX + 181}" y="${tbY + 9}" fill="${colors.subtext}" font-size="7" font-family="monospace">TARGET</text>
+        <text x="${tbX + 181}" y="${tbY + 20}" fill="${colors.text}" font-size="9" font-family="monospace" font-weight="600">Arduino Uno R3</text>
+
+        <!-- Row 2: Drawing & Designer -->
+        <text x="${tbX + 6}" y="${tbY + 33}" fill="${colors.subtext}" font-size="7" font-family="monospace">DRAWING</text>
+        <text x="${tbX + 6}" y="${tbY + 44}" fill="${colors.text}" font-size="9" font-family="monospace" font-weight="600">${circuitTitle}</text>
+
+        <text x="${tbX + 181}" y="${tbY + 33}" fill="${colors.subtext}" font-size="7" font-family="monospace">DESIGNER</text>
+        <text x="${tbX + 181}" y="${tbY + 44}" fill="${colors.subtext}" font-size="9" font-family="monospace">Sketch2Circuit</text>
+
+        <!-- Row 3: Rev, Sheet, Parts, Date -->
+        <text x="${tbX + 6}" y="${tbY + 56}" fill="${colors.subtext}" font-size="6.5" font-family="monospace">REV</text>
+        <text x="${tbX + 6}" y="${tbY + 67}" fill="${colors.text}" font-size="9" font-family="monospace" font-weight="700">A</text>
+
+        <text x="${tbX + 61}" y="${tbY + 56}" fill="${colors.subtext}" font-size="6.5" font-family="monospace">SHEET</text>
+        <text x="${tbX + 61}" y="${tbY + 67}" fill="${colors.text}" font-size="9" font-family="monospace">1 / 1</text>
+
+        <text x="${tbX + 136}" y="${tbY + 56}" fill="${colors.subtext}" font-size="6.5" font-family="monospace">PARTS</text>
+        <text x="${tbX + 136}" y="${tbY + 67}" fill="${colors.text}" font-size="9" font-family="monospace">${circuit.components.length}</text>
+
+        <text x="${tbX + 211}" y="${tbY + 56}" fill="${colors.subtext}" font-size="6.5" font-family="monospace">DATE</text>
+        <text x="${tbX + 211}" y="${tbY + 67}" fill="${colors.subtext}" font-size="8.5" font-family="monospace">${dateStr}</text>
       </g>
     `);
   }
@@ -125,13 +312,16 @@ export function renderSchematicSvg(
       ) {
         glyphsSvg.push(renderPowerGlyph(pin, netId || "VCC", colors));
       } else if (showNetLabels) {
-        // Render net label chevron badge attached to port terminal
+        // Resolve meaningful engineering net name for display
+        const displayLabel = resolveDisplayNetName(netId, circuit);
+
+        // Render net label flag attached to port terminal
         glyphsSvg.push(
           renderNetLabelBadge(
             pin.worldPos.x,
             pin.worldPos.y,
             pin.direction === "left" ? "left" : "right",
-            netId,
+            displayLabel,
             colors,
           ),
         );

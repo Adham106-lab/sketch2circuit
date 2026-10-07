@@ -196,230 +196,231 @@ export default function App() {
       {/* Top Application Header / Navigation Ribbon */}
       <header
         id="workbench-header"
-        className="border-b px-4 py-2.5 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40"
+        className="border-b sticky top-0 z-40"
         style={{
           backgroundColor: "var(--bg-subpanel)",
           borderColor: "var(--border-app)",
         }}
       >
-        {/* Zone 1: Brand & Subtitle */}
-        <div className="flex items-center gap-3">
-          <div
-            className="w-7 h-7 flex items-center justify-center border rounded-[2px]"
-            style={{
-              borderColor: "var(--border-strong)",
-              backgroundColor: "var(--bg-sunken)",
-              color: "var(--text-main)",
-            }}
-          >
-            <Cpu className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
+        {/* Top Status Bar: Consolidated Title Block & Actionable Controls (No Badge Soup) */}
+        <div className="px-4 pt-2 pb-1.5 flex flex-wrap items-center justify-between gap-3">
+          {/* Zone 1: Brand & Plain-text Title Block */}
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-6 h-6 flex items-center justify-center border rounded-[2px]"
+              style={{
+                borderColor: "var(--border-strong)",
+                backgroundColor: "var(--bg-sunken)",
+                color: "var(--text-main)",
+              }}
+            >
+              <Cpu className="w-3.5 h-3.5" />
+            </div>
+            <div>
               <span
-                className="text-sm font-bold tracking-tight uppercase"
+                className="text-xs font-bold tracking-tight uppercase block leading-none"
                 style={{ color: "var(--text-main)" }}
               >
                 sketch2circuit
               </span>
-              <span
-                className="text-[9px] px-1.5 py-0.2 border rounded-[1px] font-mono tracking-wider"
-                style={{
-                  borderColor: "var(--border-strong)",
-                  color: "var(--text-main)",
-                }}
+              <p
+                id="header-target-desc"
+                className="text-[10px] font-mono tracking-tight leading-normal mt-0.5"
+                style={{ color: "var(--text-muted)" }}
               >
-                SYNTHESIS ENGINE
-              </span>
-              <span
-                className="text-[9px] px-1.5 py-0.2 border rounded-[1px] font-mono tracking-wider font-semibold"
-                style={{
-                  borderColor: "rgba(59, 130, 246, 0.4)",
-                  backgroundColor: "rgba(59, 130, 246, 0.1)",
-                  color: "#60a5fa",
-                }}
-                title="Current Target Hardware Scope: Arduino Uno R3 Shield Architecture only"
-              >
-                TARGET: ARDUINO UNO R3 (v1)
-              </span>
+                Sheet 1 — Arduino Uno R3 target · Synthesis Engine
+              </p>
             </div>
-            <p className="text-[10px] hidden sm:block" style={{ color: "var(--text-muted)" }}>
-              CODE-TO-CIRCUIT COMPILER &amp; DETERMINISTIC ERC VALIDATION
-            </p>
+          </div>
+
+          {/* Zone 3: Genuine Actionable Badges & Plain Theme Toggle */}
+          <div className="flex items-center gap-3">
+            {/* Real Actionable Warning Status Badge */}
+            <button
+              id="status-routing-badge"
+              type="button"
+              onClick={() => setActiveMainTab("pcb")}
+              className="px-2 py-0.5 border rounded-[2px] font-bold text-[10px] tracking-wide flex items-center gap-1.5 transition hover:brightness-110 cursor-pointer"
+              style={{
+                backgroundColor:
+                  routingBadgeStats.unrouted > 0
+                    ? "rgba(234, 88, 12, 0.16)"
+                    : "rgba(34, 197, 94, 0.16)",
+                borderColor: routingBadgeStats.unrouted > 0 ? "#ea580c" : "#22c55e",
+                color: routingBadgeStats.unrouted > 0 ? "#fdba74" : "#86efac",
+              }}
+              title="Click to switch to 2D PCB Layout and inspect routing & DRC details"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>
+                {routingBadgeStats.routed}/{routingBadgeStats.total} routed ({routingBadgeStats.pct}%)
+                · {routingBadgeStats.drcErrors} DRC
+              </span>
+            </button>
+
+            {/* Plain Theme Toggle Switch (Setting control, not a bordered badge) */}
+            <button
+              id="theme-toggle-switch"
+              type="button"
+              role="switch"
+              aria-checked={theme === "light"}
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="flex items-center gap-2 cursor-pointer text-[10px] font-mono transition focus:outline-none"
+              style={{ color: "var(--text-muted)" }}
+              title="Toggle Visual Identity: Drafting Sheet (Light) / Oscilloscope (Dark)"
+            >
+              <span className="uppercase tracking-wider font-semibold" style={{ color: "var(--text-main)" }}>
+                {theme === "dark" ? "Oscilloscope" : "Drafting Sheet"}
+              </span>
+              <span
+                className="w-6 h-3.5 rounded-full p-0.5 flex items-center transition-colors"
+                style={{
+                  backgroundColor: theme === "dark" ? "#1F3824" : "#D9D4C4",
+                }}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full shadow-xs transition-transform transform"
+                  style={{
+                    backgroundColor: theme === "dark" ? "#4ADE80" : "#B5432A",
+                    transform: theme === "dark" ? "translateX(0)" : "translateX(10px)",
+                  }}
+                />
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* Zone 2: Navigation Folder Tabs */}
-        <nav id="workbench-nav" className="flex items-end gap-1 text-[11px] overflow-x-auto">
-          <button
-            id="tab-studio"
-            type="button"
-            onClick={() => setActiveMainTab("studio")}
-            className={`folder-tab ${activeMainTab === "studio" ? "active" : ""}`}
-            title="Interactive Sketch Editor & Schematic Vector View"
-          >
-            <Code2 className="w-3.5 h-3.5" />
-            <span>SCHEMATIC</span>
-          </button>
+        {/* Zone 2: Navigation Folder Tabs Bar (Attached to content panel) */}
+        <div id="workbench-tab-bar" className="px-4 flex items-end overflow-x-auto">
+          <nav id="workbench-nav" className="flex items-end gap-1 text-[11px] overflow-x-auto -mb-px">
+            <button
+              id="tab-studio"
+              type="button"
+              onClick={() => setActiveMainTab("studio")}
+              className={`folder-tab ${activeMainTab === "studio" ? "active" : ""}`}
+              title="Interactive Sketch Editor & Schematic Vector View"
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              <span>SCHEMATIC</span>
+            </button>
 
-          <button
-            id="tab-pcb"
-            type="button"
-            onClick={() => setActiveMainTab("pcb")}
-            className={`folder-tab ${activeMainTab === "pcb" ? "active" : ""}`}
-            title="2D Vector PCB Layout Workbench & DRC Engine"
-          >
-            <Layers className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="font-bold">2D PCB</span>
-          </button>
+            <button
+              id="tab-pcb"
+              type="button"
+              onClick={() => setActiveMainTab("pcb")}
+              className={`folder-tab ${activeMainTab === "pcb" ? "active" : ""}`}
+              title="2D Vector PCB Layout Workbench & DRC Engine"
+            >
+              <Layers className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="font-bold">2D PCB</span>
+            </button>
 
-          <button
-            id="tab-pcb3d"
-            type="button"
-            onClick={() => setActiveMainTab("pcb3d")}
-            className={`folder-tab ${activeMainTab === "pcb3d" ? "active" : ""}`}
-            title="3D WebGL CAD Viewer with View-Cube & Orbit Controls"
-          >
-            <Boxes className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-bold">3D VIEWER</span>
-          </button>
+            <button
+              id="tab-pcb3d"
+              type="button"
+              onClick={() => setActiveMainTab("pcb3d")}
+              className={`folder-tab ${activeMainTab === "pcb3d" ? "active" : ""}`}
+              title="3D WebGL CAD Viewer with View-Cube & Orbit Controls"
+            >
+              <Boxes className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="font-bold">3D VIEWER</span>
+            </button>
 
-          <button
-            id="tab-bom"
-            type="button"
-            onClick={() => setActiveMainTab("bom")}
-            className={`folder-tab ${activeMainTab === "bom" ? "active" : ""}`}
-            title="Bill of Materials with Component Footprints, Costs & Coordinates"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
-            <span className="font-bold">BOM</span>
-          </button>
+            <button
+              id="tab-bom"
+              type="button"
+              onClick={() => setActiveMainTab("bom")}
+              className={`folder-tab ${activeMainTab === "bom" ? "active" : ""}`}
+              title="Bill of Materials with Component Footprints, Costs & Coordinates"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
+              <span className="font-bold">BOM</span>
+            </button>
 
-          <button
-            id="tab-erc"
-            type="button"
-            onClick={() => setActiveMainTab("erc")}
-            className={`folder-tab ${activeMainTab === "erc" ? "active" : ""}`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>ERC</span>
-            {(errorCount > 0 || warningCount > 0) && (
-              <span
-                className="ml-1 px-1 py-0.2 text-[9px] font-bold border rounded-[1px]"
-                style={{
-                  backgroundColor: "var(--accent-copper-bg)",
-                  borderColor: "var(--accent-copper-border)",
-                  color: "var(--accent-copper)",
-                }}
-              >
-                {errorCount + warningCount}
-              </span>
-            )}
-          </button>
+            <button
+              id="tab-erc"
+              type="button"
+              onClick={() => setActiveMainTab("erc")}
+              className={`folder-tab ${activeMainTab === "erc" ? "active" : ""}`}
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>ERC</span>
+              {(errorCount > 0 || warningCount > 0) && (
+                <span
+                  className="ml-1 px-1 py-0.2 text-[9px] font-bold border rounded-[1px]"
+                  style={{
+                    backgroundColor: "var(--accent-copper-bg)",
+                    borderColor: "var(--accent-copper-border)",
+                    color: "var(--accent-copper)",
+                  }}
+                >
+                  {errorCount + warningCount}
+                </span>
+              )}
+            </button>
 
-          <button
-            id="tab-simulate"
-            type="button"
-            onClick={() => setActiveMainTab("simulate")}
-            className={`folder-tab ${activeMainTab === "simulate" ? "active" : ""}`}
-            title="In-Browser Numerical Simulation Engine & Circuit Dynamics (M17)"
-          >
-            <Activity className="w-3.5 h-3.5 text-sky-400" />
-            <span className="font-bold">SIMULATE</span>
-          </button>
+            <button
+              id="tab-simulate"
+              type="button"
+              onClick={() => setActiveMainTab("simulate")}
+              className={`folder-tab ${activeMainTab === "simulate" ? "active" : ""}`}
+              title="In-Browser Numerical Simulation Engine & Circuit Dynamics (M17)"
+            >
+              <Activity className="w-3.5 h-3.5 text-sky-400" />
+              <span className="font-bold">SIMULATE</span>
+            </button>
 
-          <button
-            id="tab-blockdiagram"
-            type="button"
-            onClick={() => setActiveMainTab("blockdiagram")}
-            className={`folder-tab ${activeMainTab === "blockdiagram" ? "active" : ""}`}
-            title="General Block-Diagram Simulation Editor & Wiring Canvas (M18)"
-          >
-            <Workflow className="w-3.5 h-3.5 text-sky-400" />
-            <span className="font-bold">BLOCK DIAGRAM</span>
-          </button>
+            <button
+              id="tab-blockdiagram"
+              type="button"
+              onClick={() => setActiveMainTab("blockdiagram")}
+              className={`folder-tab ${activeMainTab === "blockdiagram" ? "active" : ""}`}
+              title="General Block-Diagram Simulation Editor & Wiring Canvas (M18)"
+            >
+              <Workflow className="w-3.5 h-3.5 text-sky-400" />
+              <span className="font-bold">BLOCK DIAGRAM</span>
+            </button>
 
-          <button
-            id="tab-export"
-            type="button"
-            onClick={() => setActiveMainTab("export")}
-            className={`folder-tab ${activeMainTab === "export" ? "active" : ""}`}
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>EXPORTS</span>
-          </button>
+            <button
+              id="tab-export"
+              type="button"
+              onClick={() => setActiveMainTab("export")}
+              className={`folder-tab ${activeMainTab === "export" ? "active" : ""}`}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>EXPORTS</span>
+            </button>
 
-          <button
-            id="tab-catalog"
-            type="button"
-            onClick={() => setActiveMainTab("catalog")}
-            className={`folder-tab ${activeMainTab === "catalog" ? "active" : ""}`}
-          >
-            <Boxes className="w-3.5 h-3.5" />
-            <span>CATALOG</span>
-          </button>
+            <button
+              id="tab-catalog"
+              type="button"
+              onClick={() => setActiveMainTab("catalog")}
+              className={`folder-tab ${activeMainTab === "catalog" ? "active" : ""}`}
+            >
+              <Boxes className="w-3.5 h-3.5" />
+              <span>CATALOG</span>
+            </button>
 
-          <button
-            id="tab-calculators"
-            type="button"
-            onClick={() => setActiveMainTab("calculators")}
-            className={`folder-tab ${activeMainTab === "calculators" ? "active" : ""}`}
-          >
-            <Calculator className="w-3.5 h-3.5" />
-            <span>CALCS</span>
-          </button>
+            <button
+              id="tab-calculators"
+              type="button"
+              onClick={() => setActiveMainTab("calculators")}
+              className={`folder-tab ${activeMainTab === "calculators" ? "active" : ""}`}
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              <span>CALCS</span>
+            </button>
 
-          <button
-            id="tab-docs"
-            type="button"
-            onClick={() => setActiveMainTab("docs")}
-            className={`folder-tab ${activeMainTab === "docs" ? "active" : ""}`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>DOCS</span>
-          </button>
-        </nav>
-
-        {/* Zone 3: Routing/DRC Status Badge & Theme Toggle */}
-        <div className="flex items-center gap-2.5">
-          {/* Honest Routing & DRC Status Badge */}
-          <button
-            type="button"
-            onClick={() => setActiveMainTab("pcb")}
-            className="px-2 py-1 border rounded-[2px] font-bold text-[10px] tracking-wide flex items-center gap-1.5 transition hover:brightness-110 cursor-pointer"
-            style={{
-              backgroundColor:
-                routingBadgeStats.unrouted > 0
-                  ? "rgba(234, 88, 12, 0.16)"
-                  : "rgba(34, 197, 94, 0.16)",
-              borderColor: routingBadgeStats.unrouted > 0 ? "#ea580c" : "#22c55e",
-              color: routingBadgeStats.unrouted > 0 ? "#fdba74" : "#86efac",
-            }}
-            title="Click to switch to 2D PCB Layout and inspect routing & DRC details"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>
-              {routingBadgeStats.routed}/{routingBadgeStats.total} routed ({routingBadgeStats.pct}%)
-              · {routingBadgeStats.drcErrors} DRC
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="eng-btn"
-            title="Toggle Visual Identity: Drafting Sheet (Light) / Oscilloscope (Dark)"
-          >
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{
-                backgroundColor: theme === "dark" ? "#4ADE80" : "#B5432A",
-              }}
-            />
-            <span className="text-[10px] font-bold tracking-wider uppercase">
-              {theme === "dark" ? "THEME: OSCILLOSCOPE" : "THEME: DRAFTING SHEET"}
-            </span>
-          </button>
+            <button
+              id="tab-docs"
+              type="button"
+              onClick={() => setActiveMainTab("docs")}
+              className={`folder-tab ${activeMainTab === "docs" ? "active" : ""}`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>DOCS</span>
+            </button>
+          </nav>
         </div>
       </header>
 
@@ -1364,29 +1365,6 @@ export default function App() {
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer
-        className="border-t px-4 py-2 text-[10px] flex flex-wrap items-center justify-between gap-4"
-        style={{
-          backgroundColor: "var(--bg-subpanel)",
-          borderColor: "var(--border-app)",
-          color: "var(--text-muted)",
-        }}
-      >
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold" style={{ color: "var(--text-main)" }}>
-            sketch2circuit CAD WORKBENCH
-          </span>
-          <span>·</span>
-          <span>DOC §12 SYNTHESIS</span>
-          <span>·</span>
-          <span>DOC §10 NET-LABEL SCHEMATIC</span>
-          <span>·</span>
-          <span>18-RULE ERC ENGINE</span>
-        </div>
-        <div>DETERMINISTIC COMPILATION · OUTPUT IR SCHEMA 0.1.0</div>
-      </footer>
     </div>
   );
 }

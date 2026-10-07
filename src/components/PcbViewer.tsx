@@ -537,6 +537,28 @@ export const PcbViewer: React.FC<PcbViewerProps> = ({
           </div>
         </div>
 
+        {/* Minimal Engineering Drawing Title Block (Bottom-Right Corner per Item 3) */}
+        <div
+          id="pcb-canvas-title-block"
+          className="absolute bottom-3 right-3 border rounded-[1px] p-2 text-[9px] font-mono pointer-events-none select-none z-10"
+          style={{
+            borderColor: "var(--border-strong)",
+            backgroundColor: "var(--bg-panel)",
+            color: "var(--text-main)",
+          }}
+        >
+          <div className="border-b pb-1 mb-1 font-bold tracking-wider" style={{ borderColor: "var(--border-app)" }}>
+            <div className="text-[8px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              DRAWING SHEET
+            </div>
+            <div className="truncate max-w-[170px]">{sketchName} · 2D PCB</div>
+          </div>
+          <div className="flex items-center justify-between gap-4 text-[8px]" style={{ color: "var(--text-muted)" }}>
+            <span>GEN: sketch2circuit</span>
+            <span>REV 1.0</span>
+          </div>
+        </div>
+
         {/* DRC Breakdown Drawer Modal */}
         {showDrcDrawer && (
           <div className="absolute top-3 right-3 w-80 max-h-[85%] bg-neutral-900/95 border border-neutral-700 rounded-[2px] shadow-2xl p-3 text-[11px] overflow-y-auto z-30 font-mono text-neutral-200">

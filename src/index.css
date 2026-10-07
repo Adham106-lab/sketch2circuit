@@ -38,7 +38,7 @@ body, button, input, select, textarea, table, th, td, code, pre, span, p, h1, h2
   --accent-valid-bg: rgba(61, 107, 79, 0.08);
   --accent-valid-border: rgba(61, 107, 79, 0.45);
 
-  --tab-active-bg: #FAF8F2;
+  --tab-active-bg: #F7F4EC;
   --tab-active-text: #1A1A17;
   --tab-active-border: #1A1A17;
   --tab-inactive-bg: #E8E4D8;
@@ -85,10 +85,10 @@ body, button, input, select, textarea, table, th, td, code, pre, span, p, h1, h2
   --accent-valid-bg: rgba(74, 222, 128, 0.1);
   --accent-valid-border: rgba(74, 222, 128, 0.35);
 
-  --tab-active-bg: #111111;
+  --tab-active-bg: #0A0A0A;
   --tab-active-text: #4ADE80;
   --tab-active-border: #4ADE80;
-  --tab-inactive-bg: #070707;
+  --tab-inactive-bg: #141414;
   --tab-inactive-text: #3C6B4B;
   --tab-inactive-border: #1F3824;
 
@@ -110,13 +110,14 @@ body, button, input, select, textarea, table, th, td, code, pre, span, p, h1, h2
   background-size: 16px 16px;
 }
 
-/* Folder tab styling */
+/* Folder tab styling — drafting sheet / KiCad sheet divider tabs */
 .folder-tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.02em;
   border-top: 1px solid var(--tab-inactive-border);
   border-left: 1px solid var(--tab-inactive-border);
@@ -128,10 +129,12 @@ body, button, input, select, textarea, table, th, td, code, pre, span, p, h1, h2
   cursor: pointer;
   user-select: none;
   border-radius: 2px 2px 0 0;
-  transition: background-color 100ms ease, color 100ms ease, border-color 100ms ease;
+  box-shadow: none !important;
+  position: relative;
+  transition: background-color 100ms ease, color 100ms ease;
 }
 
-.folder-tab:hover {
+.folder-tab:hover:not(.active) {
   color: var(--text-main);
   background-color: var(--bg-hover);
 }
@@ -143,7 +146,7 @@ body, button, input, select, textarea, table, th, td, code, pre, span, p, h1, h2
   border-left: 1px solid var(--border-app);
   border-right: 1px solid var(--border-app);
   border-bottom: 1px solid var(--tab-active-bg);
-  z-index: 10;
+  z-index: 20;
   font-weight: 600;
 }
 

@@ -373,7 +373,7 @@ export function renderPowerGlyph(pos: PinPosition, label: string, colors: Symbol
 }
 
 /**
- * Renders a Net Label chevron badge at a pin.
+ * Renders a Net Label chevron badge at a pin in authentic EDA flag style.
  */
 export function renderNetLabelBadge(
   x: number,
@@ -382,43 +382,44 @@ export function renderNetLabelBadge(
   label: string,
   colors: SymbolColors,
 ): string {
-  const badgeWidth = Math.max(45, label.length * 7 + 16);
-  const badgeHeight = 18;
-  const tipDepth = 6;
+  const charWidth = 6.5;
+  const paddingX = 8;
+  const textWidth = Math.max(34, label.length * charWidth);
+  const badgeWidth = textWidth + paddingX * 2;
+  const badgeHeight = 16;
+  const tipDepth = 5;
 
   let path = "";
   let textX = 0;
 
   if (direction === "right") {
-    // Points to the right: <x, y> is pin contact on left
+    // Points toward the pin on left, extending to right
     path = [
       `M ${x} ${y}`,
-      `L ${x + 8} ${y - badgeHeight / 2}`,
-      `L ${x + badgeWidth - tipDepth} ${y - badgeHeight / 2}`,
-      `L ${x + badgeWidth} ${y}`,
-      `L ${x + badgeWidth - tipDepth} ${y + badgeHeight / 2}`,
-      `L ${x + 8} ${y + badgeHeight / 2}`,
+      `L ${x + tipDepth} ${y - badgeHeight / 2}`,
+      `L ${x + badgeWidth} ${y - badgeHeight / 2}`,
+      `L ${x + badgeWidth} ${y + badgeHeight / 2}`,
+      `L ${x + tipDepth} ${y + badgeHeight / 2}`,
       "Z",
     ].join(" ");
-    textX = x + badgeWidth / 2 + 2;
+    textX = x + tipDepth + textWidth / 2 + 3;
   } else {
-    // Points to the left
+    // Points toward the pin on right, extending to left
     path = [
       `M ${x} ${y}`,
-      `L ${x - 8} ${y - badgeHeight / 2}`,
-      `L ${x - badgeWidth + tipDepth} ${y - badgeHeight / 2}`,
-      `L ${x - badgeWidth} ${y}`,
-      `L ${x - badgeWidth + tipDepth} ${y + badgeHeight / 2}`,
-      `L ${x - 8} ${y + badgeHeight / 2}`,
+      `L ${x - tipDepth} ${y - badgeHeight / 2}`,
+      `L ${x - badgeWidth} ${y - badgeHeight / 2}`,
+      `L ${x - badgeWidth} ${y + badgeHeight / 2}`,
+      `L ${x - tipDepth} ${y + badgeHeight / 2}`,
       "Z",
     ].join(" ");
-    textX = x - badgeWidth / 2 - 2;
+    textX = x - tipDepth - textWidth / 2 - 3;
   }
 
   return `
-    <g class="net-label-badge">
-      <path d="${path}" fill="${colors.fill}" stroke="${colors.wire}" stroke-width="1.5" stroke-linejoin="round" />
-      <text x="${textX}" y="${y + 4}" fill="${colors.text}" font-size="10" font-family="monospace" font-weight="600" text-anchor="middle">${escapeXml(label)}</text>
+    <g class="net-label-badge" data-net="${escapeXml(label)}">
+      <path d="${path}" fill="${colors.fill}" stroke="${colors.wire}" stroke-width="1.2" stroke-linejoin="round" />
+      <text x="${textX}" y="${y + 3.5}" fill="${colors.text}" font-size="9" font-family="monospace" font-weight="600" letter-spacing="0.03em" text-anchor="middle">${escapeXml(label)}</text>
     </g>
   `;
 }

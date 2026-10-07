@@ -217,6 +217,7 @@ export const SchematicViewer: React.FC<SchematicViewerProps> = ({
 
       {/* Real Engineering Title Block (Bordered Box per ANSI/ISO CAD drawing standard) */}
       <div
+        id="schematic-canvas-title-block"
         className="border-t text-[10px]"
         style={{
           borderColor: "var(--border-strong)",
