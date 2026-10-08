@@ -76,10 +76,18 @@ export const BlockNodeComponent: React.FC<NodeProps<BlockNodeType>> = ({ data, s
         return `val = ${params.value ?? 1}`;
       case "Step":
         return `t = ${params.stepTime ?? 1}`;
+      case "Ramp":
+        return `slope = ${params.slope ?? 1}`;
+      case "Sine":
+        return `f = ${params.frequency ?? 1}Hz`;
       case "Sum":
         return `[ ${params.signs ?? "+-"} ]`;
+      case "Product":
+        return "u1 × u2";
+      case "Abs":
+        return "|u|";
       case "Integrator":
-        return `1 / s  (x0 = ${params.initialCondition ?? 0})`;
+        return `1/s (x0=${params.initialCondition ?? 0})`;
       case "TransferFunction": {
         const num = Array.isArray(params.numerator) ? params.numerator.join(",") : "1";
         const den = Array.isArray(params.denominator) ? params.denominator.join(",") : "1,1";
@@ -98,7 +106,7 @@ export const BlockNodeComponent: React.FC<NodeProps<BlockNodeType>> = ({ data, s
 
   return (
     <div
-      className={`relative min-w-[130px] rounded-[3px] border shadow-md transition-all select-none ${
+      className={`relative min-w-[150px] w-[170px] rounded-[3px] border shadow-md transition-all select-none ${
         isOffending
           ? "border-red-500 ring-2 ring-red-500/50 bg-red-950/40"
           : selected
@@ -113,49 +121,35 @@ export const BlockNodeComponent: React.FC<NodeProps<BlockNodeType>> = ({ data, s
             : "0 2px 4px rgba(0, 0, 0, 0.5)",
       }}
     >
-      {/* Input Handles (Target) */}
+      {/* Input Handles (Target) - directly attached to boundary for ReactFlow accuracy */}
       {inputs.map((port, idx) => {
         const total = inputs.length;
-        const topPercent = total === 1 ? 50 : 30 + (idx * 40) / (total - 1);
+        const topPercent = total === 1 ? 50 : 28 + (idx * 44) / (total - 1);
         return (
-          <div
+          <Handle
             key={port.id}
-            className="absolute -left-2.5 flex items-center gap-1 pointer-events-auto"
-            style={{ top: `${topPercent}%`, transform: "translateY(-50%)" }}
-          >
-            <Handle
-              type="target"
-              position={Position.Left}
-              id={port.id}
-              className="!w-2.5 !h-2.5 !bg-sky-400 !border !border-black rounded-full transition-transform hover:scale-125"
-            />
-            <span className="text-[9px] font-mono text-neutral-400 pl-3 select-none">
-              {port.name || port.id}
-            </span>
-          </div>
+            type="target"
+            position={Position.Left}
+            id={port.id}
+            style={{ top: `${topPercent}%` }}
+            className="!w-2.5 !h-2.5 !bg-sky-400 !border !border-black rounded-full transition-transform hover:scale-125"
+          />
         );
       })}
 
-      {/* Output Handles (Source) */}
+      {/* Output Handles (Source) - directly attached to boundary for ReactFlow accuracy */}
       {outputs.map((port, idx) => {
         const total = outputs.length;
-        const topPercent = total === 1 ? 50 : 30 + (idx * 40) / (total - 1);
+        const topPercent = total === 1 ? 50 : 28 + (idx * 44) / (total - 1);
         return (
-          <div
+          <Handle
             key={port.id}
-            className="absolute -right-2.5 flex items-center justify-end gap-1 pointer-events-auto"
-            style={{ top: `${topPercent}%`, transform: "translateY(-50%)" }}
-          >
-            <span className="text-[9px] font-mono text-neutral-400 pr-3 select-none">
-              {port.name || port.id}
-            </span>
-            <Handle
-              type="source"
-              position={Position.Right}
-              id={port.id}
-              className="!w-2.5 !h-2.5 !bg-emerald-400 !border !border-black rounded-full transition-transform hover:scale-125"
-            />
-          </div>
+            type="source"
+            position={Position.Right}
+            id={port.id}
+            style={{ top: `${topPercent}%` }}
+            className="!w-2.5 !h-2.5 !bg-emerald-400 !border !border-black rounded-full transition-transform hover:scale-125"
+          />
         );
       })}
 
@@ -177,16 +171,47 @@ export const BlockNodeComponent: React.FC<NodeProps<BlockNodeType>> = ({ data, s
         <span className="text-[9px] font-mono text-neutral-400 shrink-0">{blockType}</span>
       </div>
 
-      {/* Body / Summary */}
-      <div className="px-3 py-2 text-center min-h-[32px] flex items-center justify-center">
-        {paramSummary ? (
-          <span className="text-[10px] font-mono text-sky-300 font-semibold bg-black/40 px-1.5 py-0.5 rounded-[1px] border border-neutral-800/80">
-            {paramSummary}
-          </span>
-        ) : (
-          <span className="text-[9px] text-neutral-500 italic">
-            {def?.description || blockType}
-          </span>
+      {/* Body / Summary with Port Indicators separated cleanly to prevent collisions */}
+      <div className="px-2.5 py-2 min-h-[34px] flex items-center justify-between gap-1.5">
+        {/* Left Port Labels */}
+        {inputs.length > 0 && (
+          <div className="flex flex-col gap-0.5 items-start shrink-0">
+            {inputs.map((port) => (
+              <span
+                key={port.id}
+                className="text-[8.5px] font-mono text-neutral-400 select-none px-1 bg-black/30 rounded-[1px]"
+              >
+                {port.name || port.id}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Center Parameter / Description */}
+        <div className="flex-1 text-center px-1 overflow-hidden">
+          {paramSummary ? (
+            <span className="text-[9.5px] font-mono text-sky-300 font-semibold bg-black/40 px-1.5 py-0.5 rounded-[1px] border border-neutral-800/80 inline-block max-w-full truncate">
+              {paramSummary}
+            </span>
+          ) : (
+            <span className="text-[9px] text-neutral-500 italic block truncate">
+              {def?.description || blockType}
+            </span>
+          )}
+        </div>
+
+        {/* Right Port Labels */}
+        {outputs.length > 0 && (
+          <div className="flex flex-col gap-0.5 items-end shrink-0">
+            {outputs.map((port) => (
+              <span
+                key={port.id}
+                className="text-[8.5px] font-mono text-neutral-400 select-none px-1 bg-black/30 rounded-[1px]"
+              >
+                {port.name || port.id}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 

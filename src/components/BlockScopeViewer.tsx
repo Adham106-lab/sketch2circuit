@@ -4,7 +4,7 @@
  * Uses vector SVG rendering matching M17's oscilloscope aesthetic with time cursor & readouts.
  */
 
-import { Download, Maximize2, Minimize2, X } from "lucide-react";
+import { Activity, Download, Maximize2, Minimize2, X } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
 
@@ -19,6 +19,7 @@ interface BlockScopeViewerProps {
   signals: Record<string, ScopeSignalData>;
   tEnd: number;
   solverMethod: "rk4" | "rkf45";
+  hasRun?: boolean;
   onClose?: () => void;
 }
 
@@ -26,6 +27,7 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
   signals,
   tEnd: _tEnd,
   solverMethod,
+  hasRun = true,
   onClose,
 }) => {
   const signalKeys = Object.keys(signals);
@@ -113,12 +115,15 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
 
   return (
     <div
-      className={`border-t flex flex-col transition-all duration-200 select-none ${
-        isExpanded ? "h-[450px]" : "h-[300px]"
+      id="block-scope-viewer"
+      data-testid="block-scope-viewer"
+      className={`border-t shrink-0 flex flex-col transition-all duration-200 select-none ${
+        isExpanded ? "h-[450px]" : "h-[320px]"
       }`}
       style={{
         borderColor: "var(--border-strong)",
         backgroundColor: "#080c14",
+        minHeight: isExpanded ? "450px" : "320px",
       }}
     >
       {/* Scope Header Bar */}
@@ -152,8 +157,17 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
           )}
 
           <span className="text-[10px] text-neutral-400 font-mono">
-            {currentSignal?.title} • {metrics?.count ?? 0} samples • Method:{" "}
-            <span className="text-emerald-400 font-bold uppercase">{solverMethod}</span>
+            {currentSignal?.title ? `${currentSignal.title} • ` : ""}
+            {hasRun && metrics && points.length > 0 ? (
+              <>
+                <span className="text-neutral-200 font-semibold">{metrics.count}</span> samples • Method:{" "}
+                <span className="text-emerald-400 font-bold uppercase">{solverMethod}</span>
+              </>
+            ) : (
+              <span className="text-amber-400 font-medium">
+                No simulation run yet — click Run Simulation
+              </span>
+            )}
           </span>
         </div>
 
@@ -203,11 +217,13 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
       </div>
 
       {/* Scope Plot Area */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {metrics && points.length > 0 ? (
-          <div className="flex-1 relative flex items-center justify-center p-2">
+      <div className="flex-1 min-h-[250px] flex overflow-hidden relative">
+        {hasRun && metrics && points.length > 0 ? (
+          <div className="flex-1 min-h-[250px] relative flex items-center justify-center p-2">
             <svg
-              className="w-full h-full"
+              id="scope-waveform-svg"
+              data-testid="scope-waveform-svg"
+              className="w-full h-full min-h-[240px]"
               viewBox="0 0 800 320"
               preserveAspectRatio="none"
               role="img"
@@ -296,6 +312,7 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
                 strokeWidth="2.0"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                data-testid="scope-waveform-path"
               />
 
               {/* Active Hover Cursor */}
@@ -350,8 +367,21 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-neutral-500 font-mono text-xs">
-            Awaiting simulation run to display Scope waveform...
+          <div
+            data-testid="scope-empty-state"
+            className="flex-1 min-h-[250px] flex flex-col items-center justify-center text-center p-6 space-y-2 select-none"
+            style={{ backgroundColor: "#080c14" }}
+          >
+            <div className="w-10 h-10 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-500 mb-1">
+              <Activity className="w-5 h-5 animate-pulse text-amber-500/80" />
+            </div>
+            <span className="text-xs font-semibold text-neutral-300 font-mono tracking-wide">
+              No simulation run yet — click Run Simulation
+            </span>
+            <p className="text-[11px] text-neutral-500 max-w-md leading-relaxed">
+              Click the green <strong className="text-emerald-400">Run Simulation</strong> button in the ribbon above to compile the diagram topology and plot the continuous-time waveform using the{" "}
+              <span className="text-neutral-300 font-mono font-bold uppercase">{solverMethod}</span> ODE solver.
+            </p>
           </div>
         )}
       </div>

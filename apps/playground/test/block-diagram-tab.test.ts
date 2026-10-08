@@ -1,13 +1,15 @@
+// @vitest-environment happy-dom
 /**
  * @license Apache-2.0
  * @s2c/apps/playground — Milestone 18b Canvas & Wiring Unit Tests.
  */
 
 import { compileBlockDiagram } from "@s2c/block-diagram";
-import React from "react";
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
 import ReactDOMServer from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BlockDiagramTab } from "../../../src/components/BlockDiagramTab.js";
+import { BlockDiagramTab, BlockDiagramUsageGuideModal } from "../../../src/components/BlockDiagramTab.js";
 
 describe("Milestone 18b: Block Diagram Canvas UI & Compilation Integration", () => {
   it("renders the Block Diagram canvas, palette, and inspector with connected blocks", () => {
@@ -43,6 +45,12 @@ describe("Milestone 18b: Block Diagram Canvas UI & Compilation Integration", () 
     // 5. Verify Canvas ReactFlow Container
     expect(html).toContain('id="block-diagram-canvas"');
     expect(html).toContain("react-flow");
+
+    // 6. Verify Scope Waveform Panel mounts in explicit empty state
+    expect(html).toContain('id="block-scope-viewer"');
+    expect(html).toContain("No simulation run yet — click Run Simulation");
+    expect(html).toContain('data-testid="scope-empty-state"');
+    expect(html).not.toContain('data-testid="scope-waveform-path"');
 
     // Print raw DOM evidence for M18b acceptance
     console.log("=== M18b CANVAS RAW DOM EVIDENCE ===");
@@ -172,5 +180,176 @@ describe("Milestone 18b: Block Diagram Canvas UI & Compilation Integration", () 
     // Kp = 0.2 has higher peak overshoot than Kp = 1.0
     expect(underdamped.peak).toBeGreaterThan(tuned.peak + 50.0);
     expect(underdamped.overshootPct).toBeGreaterThan(tuned.overshootPct + 10.0);
+  });
+
+  it("verifies canvas container has explicit min-height 600px and action toolbar with Usage Guide and Fit View", () => {
+    const html = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(BlockDiagramTab, { theme: "dark" }),
+    );
+
+    // Verify canvas container styling and attributes
+    expect(html).toContain('id="block-diagram-canvas"');
+    expect(html).toContain("min-height:600px");
+    expect(html).toContain("Usage Guide");
+    expect(html).toContain("Fit View");
+
+    // Print raw DOM evidence of canvas toolbar
+    console.log("=== CANVAS CONTAINER & TOOLBAR RAW DOM EVIDENCE ===");
+    const canvasStart = html.indexOf('id="block-diagram-canvas"');
+    console.log(html.slice(canvasStart - 50, canvasStart + 1200));
+  });
+
+  it("renders the in-app usage guide modal with full ODE simulation and algebraic loop reference manual", () => {
+    const modalHtml = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(BlockDiagramUsageGuideModal, {
+        isOpen: true,
+        onClose: () => {},
+      }),
+    );
+
+    // Verify header and specification badge
+    expect(modalHtml).toContain("Block-Diagram Simulation Editor — In-App Usage Guide");
+    expect(modalHtml).toContain("M18 SPECIFICATION");
+
+    // Verify Section 1: Quick start & wiring
+    expect(modalHtml).toContain("1. Quick Start &amp; Graphical Canvas Controls");
+    expect(modalHtml).toContain("Adding &amp; Wiring Blocks");
+    expect(modalHtml).toContain("Selecting &amp; Editing Parameters");
+
+    // Verify Section 2: Numerical ODE Solvers
+    expect(modalHtml).toContain("2. Numerical ODE Solvers (RKF45 Adaptive vs. RK4 Fixed-Step)");
+    expect(modalHtml).toContain("RKF45 Adaptive (Default Recommended)");
+    expect(modalHtml).toContain("RK4 Fixed-Step");
+    expect(modalHtml).toContain("DISCONTINUITY NOTICE (DOC §19)");
+
+    // Verify Section 3: Algebraic Loops & Topological Validation
+    expect(modalHtml).toContain("3. Algebraic Loops &amp; Topological Validation (Tarjan SCC)");
+    expect(modalHtml).toContain("Direct Feedthrough:");
+    expect(modalHtml).toContain("Algebraic Loop Error:");
+
+    // Verify Section 4: Standard Library Block Categories
+    expect(modalHtml).toContain("4. Standard Library Block Reference");
+    expect(modalHtml).toContain("Sources");
+    expect(modalHtml).toContain("Math &amp; Algebraic");
+    expect(modalHtml).toContain("Dynamics (State)");
+    expect(modalHtml).toContain("Sinks &amp; Display");
+
+    // Verify Section 5: Presets Guide
+    expect(modalHtml).toContain("5. Built-in Engineering Presets");
+    expect(modalHtml).toContain("1. Valid Feedback Loop");
+    expect(modalHtml).toContain("2. Algebraic Loop Error");
+    expect(modalHtml).toContain("3. Harmonic Oscillator (2-State)");
+    expect(modalHtml).toContain("4. PID DC Motor Actuator Speed Control");
+
+    // Print raw DOM evidence for Usage Guide
+    console.log("=== USAGE GUIDE MODAL RAW DOM EVIDENCE ===");
+    console.log(modalHtml.slice(0, 1500));
+  });
+
+  it("regression: clicking Run Simulation updates component chart data and renders real SVG waveform for preset 1 (valid feedback)", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(React.createElement(BlockDiagramTab, { theme: "dark" }));
+    });
+
+    // 1. Initial State: Scope is in empty state, no waveform path rendered yet
+    const emptyState = container.querySelector('[data-testid="scope-empty-state"]');
+    expect(emptyState).not.toBeNull();
+    expect(container.textContent).toContain("No simulation run yet — click Run Simulation");
+    expect(container.querySelector('[data-testid="scope-waveform-path"]')).toBeNull();
+
+    // 2. Locate the "Run Simulation" button
+    const buttons = Array.from(container.querySelectorAll("button"));
+    const runBtn = buttons.find((b) => b.textContent?.includes("Run Simulation"));
+    expect(runBtn).toBeDefined();
+
+    // 3. Click Run Simulation
+    await act(async () => {
+      runBtn!.click();
+    });
+
+    // 4. Assert: Empty state is gone, live waveform is rendered in the DOM
+    expect(container.querySelector('[data-testid="scope-empty-state"]')).toBeNull();
+    const waveformPath = container.querySelector('[data-testid="scope-waveform-path"]');
+    expect(waveformPath).not.toBeNull();
+
+    // 5. Assert: SVG coordinates are plotted with real numbers
+    const dAttr = waveformPath!.getAttribute("d");
+    expect(dAttr).toBeDefined();
+    expect(dAttr).toMatch(/^M 60\.0 290\.0/);
+    expect(dAttr).toContain("L 760.0 30.0");
+
+    // 6. Assert: Status text reflects live computed samples
+    const scopeViewer = container.querySelector("#block-scope-viewer");
+    expect(scopeViewer?.textContent).toContain("35 samples");
+    expect(scopeViewer?.textContent).toContain("Method: rkf45");
+    expect(scopeViewer?.textContent).toContain("Filtered Output");
+
+    // 7. Verify green validation banner also updated
+    expect(container.textContent).toContain("Topology is executable: 1 continuous state variable(s)");
+
+    // Print raw DOM evidence for regression test
+    console.log("=== RAW SCOPE WAVEFORM SVG EVIDENCE (PRESET 1 VALID FEEDBACK) ===");
+    const svgEl = container.querySelector("#scope-waveform-svg");
+    console.log(svgEl?.outerHTML);
+
+    root.unmount();
+    container.remove();
+  });
+
+  it("regression: running simulation on preset 4 (PID DC motor) renders closed-loop speed step response waveform", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(React.createElement(BlockDiagramTab, { theme: "dark" }));
+    });
+
+    // 1. Switch to preset 4
+    const buttons = Array.from(container.querySelectorAll("button"));
+    const preset4Btn = buttons.find((b) => b.textContent?.includes("4. PID DC Motor"));
+    expect(preset4Btn).toBeDefined();
+
+    await act(async () => {
+      preset4Btn!.click();
+    });
+
+    // 2. Verify empty state for preset 4 before simulation
+    expect(container.textContent).toContain("No simulation run yet — click Run Simulation");
+    expect(container.querySelector('[data-testid="scope-waveform-path"]')).toBeNull();
+
+    // 3. Click Run Simulation
+    const runBtn = Array.from(container.querySelectorAll("button")).find((b) =>
+      b.textContent?.includes("Run Simulation"),
+    );
+    expect(runBtn).toBeDefined();
+
+    await act(async () => {
+      runBtn!.click();
+    });
+
+    // 4. Verify waveform rendered
+    const waveformPath = container.querySelector('[data-testid="scope-waveform-path"]');
+    expect(waveformPath).not.toBeNull();
+    const dAttr = waveformPath!.getAttribute("d");
+    expect(dAttr).toMatch(/^M 60\.0 290\.0/);
+    expect(dAttr).toContain("L 760.0");
+
+    const scopeViewer = container.querySelector("#block-scope-viewer");
+    expect(scopeViewer?.textContent).toContain("98 samples");
+    expect(scopeViewer?.textContent).toContain("DC Motor Shaft Speed (RPM)");
+    expect(scopeViewer?.textContent).toContain("Method: rkf45");
+
+    // Print raw DOM evidence for PID DC Motor
+    console.log("=== RAW SCOPE WAVEFORM SVG EVIDENCE (PRESET 4 PID DC MOTOR) ===");
+    const svgEl = container.querySelector("#scope-waveform-svg");
+    console.log(svgEl?.outerHTML);
+
+    root.unmount();
+    container.remove();
   });
 });
