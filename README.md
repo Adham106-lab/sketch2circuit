@@ -55,7 +55,7 @@ sketch2circuit/
 
 ```bash
 # Clone and install dependencies
-git clone https://github.com/sketch2circuit/sketch2circuit.git
+git clone https://github.com/Adham106-lab/sketch2circuit
 cd sketch2circuit
 pnpm install
 
