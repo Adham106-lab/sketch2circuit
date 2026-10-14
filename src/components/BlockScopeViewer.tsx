@@ -160,8 +160,8 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
             {currentSignal?.title ? `${currentSignal.title} • ` : ""}
             {hasRun && metrics && points.length > 0 ? (
               <>
-                <span className="text-neutral-200 font-semibold">{metrics.count}</span> samples • Method:{" "}
-                <span className="text-emerald-400 font-bold uppercase">{solverMethod}</span>
+                <span className="text-neutral-200 font-semibold">{metrics.count}</span> samples •
+                Method: <span className="text-emerald-400 font-bold uppercase">{solverMethod}</span>
               </>
             ) : (
               <span className="text-amber-400 font-medium">
@@ -379,8 +379,11 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
               No simulation run yet — click Run Simulation
             </span>
             <p className="text-[11px] text-neutral-500 max-w-md leading-relaxed">
-              Click the green <strong className="text-emerald-400">Run Simulation</strong> button in the ribbon above to compile the diagram topology and plot the continuous-time waveform using the{" "}
-              <span className="text-neutral-300 font-mono font-bold uppercase">{solverMethod}</span> ODE solver.
+              Click the green <strong className="text-emerald-400">Run Simulation</strong> button in
+              the ribbon above to compile the diagram topology and plot the continuous-time waveform
+              using the{" "}
+              <span className="text-neutral-300 font-mono font-bold uppercase">{solverMethod}</span>{" "}
+              ODE solver.
             </p>
           </div>
         )}

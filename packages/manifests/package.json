@@ -1,0 +1,18 @@
+{
+  "name": "@s2c/manifests",
+  "version": "0.1.0",
+  "description": "Declarative board manifests and peripheral sub-circuit templates for sketch2circuit",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@s2c/circuit-json": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

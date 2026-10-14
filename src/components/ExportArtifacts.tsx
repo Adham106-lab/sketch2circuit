@@ -20,7 +20,10 @@ import {
   type WiringRow,
 } from "@s2c/export";
 import { circuitToAto } from "@s2c/export-ato";
+import { createGerberZip, exportGerber } from "@s2c/export-gerber";
+import { ARDUINO_UNO_R3_SHIELD_OUTLINE } from "@s2c/footprints";
 import { getPartDefinition } from "@s2c/parts";
+import { placeCircuit, routeCircuit } from "@s2c/pcb-layout";
 import {
   Check,
   ChevronDown,
@@ -32,6 +35,7 @@ import {
   FileCode,
   FileSpreadsheet,
   FileText,
+  Layers,
   ListOrdered,
   Search,
   Share2,
@@ -137,13 +141,32 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
   sourceCode = "",
 }) => {
   const [activeExportTab, setActiveExportTab] = useState<
-    "bom" | "wiring" | "kicad" | "report" | "circuit_json" | "ato"
+    "bom" | "wiring" | "kicad" | "gerber" | "report" | "circuit_json" | "ato"
   >("bom");
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [bomSearch, setBomSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<BomCategory>("all");
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
+
+  const safeBoardName = useMemo(() => {
+    return sketchName.toLowerCase().replace(/[^a-z0-9_]/g, "_") || "board";
+  }, [sketchName]);
+
+  const gerberData = useMemo(() => {
+    try {
+      const placed = placeCircuit(circuit, ARDUINO_UNO_R3_SHIELD_OUTLINE);
+      const routed = routeCircuit(placed.layout, circuit, { gridPitchMm: 0.635 });
+      const fileSet = exportGerber(routed.layout, { boardName: safeBoardName });
+      return { fileSet, layout: routed.layout, error: null };
+    } catch (e: unknown) {
+      return { fileSet: null, layout: null, error: (e as Error).message };
+    }
+  }, [circuit, safeBoardName]);
+
+  const [selectedGerberFile, setSelectedGerberFile] = useState<string>("");
+  const activeGerberFilename =
+    selectedGerberFile || (gerberData.fileSet ? `${safeBoardName}.gtl` : "");
 
   // 1. Dynamic Enriched Bill of Materials
   const enrichedBomRows: EnrichedBomRow[] = useMemo(() => {
@@ -310,6 +333,20 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadGerberZip = () => {
+    if (!gerberData.fileSet) return;
+    const zipBytes = createGerberZip(gerberData.fileSet);
+    const blob = new Blob([zipBytes], { type: "application/zip" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeBoardName}_gerbers.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div
       className="flex flex-col h-full border rounded-none overflow-hidden font-mono text-xs"
@@ -417,10 +454,57 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
             <FileCode className="w-3.5 h-3.5 text-cyan-400" />
             <span className="text-cyan-400 font-bold">ATOPILE (.ATO)</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveExportTab("gerber")}
+            className="px-3 py-1.5 border rounded-none flex items-center gap-1.5 transition font-bold uppercase text-[11px]"
+            style={{
+              backgroundColor: activeExportTab === "gerber" ? "var(--bg-panel)" : "transparent",
+              borderColor:
+                activeExportTab === "gerber" ? "var(--border-strong)" : "var(--border-app)",
+              color: activeExportTab === "gerber" ? "var(--text-main)" : "var(--text-muted)",
+            }}
+          >
+            <Layers className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-amber-400 font-bold">GERBER RS-274X (M20)</span>
+          </button>
         </div>
 
         {/* Global Action Buttons */}
         <div className="flex items-center gap-2">
+          {activeExportTab === "gerber" && gerberData.fileSet && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const content = gerberData.fileSet?.files[activeGerberFilename] || "";
+                  copyToClipboard(content, activeGerberFilename);
+                }}
+                className="eng-btn"
+                title={`Copy ${activeGerberFilename}`}
+              >
+                {copiedKey === activeGerberFilename ? (
+                  <Check className="w-3 h-3" style={{ color: "var(--accent-valid)" }} />
+                ) : (
+                  <ClipboardCopy className="w-3 h-3" />
+                )}
+                <span>COPY {activeGerberFilename.toUpperCase()}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const content = gerberData.fileSet?.files[activeGerberFilename] || "";
+                  downloadFile(content, activeGerberFilename, "text/plain");
+                }}
+                className="eng-btn"
+                title={`Download ${activeGerberFilename}`}
+              >
+                <Download className="w-3 h-3" />
+                <span>DOWNLOAD FILE</span>
+              </button>
+            </div>
+          )}
           {activeExportTab === "bom" && (
             <div className="flex items-center gap-1.5">
               <button
@@ -1331,6 +1415,142 @@ export const ExportArtifacts: React.FC<ExportArtifactsProps> = ({
             >
               {atoCode}
             </pre>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB: RS-274X GERBER & EXCELLON DRILL 8-FILE SET (M20a / M20b)              */}
+        {/* ========================================================================= */}
+        {activeExportTab === "gerber" && (
+          <div className="h-full flex flex-col space-y-2">
+            <div
+              className="p-3 border rounded-none text-[11px] space-y-2"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-app)",
+                color: "var(--text-muted)",
+              }}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-amber-400 uppercase tracking-wide">
+                    2-LAYER RS-274X GERBER & EXCELLON DRILL SET (M20)
+                  </span>
+                  <span className="px-1.5 py-0.2 border rounded-none text-[10px] bg-emerald-950/40 border-emerald-500/50 text-emerald-300 font-mono">
+                    ✓ matches-published-jlcpcb-standard
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadGerberZip}
+                    className="px-2.5 py-1 border rounded-none text-[10px] flex items-center gap-1.5 transition font-bold uppercase bg-amber-500/20 border-amber-500/60 text-amber-300 hover:bg-amber-500/30 cursor-pointer"
+                    title="Download complete 8-file Gerber and drill set in a single .zip archive"
+                    data-testid="export-artifacts-gerber-zip-btn"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>DOWNLOAD GERBERS (.ZIP)</span>
+                  </button>
+                  <span className="text-[10px] text-neutral-400">
+                    Ucamco Gerber Spec §4.1/§4.2 & Excellon NC Standard
+                  </span>
+                </div>
+              </div>
+
+              {gerberData.error ? (
+                <div className="text-red-400 font-mono text-xs">
+                  Error generating Gerber file set: {gerberData.error}
+                </div>
+              ) : gerberData.fileSet ? (
+                <>
+                  {/* File selector pill list */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {Object.keys(gerberData.fileSet.files).map((filename) => {
+                      const isSelected = filename === activeGerberFilename;
+                      let label = filename;
+                      if (filename.endsWith(".gtl")) label = `${filename} (Top Copper)`;
+                      else if (filename.endsWith(".gbl")) label = `${filename} (Bottom Copper)`;
+                      else if (filename.endsWith(".gts")) label = `${filename} (Top Mask)`;
+                      else if (filename.endsWith(".gbs")) label = `${filename} (Bottom Mask)`;
+                      else if (filename.endsWith(".gto")) label = `${filename} (Top Silk)`;
+                      else if (filename.endsWith(".gbo")) label = `${filename} (Bottom Silk)`;
+                      else if (filename.endsWith(".gko")) label = `${filename} (Outline)`;
+                      else if (filename.endsWith(".drl")) label = `${filename} (Excellon Drill)`;
+
+                      return (
+                        <button
+                          key={filename}
+                          type="button"
+                          onClick={() => setSelectedGerberFile(filename)}
+                          className={`px-2 py-0.5 border rounded-none text-[10px] font-mono transition cursor-pointer ${
+                            isSelected ? "font-bold" : "opacity-70 hover:opacity-100"
+                          }`}
+                          style={{
+                            backgroundColor: isSelected ? "var(--bg-panel)" : "var(--bg-sunken)",
+                            borderColor: isSelected ? "#f59e0b" : "var(--border-app)",
+                            color: isSelected ? "#fef3c7" : "var(--text-muted)",
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Summary metrics bar */}
+                  <div className="flex flex-wrap items-center gap-3 pt-1 text-[10px] text-neutral-300 border-t border-neutral-800">
+                    <span>
+                      Top Traces:{" "}
+                      <strong className="text-white">
+                        {gerberData.fileSet.metrics.topCopperTraceCount}
+                      </strong>
+                    </span>
+                    <span>
+                      Bottom Traces:{" "}
+                      <strong className="text-white">
+                        {gerberData.fileSet.metrics.bottomCopperTraceCount}
+                      </strong>
+                    </span>
+                    <span>
+                      Top Pads:{" "}
+                      <strong className="text-white">
+                        {gerberData.fileSet.metrics.topPadCount}
+                      </strong>
+                    </span>
+                    <span>
+                      Vias:{" "}
+                      <strong className="text-white">{gerberData.fileSet.metrics.viaCount}</strong>
+                    </span>
+                    <span>
+                      Drill Holes:{" "}
+                      <strong className="text-white">
+                        {gerberData.fileSet.metrics.drillHoleCount}
+                      </strong>
+                    </span>
+                    <span>
+                      Apertures (Top/Bottom):{" "}
+                      <strong className="text-white">
+                        {gerberData.fileSet.metrics.aperturesDefinedTopCopper}/
+                        {gerberData.fileSet.metrics.aperturesDefinedBottomCopper}
+                      </strong>
+                    </span>
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            {gerberData.fileSet && (
+              <pre
+                className="flex-1 p-4 border rounded-none font-mono text-[11px] overflow-auto whitespace-pre leading-relaxed"
+                style={{
+                  backgroundColor: "var(--bg-sunken)",
+                  borderColor: "var(--border-app)",
+                  color: "#fde68a",
+                }}
+              >
+                {gerberData.fileSet.files[activeGerberFilename] || "No file content available."}
+              </pre>
+            )}
           </div>
         )}
       </div>

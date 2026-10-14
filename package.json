@@ -33,6 +33,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@changesets/cli": "3.0.3",
+    "@hpcreery/tracespace-parser": "^5.0.4",
     "@monaco-editor/react": "4.7.0",
     "@types/node": "^22.14.0",
     "@types/react": "^19.3.0",
@@ -40,6 +41,7 @@
     "@types/three": "^0.186.0",
     "esbuild": "0.25.0",
     "fast-check": "4.10.2",
+    "gerber-parser": "^4.2.7",
     "happy-dom": "^20.14.5",
     "monaco-editor": "0.56.0",
     "tailwindcss": "^4.3.3",

@@ -332,7 +332,10 @@ export function computeSchematicLayout(
       if (p.name && p.name.length > maxPinNameLen) maxPinNameLen = p.name.length;
     }
     const estimatedPinWidth = maxPinNameLen * 7.5 + 44;
-    const width = Math.max(minWidth, Math.ceil(Math.max(estimatedTitleWidth, estimatedPartWidth, estimatedPinWidth)));
+    const width = Math.max(
+      minWidth,
+      Math.ceil(Math.max(estimatedTitleWidth, estimatedPartWidth, estimatedPinWidth)),
+    );
 
     // Pin vertical distribution: header band = 36px, pin spacing = 28px, bottom pad = 16px
     const headerHeight = 36;
@@ -499,7 +502,11 @@ export function computeSchematicLayout(
     const mcuX = isExplicit
       ? (mcu.position?.x ?? padding + 20)
       : hasLeftComps
-        ? leftColX + maxLeftCompWidth + Math.max(60, maxLeftBadgeWidth) + 40 + Math.max(50, maxMcuLeftBadgeWidth)
+        ? leftColX +
+          maxLeftCompWidth +
+          Math.max(60, maxLeftBadgeWidth) +
+          40 +
+          Math.max(50, maxMcuLeftBadgeWidth)
         : padding + 20;
     const mcuY = isExplicit ? (mcu.position?.y ?? padding + 40) : padding + 40;
 
@@ -572,20 +579,28 @@ export function computeSchematicLayout(
     let maxRight1LeftBadgeWidth = 0;
     for (const c of allRightComps) {
       for (const p of c.ports) {
-        maxRight1LeftBadgeWidth = Math.max(maxRight1LeftBadgeWidth, getBadgeWidth(p.netId, circuit));
+        maxRight1LeftBadgeWidth = Math.max(
+          maxRight1LeftBadgeWidth,
+          getBadgeWidth(p.netId, circuit),
+        );
       }
     }
 
     // Right Column 1 X: placed with guaranteed clearance from MCU right badges
-    const rightCol1X = mcuX + boxWidth + Math.max(60, maxMcuRightBadgeWidth) + 40 + Math.max(60, maxRight1LeftBadgeWidth);
+    const rightCol1X =
+      mcuX +
+      boxWidth +
+      Math.max(60, maxMcuRightBadgeWidth) +
+      40 +
+      Math.max(60, maxRight1LeftBadgeWidth);
     let rightCursorY = padding + 40;
 
     // Sort right components by the Y coordinate of the connected MCU pin
     allRightComps.sort((a, b) => {
       const portA = compPinMap.get(a.id)?.port;
       const portB = compPinMap.get(b.id)?.port;
-      const pinA = portA ? portPositions.get(`${mcu.id}.${portA.name}`)?.worldPos.y ?? 0 : 0;
-      const pinB = portB ? portPositions.get(`${mcu.id}.${portB.name}`)?.worldPos.y ?? 0 : 0;
+      const pinA = portA ? (portPositions.get(`${mcu.id}.${portA.name}`)?.worldPos.y ?? 0) : 0;
+      const pinB = portB ? (portPositions.get(`${mcu.id}.${portB.name}`)?.worldPos.y ?? 0) : 0;
       return pinA - pinB;
     });
 
@@ -633,10 +648,14 @@ export function computeSchematicLayout(
       if (partnerComp && !placedIds.has(partnerComp.id)) {
         // Ensure the component directly connected to the MCU is in Column 1 (closer to MCU)
         const compConnectsMcu = circuit.nets.some(
-          (n) => n.portIds.some((p) => p.startsWith(`${mcu.id}.`)) && n.portIds.some((p) => p.startsWith(`${comp.id}.`)),
+          (n) =>
+            n.portIds.some((p) => p.startsWith(`${mcu.id}.`)) &&
+            n.portIds.some((p) => p.startsWith(`${comp.id}.`)),
         );
         const partnerConnectsMcu = circuit.nets.some(
-          (n) => n.portIds.some((p) => p.startsWith(`${mcu.id}.`)) && n.portIds.some((p) => p.startsWith(`${partnerComp!.id}.`)),
+          (n) =>
+            n.portIds.some((p) => p.startsWith(`${mcu.id}.`)) &&
+            n.portIds.some((p) => p.startsWith(`${partnerComp!.id}.`)),
         );
         let firstComp = comp;
         let secondComp = partnerComp;
@@ -659,7 +678,8 @@ export function computeSchematicLayout(
         for (const p of secondComp.ports) {
           comp2LeftBadgeWidth = Math.max(comp2LeftBadgeWidth, getBadgeWidth(p.netId, circuit));
         }
-        const interBadgeGap = Math.max(60, comp1RightBadgeWidth) + 40 + Math.max(60, comp2LeftBadgeWidth);
+        const interBadgeGap =
+          Math.max(60, comp1RightBadgeWidth) + 40 + Math.max(60, comp2LeftBadgeWidth);
         const rightCol2X = rightCol1X + placed1.width + interBadgeGap;
 
         const isComp2Mod = !isDiscreteComponent(secondComp);

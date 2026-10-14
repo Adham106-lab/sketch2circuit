@@ -253,8 +253,8 @@ export default function App() {
             >
               <Layers className="w-3.5 h-3.5" />
               <span>
-                {routingBadgeStats.routed}/{routingBadgeStats.total} routed ({routingBadgeStats.pct}%)
-                · {routingBadgeStats.drcErrors} DRC
+                {routingBadgeStats.routed}/{routingBadgeStats.total} routed ({routingBadgeStats.pct}
+                %) · {routingBadgeStats.drcErrors} DRC
               </span>
             </button>
 
@@ -269,7 +269,10 @@ export default function App() {
               style={{ color: "var(--text-muted)" }}
               title="Toggle Visual Identity: Drafting Sheet (Light) / Oscilloscope (Dark)"
             >
-              <span className="uppercase tracking-wider font-semibold" style={{ color: "var(--text-main)" }}>
+              <span
+                className="uppercase tracking-wider font-semibold"
+                style={{ color: "var(--text-main)" }}
+              >
                 {theme === "dark" ? "Oscilloscope" : "Drafting Sheet"}
               </span>
               <span
@@ -292,7 +295,10 @@ export default function App() {
 
         {/* Zone 2: Navigation Folder Tabs Bar (Attached to content panel) */}
         <div id="workbench-tab-bar" className="px-4 flex items-end overflow-x-auto">
-          <nav id="workbench-nav" className="flex items-end gap-1 text-[11px] overflow-x-auto -mb-px">
+          <nav
+            id="workbench-nav"
+            className="flex items-end gap-1 text-[11px] overflow-x-auto -mb-px"
+          >
             <button
               id="tab-studio"
               type="button"

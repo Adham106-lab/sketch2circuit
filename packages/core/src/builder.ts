@@ -5,6 +5,7 @@
  */
 
 import type {
+  Bus,
   Circuit,
   Component,
   ComponentKind,
@@ -12,6 +13,7 @@ import type {
   NetKind,
   PinCapability,
   PortKind,
+  Provenance,
 } from "@s2c/circuit-json";
 import { instantiatePart, type PartDefinition } from "@s2c/parts";
 import { DisjointSet } from "./disjoint-set.js";
@@ -98,6 +100,10 @@ export class CircuitBuilder {
   private namedNets: Map<string, { kind: NetKind; voltage?: number }> = new Map();
   // Mapping from port ID to explicit net name
   private portExplicitNets: Map<string, string> = new Map();
+
+  private buses: Map<string, Bus> = new Map();
+  private netProvenances: Map<string, Provenance> = new Map();
+  private componentProvenances: Map<string, Provenance> = new Map();
 
   private autoNetCounter = 1;
 
@@ -359,6 +365,53 @@ export class CircuitBuilder {
   }
 
   /**
+   * Registers a logical Bus grouping multiple nets.
+   */
+  addBus(bus: Bus): this {
+    this.buses.set(bus.id, bus);
+    return this;
+  }
+
+  /**
+   * Connects two ports via an explicitly named LogicalNet (e.g. NET_GPIO_13, NET_I2C_SDA)
+   * with provenance and direction metadata.
+   */
+  connectLogicalNet(
+    netId: string,
+    portA: string,
+    portB: string,
+    options?: {
+      provenance?: Provenance;
+      kind?: NetKind;
+      voltage?: number;
+    },
+  ): this {
+    this.net(netId, options?.kind ?? "signal", options?.voltage);
+    if (options?.provenance) {
+      this.netProvenances.set(netId, options.provenance);
+    }
+    this.connectNet(netId, portA);
+    this.connectNet(netId, portB);
+    return this;
+  }
+
+  /**
+   * Attaches provenance to a component or net.
+   */
+  attachProvenance(targetId: string, provenance: Provenance): this {
+    if (this.components.has(targetId)) {
+      this.componentProvenances.set(targetId, provenance);
+      const comp = this.components.get(targetId);
+      if (comp) {
+        comp.provenance = provenance;
+      }
+    } else {
+      this.netProvenances.set(targetId, provenance);
+    }
+    return this;
+  }
+
+  /**
    * Produces the canonical Circuit JSON IR object using Disjoint-Set Union classes.
    */
   build(): Circuit {
@@ -419,11 +472,14 @@ export class CircuitBuilder {
         }
       }
 
+      const netProvenance = this.netProvenances.get(netId);
+
       resolvedNets.push({
         id: netId,
         kind: netKind,
         voltage,
         portIds: realPorts,
+        provenance: netProvenance,
       });
     }
 
@@ -436,6 +492,7 @@ export class CircuitBuilder {
       },
       components: Array.from(this.components.values()),
       nets: resolvedNets,
+      buses: this.buses.size > 0 ? Array.from(this.buses.values()) : undefined,
     };
   }
 }

@@ -145,6 +145,19 @@ export interface Via {
   diameter: number; // In mm (annular ring + drill)
 }
 
+export type DrcRuleVerification =
+  | "matches-published-jlcpcb-standard"
+  | "conservative-default"
+  | "unverified";
+
+export interface DrcRuleCitation {
+  verification: DrcRuleVerification;
+  fabValueMm: number;
+  ruleValueMm: number;
+  relation: "more-conservative" | "equal";
+  citation: string;
+}
+
 export interface DesignRules {
   minTraceWidthMm: number;
   minClearanceMm: number;
@@ -152,6 +165,8 @@ export interface DesignRules {
   minAnnularRingMm: number;
   boardEdgeClearanceMm: number;
   source: string;
+  verification?: DrcRuleVerification;
+  ruleCitations?: Record<string, DrcRuleCitation>;
 }
 
 export interface DrcViolation {

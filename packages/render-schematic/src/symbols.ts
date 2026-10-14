@@ -316,14 +316,20 @@ export function renderMcuOrModule(
   const estimatedTitleWidth = title.length * 7.5;
   const titleFontSize =
     estimatedTitleWidth > maxTitleWidth
-      ? Math.max(8, Math.min(12, Math.floor(((maxTitleWidth / Math.max(1, title.length)) * 1.35) * 10) / 10))
+      ? Math.max(
+          8,
+          Math.min(12, Math.floor((maxTitleWidth / Math.max(1, title.length)) * 1.35 * 10) / 10),
+        )
       : 12;
 
   const maxPartWidth = width - 16;
   const estimatedPartWidth = partNum.length * 6.5;
   const partFontSize =
     estimatedPartWidth > maxPartWidth
-      ? Math.max(7, Math.min(9, Math.floor(((maxPartWidth / Math.max(1, partNum.length)) * 1.35) * 10) / 10))
+      ? Math.max(
+          7,
+          Math.min(9, Math.floor((maxPartWidth / Math.max(1, partNum.length)) * 1.35 * 10) / 10),
+        )
       : 9;
 
   return `

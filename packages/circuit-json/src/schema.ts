@@ -60,6 +60,41 @@ export const PositionSchema = z.object({
   rotation: z.number().optional(),
 });
 
+export const EvidenceTypeSchema = z.enum([
+  "EXPLICIT_AST_CALL",
+  "LIBRARY_INFERENCE",
+  "TEMPLATE_AUTO_INJECTED",
+]);
+
+export const SignalDirectionSchema = z.enum(["INPUT", "OUTPUT", "BIDIRECTIONAL", "POWER"]);
+
+export const LineSpanSchema = z.object({
+  startLine: z.number().int().positive(),
+  startCol: z.number().int().positive().optional(),
+  endLine: z.number().int().positive(),
+  endCol: z.number().int().positive().optional(),
+});
+
+export const ProvenanceSchema = z.object({
+  sourceFile: z.string().optional(),
+  lineSpan: LineSpanSchema.optional(),
+  evidenceType: EvidenceTypeSchema,
+  confidence: z.number().min(0).max(1),
+  direction: SignalDirectionSchema.optional(),
+  notes: z.string().optional(),
+});
+
+export const BusTypeSchema = z.enum(["I2C_BUS", "SPI_BUS", "UART_BUS", "CUSTOM"]);
+
+export const BusSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().optional(),
+  type: BusTypeSchema,
+  netIds: z.array(z.string().min(1)),
+  signals: z.record(z.string()).optional(),
+  provenance: ProvenanceSchema.optional(),
+});
+
 export const PortSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -70,6 +105,7 @@ export const PortSchema = z.object({
   voltageRange: z.tuple([z.number(), z.number()]).optional(),
   currentLimit: z.number().positive().optional(),
   pull: z.enum(["up", "down", "none"]).optional(),
+  provenance: ProvenanceSchema.optional(),
 });
 
 export const ComponentSchema = z.object({
@@ -86,6 +122,7 @@ export const ComponentSchema = z.object({
   ports: z.array(PortSchema),
   position: PositionSchema.optional(),
   verified: z.boolean().optional(),
+  provenance: ProvenanceSchema.optional(),
 });
 
 export const NetSchema = z.object({
@@ -94,6 +131,7 @@ export const NetSchema = z.object({
   kind: NetKindSchema,
   voltage: z.number().optional(),
   portIds: z.array(z.string().min(1)),
+  provenance: ProvenanceSchema.optional(),
 });
 
 export const DiagnosticTargetSchema = z.object({
@@ -142,6 +180,7 @@ export const CircuitSchema = z.object({
   name: z.string().min(1),
   components: z.array(ComponentSchema),
   nets: z.array(NetSchema),
+  buses: z.array(BusSchema).optional(),
   diagnostics: z.array(DiagnosticSchema).optional(),
   assumptions: z.array(AssumptionSchema).optional(),
   metadata: CircuitMetadataSchema.optional(),
@@ -237,6 +276,32 @@ export function validateCircuitIntegrity(circuit: Circuit): IntegrityError[] {
         });
       } else {
         portToNetMap.set(portId, net.id);
+      }
+    }
+  }
+
+  // Check buses if present
+  if (circuit.buses) {
+    const busIds = new Set<string>();
+    for (let b = 0; b < circuit.buses.length; b++) {
+      const bus = circuit.buses[b];
+      if (!bus) continue;
+      if (busIds.has(bus.id)) {
+        errors.push({
+          path: `buses[${b}].id`,
+          message: `Duplicate bus id: "${bus.id}"`,
+        });
+      } else {
+        busIds.add(bus.id);
+      }
+      for (let n = 0; n < bus.netIds.length; n++) {
+        const netId = bus.netIds[n];
+        if (!netIds.has(netId)) {
+          errors.push({
+            path: `buses[${b}].netIds[${n}]`,
+            message: `Bus "${bus.id}" references non-existent net "${netId}"`,
+          });
+        }
       }
     }
   }

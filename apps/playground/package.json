@@ -25,6 +25,7 @@
     "@s2c/rules": "workspace:*",
     "@s2c/sim-engine": "workspace:*",
     "@s2c/block-diagram": "workspace:*",
+    "@s2c/export-gerber": "workspace:*",
     "@s2c/units": "workspace:*"
   }
 }

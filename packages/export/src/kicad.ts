@@ -53,3 +53,6 @@ export function exportKicadNetlist(circuit: Circuit): string {
 function escapeSExpr(str: string): string {
   return str.replace(/["\\]/g, "\\$&");
 }
+
+export const toKiCadNetlist = exportKicadNetlist;
+

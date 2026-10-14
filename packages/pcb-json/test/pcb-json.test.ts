@@ -193,6 +193,31 @@ describe("@s2c/pcb-json data model and validation", () => {
     }
   });
 
+  it("verifies DEFAULT_DESIGN_RULES is tagged matches-published-jlcpcb-standard with real citations", () => {
+    expect(DEFAULT_DESIGN_RULES.verification).toBe("matches-published-jlcpcb-standard");
+    expect(DEFAULT_DESIGN_RULES.source).toContain("jlcpcb.com");
+    expect(DEFAULT_DESIGN_RULES.ruleCitations).toBeDefined();
+
+    const citations = DEFAULT_DESIGN_RULES.ruleCitations;
+    expect(citations).toBeDefined();
+    if (!citations) return;
+    expect(citations.minTraceWidthMm.ruleValueMm).toBeGreaterThanOrEqual(
+      citations.minTraceWidthMm.fabValueMm,
+    );
+    expect(citations.minClearanceMm.ruleValueMm).toBeGreaterThanOrEqual(
+      citations.minClearanceMm.fabValueMm,
+    );
+    expect(citations.minDrillDiameterMm.ruleValueMm).toBeGreaterThanOrEqual(
+      citations.minDrillDiameterMm.fabValueMm,
+    );
+    expect(citations.minAnnularRingMm.ruleValueMm).toBeGreaterThanOrEqual(
+      citations.minAnnularRingMm.fabValueMm,
+    );
+    expect(citations.boardEdgeClearanceMm.ruleValueMm).toBeGreaterThanOrEqual(
+      citations.boardEdgeClearanceMm.fabValueMm,
+    );
+  });
+
   it("verifies strict TypeScript types", () => {
     expectTypeOf(VALID_SAMPLE_LAYOUT).toEqualTypeOf<PcbLayout>();
   });

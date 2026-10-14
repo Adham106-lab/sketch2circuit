@@ -4,6 +4,7 @@
  */
 
 export * from "./json-schema.js";
+export * from "./net-graph.js";
 export * from "./schema.js";
 export * from "./types.js";
 

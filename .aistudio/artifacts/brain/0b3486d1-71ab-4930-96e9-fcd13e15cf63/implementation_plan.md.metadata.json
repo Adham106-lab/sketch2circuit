@@ -1,0 +1,6 @@
+{
+  "summary": "Implementation plan for adding a structural diagnostic panel to the Export tab to analyze Gerber file internals, audit aperture definitions, detect excessive vector paths in silkscreen layers, and explain file size anomalies.",
+  "updatedAt": "2026-10-14T11:46:55.655233022Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

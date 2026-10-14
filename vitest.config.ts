@@ -30,6 +30,11 @@ export default defineConfig({
       "@s2c/export-ato": path.resolve(rootDir, "packages/export-ato/src"),
       "@s2c/sim-engine": path.resolve(rootDir, "packages/sim-engine/src"),
       "@s2c/block-diagram": path.resolve(rootDir, "packages/block-diagram/src"),
+      "@s2c/export-gerber": path.resolve(rootDir, "packages/export-gerber/src"),
+      "@s2c/manifests": path.resolve(rootDir, "packages/manifests/src"),
+      "@s2c/erc": path.resolve(rootDir, "packages/erc/src"),
+      "@s2c/layout": path.resolve(rootDir, "packages/layout/src"),
+      "@s2c/exporters": path.resolve(rootDir, "packages/exporters/src"),
     },
   },
 });

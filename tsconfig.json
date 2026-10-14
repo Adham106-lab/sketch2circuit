@@ -68,6 +68,21 @@
       ],
       "@s2c/block-diagram": [
         "./packages/block-diagram/src/index.ts"
+      ],
+      "@s2c/export-gerber": [
+        "./packages/export-gerber/src/index.ts"
+      ],
+      "@s2c/manifests": [
+        "./packages/manifests/src/index.ts"
+      ],
+      "@s2c/erc": [
+        "./packages/erc/src/index.ts"
+      ],
+      "@s2c/layout": [
+        "./packages/layout/src/index.ts"
+      ],
+      "@s2c/exporters": [
+        "./packages/exporters/src/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,

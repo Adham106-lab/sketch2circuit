@@ -80,6 +80,8 @@ export interface Port {
   currentLimit?: number | undefined;
   /** Internal pull resistor state */
   pull?: "up" | "down" | "none" | undefined;
+  /** Origin tracing and synthesis confidence */
+  provenance?: Provenance | undefined;
 }
 
 export interface Component {
@@ -103,10 +105,52 @@ export interface Component {
   position?: Position | undefined;
   /** Whether part specs derive from a verified datasheet entry */
   verified?: boolean | undefined;
+  /** Origin tracing and synthesis confidence */
+  provenance?: Provenance | undefined;
+}
+
+export type EvidenceType =
+  | "EXPLICIT_AST_CALL"
+  | "LIBRARY_INFERENCE"
+  | "TEMPLATE_AUTO_INJECTED";
+
+export type SignalDirection = "INPUT" | "OUTPUT" | "BIDIRECTIONAL" | "POWER";
+
+export interface LineSpan {
+  startLine: number;
+  startCol?: number | undefined;
+  endLine: number;
+  endCol?: number | undefined;
+}
+
+export interface Provenance {
+  sourceFile?: string | undefined;
+  lineSpan?: LineSpan | undefined;
+  evidenceType: EvidenceType;
+  confidence: number; // 0.0 to 1.0
+  direction?: SignalDirection | undefined;
+  notes?: string | undefined;
+}
+
+export type BusType = "I2C_BUS" | "SPI_BUS" | "UART_BUS" | "CUSTOM";
+
+export interface Bus {
+  /** Unique bus identifier: e.g. "I2C_BUS_0", "SPI_BUS_1" */
+  id: string;
+  /** Human-readable bus label */
+  name?: string | undefined;
+  /** High-level communication protocol */
+  type: BusType;
+  /** Net IDs belonging to this bus */
+  netIds: string[];
+  /** Map of standard signal roles to net IDs, e.g. { sda: "NET_I2C_SDA", scl: "NET_I2C_SCL" } */
+  signals?: Record<string, string> | undefined;
+  /** Bus provenance and synthesis evidence */
+  provenance?: Provenance | undefined;
 }
 
 export interface Net {
-  /** Unique net ID: e.g. "GND", "5V", "N$1", "net_d9_led" */
+  /** Unique net ID: e.g. "GND", "5V", "NET_GPIO_13", "NET_I2C_SDA" */
   id: string;
   /** Optional human-readable net name */
   name?: string | undefined;
@@ -116,7 +160,14 @@ export interface Net {
   voltage?: number | undefined;
   /** List of port IDs connected together by this net */
   portIds: string[];
+  /** Origin tracing and synthesis confidence */
+  provenance?: Provenance | undefined;
 }
+
+/**
+ * LogicalNet is a Net-Centric IR abstraction that connects MCU ports to peripheral ports.
+ */
+export type LogicalNet = Net;
 
 export interface DiagnosticTarget {
   type: "component" | "port" | "net" | "circuit" | "code";
@@ -184,6 +235,8 @@ export interface Circuit {
   components: Component[];
   /** Electrical nets connecting ports */
   nets: Net[];
+  /** High-level logical buses (I2C, SPI, UART) grouping nets */
+  buses?: Bus[] | undefined;
   /** Electrical rule check results */
   diagnostics?: Diagnostic[] | undefined;
   /** Inferred assumptions with confidence metrics */

@@ -395,10 +395,7 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
   }, [nodes, edges]);
 
   // Scope blocks currently configured on the canvas
-  const scopeBlocks = useMemo(
-    () => nodes.filter((n) => n.data.blockType === "Scope"),
-    [nodes],
-  );
+  const scopeBlocks = useMemo(() => nodes.filter((n) => n.data.blockType === "Scope"), [nodes]);
 
   // Fallback empty scope signals before any simulation has been executed
   const emptyScopeSignals: Record<string, ScopeSignalData> = useMemo(() => {
@@ -1526,10 +1523,7 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2
-                  id="usage-guide-title"
-                  className="text-xs font-bold uppercase tracking-wider"
-                >
+                <h2 id="usage-guide-title" className="text-xs font-bold uppercase tracking-wider">
                   Block-Diagram Simulation Editor — In-App Usage Guide
                 </h2>
                 <span
@@ -1544,7 +1538,8 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
                 </span>
               </div>
               <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                Continuous-Time ODE Modeling • Graphical Wiring • Numerical Solvers • Algebraic Loop Detection
+                Continuous-Time ODE Modeling • Graphical Wiring • Numerical Solvers • Algebraic Loop
+                Detection
               </p>
             </div>
           </div>
@@ -1582,13 +1577,19 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
                 </div>
                 <ul className="space-y-1 text-[11px] list-disc list-inside text-neutral-300">
                   <li>
-                    <strong className="text-neutral-100">Add Blocks:</strong> Click any block in the left <em>Block Palette</em> (Sources, Math, Dynamics, Sinks).
+                    <strong className="text-neutral-100">Add Blocks:</strong> Click any block in the
+                    left <em>Block Palette</em> (Sources, Math, Dynamics, Sinks).
                   </li>
                   <li>
-                    <strong className="text-neutral-100">Connect Wires:</strong> Drag from an output port (<span className="text-emerald-400 font-bold">green dot</span> on right) to an input port (<span className="text-sky-400 font-bold">blue dot</span> on left).
+                    <strong className="text-neutral-100">Connect Wires:</strong> Drag from an output
+                    port (<span className="text-emerald-400 font-bold">green dot</span> on right) to
+                    an input port (<span className="text-sky-400 font-bold">blue dot</span> on
+                    left).
                   </li>
                   <li>
-                    <strong className="text-neutral-100">Port Typing:</strong> Self-loops on the same block are prohibited by default. Multi-input blocks (Sum, Product) accept multiple named wires.
+                    <strong className="text-neutral-100">Port Typing:</strong> Self-loops on the
+                    same block are prohibited by default. Multi-input blocks (Sum, Product) accept
+                    multiple named wires.
                   </li>
                 </ul>
               </div>
@@ -1605,16 +1606,21 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
                 </div>
                 <ul className="space-y-1 text-[11px] list-disc list-inside text-neutral-300">
                   <li>
-                    <strong className="text-neutral-100">Select Block:</strong> Click any block on the canvas to open its parameters in the right <em>Block Inspector</em>.
+                    <strong className="text-neutral-100">Select Block:</strong> Click any block on
+                    the canvas to open its parameters in the right <em>Block Inspector</em>.
                   </li>
                   <li>
-                    <strong className="text-neutral-100">Tune Live:</strong> Modify gains, time constants, transfer function polynomials, and setpoints in real-time.
+                    <strong className="text-neutral-100">Tune Live:</strong> Modify gains, time
+                    constants, transfer function polynomials, and setpoints in real-time.
                   </li>
                   <li>
-                    <strong className="text-neutral-100">Delete Block:</strong> Press <kbd className="px-1 border rounded bg-neutral-800 text-[10px]">Delete</kbd> or click the red trash icon in the Inspector.
+                    <strong className="text-neutral-100">Delete Block:</strong> Press{" "}
+                    <kbd className="px-1 border rounded bg-neutral-800 text-[10px]">Delete</kbd> or
+                    click the red trash icon in the Inspector.
                   </li>
                   <li>
-                    <strong className="text-neutral-100">Fit View:</strong> Click <em>Fit View</em> on the top-left canvas badge or Controls panel to re-center all blocks.
+                    <strong className="text-neutral-100">Fit View:</strong> Click <em>Fit View</em>{" "}
+                    on the top-left canvas badge or Controls panel to re-center all blocks.
                   </li>
                 </ul>
               </div>
@@ -1631,7 +1637,12 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
             </div>
             <div className="space-y-2 text-[11px] text-neutral-300">
               <p>
-                The in-browser simulation engine compiles the block diagram into state-space ordinary differential equations (ODEs) of the form <code className="px-1 py-0.5 bg-neutral-900 border border-neutral-800 rounded font-mono">dx/dt = f(t, x, u)</code> and integrates them continuously:
+                The in-browser simulation engine compiles the block diagram into state-space
+                ordinary differential equations (ODEs) of the form{" "}
+                <code className="px-1 py-0.5 bg-neutral-900 border border-neutral-800 rounded font-mono">
+                  dx/dt = f(t, x, u)
+                </code>{" "}
+                and integrates them continuously:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                 <div
@@ -1650,7 +1661,10 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
                     </span>
                   </div>
                   <p className="text-[10.5px] leading-relaxed text-neutral-300">
-                    Embeds 4th and 5th-order Runge-Kutta-Fehlberg approximations to estimate local truncation error at every step. It automatically refines time step size <code className="text-sky-300">dt</code> near steep transients and step discontinuities, avoiding artificial simulation offsets.
+                    Embeds 4th and 5th-order Runge-Kutta-Fehlberg approximations to estimate local
+                    truncation error at every step. It automatically refines time step size{" "}
+                    <code className="text-sky-300">dt</code> near steep transients and step
+                    discontinuities, avoiding artificial simulation offsets.
                   </p>
                 </div>
 
@@ -1670,14 +1684,22 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
                     </span>
                   </div>
                   <p className="text-[10.5px] leading-relaxed text-neutral-300">
-                    Classic 4th-order Runge-Kutta evaluation with a constant user-specified <code className="text-amber-300">dt</code>. Suitable for smooth harmonic oscillators, but suffers from an <code className="text-amber-300">O(dt)</code> sampling error across non-aligned discontinuous transitions (Step inputs).
+                    Classic 4th-order Runge-Kutta evaluation with a constant user-specified{" "}
+                    <code className="text-amber-300">dt</code>. Suitable for smooth harmonic
+                    oscillators, but suffers from an <code className="text-amber-300">O(dt)</code>{" "}
+                    sampling error across non-aligned discontinuous transitions (Step inputs).
                   </p>
                 </div>
               </div>
 
               <div className="p-2.5 bg-neutral-900/80 border border-neutral-800 rounded-[2px] font-mono text-[10px] text-neutral-400">
                 <span className="text-amber-400 font-bold">DISCONTINUITY NOTICE (DOC §19): </span>
-                When simulating diagrams containing <code className="text-sky-300">Step</code> blocks, stage <code className="text-neutral-200">k4</code> of fixed-step RK4 evaluates across the discontinuity boundary during the step immediately preceding it, creating an initial offset of <code className="text-neutral-200">(dt/6)·Δu</code>. Always select <strong>RKF45 Adaptive</strong> for circuits with step sources.
+                When simulating diagrams containing <code className="text-sky-300">Step</code>{" "}
+                blocks, stage <code className="text-neutral-200">k4</code> of fixed-step RK4
+                evaluates across the discontinuity boundary during the step immediately preceding
+                it, creating an initial offset of{" "}
+                <code className="text-neutral-200">(dt/6)·Δu</code>. Always select{" "}
+                <strong>RKF45 Adaptive</strong> for circuits with step sources.
               </div>
             </div>
           </section>
@@ -1692,17 +1714,30 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
             </div>
             <div className="space-y-2 text-[11px] text-neutral-300">
               <p>
-                Before executing ODE integration, the compiler runs a topological sort and strongly connected component (SCC) cycle analysis on all direct-feedthrough connections:
+                Before executing ODE integration, the compiler runs a topological sort and strongly
+                connected component (SCC) cycle analysis on all direct-feedthrough connections:
               </p>
               <ul className="space-y-1 list-disc list-inside text-neutral-300">
                 <li>
-                  <strong>Direct Feedthrough:</strong> Blocks where output depends strictly on instantaneous inputs with no state delay (<code className="text-sky-300">Sum</code>, <code className="text-sky-300">Gain</code>, <code className="text-sky-300">Product</code>, <code className="text-sky-300">Saturation</code>, <code className="text-sky-300">Abs</code>).
+                  <strong>Direct Feedthrough:</strong> Blocks where output depends strictly on
+                  instantaneous inputs with no state delay (
+                  <code className="text-sky-300">Sum</code>,{" "}
+                  <code className="text-sky-300">Gain</code>,{" "}
+                  <code className="text-sky-300">Product</code>,{" "}
+                  <code className="text-sky-300">Saturation</code>,{" "}
+                  <code className="text-sky-300">Abs</code>).
                 </li>
                 <li>
-                  <strong>Algebraic Loop Error:</strong> If direct-feedthrough blocks form a closed feedback loop with no state block (e.g. <code className="text-red-400 font-mono">Sum → Gain → Sum</code>), the circuit represents an unsolvable instantaneous circular algebraic constraint.
+                  <strong>Algebraic Loop Error:</strong> If direct-feedthrough blocks form a closed
+                  feedback loop with no state block (e.g.{" "}
+                  <code className="text-red-400 font-mono">Sum → Gain → Sum</code>), the circuit
+                  represents an unsolvable instantaneous circular algebraic constraint.
                 </li>
                 <li>
-                  <strong>Resolution:</strong> Insert an <strong>Integrator (1/s)</strong> or a <strong>Delay (T)</strong> into the feedback path. Dynamic state blocks break algebraic loops by introducing independent continuous state variables (<code className="text-emerald-400 font-mono">dx/dt</code>).
+                  <strong>Resolution:</strong> Insert an <strong>Integrator (1/s)</strong> or a{" "}
+                  <strong>Delay (T)</strong> into the feedback path. Dynamic state blocks break
+                  algebraic loops by introducing independent continuous state variables (
+                  <code className="text-emerald-400 font-mono">dx/dt</code>).
                 </li>
               </ul>
             </div>
@@ -1720,38 +1755,66 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
               <div className="p-2 border border-emerald-900/50 bg-emerald-950/20 rounded-[2px]">
                 <div className="font-bold text-emerald-400 uppercase mb-1">Sources</div>
                 <ul className="space-y-0.5 text-neutral-300">
-                  <li>• <strong>Constant:</strong> Fixed scalar value</li>
-                  <li>• <strong>Step:</strong> Step transition at t_step</li>
-                  <li>• <strong>Ramp:</strong> Linear slope ramp</li>
-                  <li>• <strong>Sine:</strong> Sinusoidal oscillator</li>
+                  <li>
+                    • <strong>Constant:</strong> Fixed scalar value
+                  </li>
+                  <li>
+                    • <strong>Step:</strong> Step transition at t_step
+                  </li>
+                  <li>
+                    • <strong>Ramp:</strong> Linear slope ramp
+                  </li>
+                  <li>
+                    • <strong>Sine:</strong> Sinusoidal oscillator
+                  </li>
                 </ul>
               </div>
 
               <div className="p-2 border border-sky-900/50 bg-sky-950/20 rounded-[2px]">
                 <div className="font-bold text-sky-400 uppercase mb-1">Math &amp; Algebraic</div>
                 <ul className="space-y-0.5 text-neutral-300">
-                  <li>• <strong>Gain:</strong> Linear multiplier (K·u)</li>
-                  <li>• <strong>Sum:</strong> Multi-input adder/subtractor</li>
-                  <li>• <strong>Product:</strong> Multiplier (u1 × u2)</li>
-                  <li>• <strong>Saturation:</strong> Clamped upper/lower limits</li>
-                  <li>• <strong>Abs:</strong> Absolute value (|u|)</li>
+                  <li>
+                    • <strong>Gain:</strong> Linear multiplier (K·u)
+                  </li>
+                  <li>
+                    • <strong>Sum:</strong> Multi-input adder/subtractor
+                  </li>
+                  <li>
+                    • <strong>Product:</strong> Multiplier (u1 × u2)
+                  </li>
+                  <li>
+                    • <strong>Saturation:</strong> Clamped upper/lower limits
+                  </li>
+                  <li>
+                    • <strong>Abs:</strong> Absolute value (|u|)
+                  </li>
                 </ul>
               </div>
 
               <div className="p-2 border border-purple-900/50 bg-purple-950/20 rounded-[2px]">
                 <div className="font-bold text-purple-400 uppercase mb-1">Dynamics (State)</div>
                 <ul className="space-y-0.5 text-neutral-300">
-                  <li>• <strong>Integrator:</strong> 1/s dynamic state</li>
-                  <li>• <strong>TransferFunction:</strong> N(s)/D(s) state-space</li>
-                  <li>• <strong>PID Controller:</strong> Parallel Kp + Ki/s + Kd·s</li>
-                  <li>• <strong>Delay:</strong> Fixed transport delay T</li>
+                  <li>
+                    • <strong>Integrator:</strong> 1/s dynamic state
+                  </li>
+                  <li>
+                    • <strong>TransferFunction:</strong> N(s)/D(s) state-space
+                  </li>
+                  <li>
+                    • <strong>PID Controller:</strong> Parallel Kp + Ki/s + Kd·s
+                  </li>
+                  <li>
+                    • <strong>Delay:</strong> Fixed transport delay T
+                  </li>
                 </ul>
               </div>
 
               <div className="p-2 border border-amber-900/50 bg-amber-950/20 rounded-[2px]">
                 <div className="font-bold text-amber-400 uppercase mb-1">Sinks &amp; Display</div>
                 <ul className="space-y-0.5 text-neutral-300">
-                  <li>• <strong>Scope:</strong> Time-domain signal recorder</li>
+                  <li>
+                    • <strong>Scope:</strong> Time-domain signal recorder
+                  </li>
                   <li>• Records waveforms over full tEnd</li>
                   <li>• Interactive hover inspect readout</li>
                   <li>• Multi-channel comparison support</li>
@@ -1772,28 +1835,38 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
               <div className="p-2.5 bg-neutral-900/60 border border-neutral-800 rounded-[2px]">
                 <div className="font-bold text-sky-300 font-mono">1. Valid Feedback Loop</div>
                 <p className="text-neutral-400 text-[10px] mt-0.5">
-                  Closed-loop 1st order dynamic system with Step input, error summation, Integrator, and unity feedback gain. Validated with 1 continuous state variable.
+                  Closed-loop 1st order dynamic system with Step input, error summation, Integrator,
+                  and unity feedback gain. Validated with 1 continuous state variable.
                 </p>
               </div>
 
               <div className="p-2.5 bg-neutral-900/60 border border-neutral-800 rounded-[2px]">
                 <div className="font-bold text-amber-300 font-mono">2. Algebraic Loop Error</div>
                 <p className="text-neutral-400 text-[10px] mt-0.5">
-                  Direct algebraic feedback between Sum and Gain without state blocks. Intentionally triggers compiler rejection and diagnostic guidance to demonstrate loop safety.
+                  Direct algebraic feedback between Sum and Gain without state blocks. Intentionally
+                  triggers compiler rejection and diagnostic guidance to demonstrate loop safety.
                 </p>
               </div>
 
               <div className="p-2.5 bg-neutral-900/60 border border-neutral-800 rounded-[2px]">
-                <div className="font-bold text-emerald-300 font-mono">3. Harmonic Oscillator (2-State)</div>
+                <div className="font-bold text-emerald-300 font-mono">
+                  3. Harmonic Oscillator (2-State)
+                </div>
                 <p className="text-neutral-400 text-[10px] mt-0.5">
-                  Second-order undamped harmonic oscillator (x&apos;&apos; = -omega^2 * x) composed of dual coupled Integrators and negative feedback gain. Produces sinusoidal state-space orbits.
+                  Second-order undamped harmonic oscillator (x&apos;&apos; = -omega^2 * x) composed
+                  of dual coupled Integrators and negative feedback gain. Produces sinusoidal
+                  state-space orbits.
                 </p>
               </div>
 
               <div className="p-2.5 bg-neutral-900/60 border border-neutral-800 rounded-[2px]">
-                <div className="font-bold text-purple-300 font-mono">4. PID DC Motor Actuator Speed Control</div>
+                <div className="font-bold text-purple-300 font-mono">
+                  4. PID DC Motor Actuator Speed Control
+                </div>
                 <p className="text-neutral-400 text-[10px] mt-0.5">
-                  Complete closed-loop actuator control benchmark matching the M17 physical DC motor model (tau = 80ms, H(s) = 12.5 / (s + 12.5)) with filtered PID speed regulating to 1000 RPM.
+                  Complete closed-loop actuator control benchmark matching the M17 physical DC motor
+                  model (tau = 80ms, H(s) = 12.5 / (s + 12.5)) with filtered PID speed regulating to
+                  1000 RPM.
                 </p>
               </div>
             </div>
@@ -1809,13 +1882,10 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
           }}
         >
           <span className="text-[10px] text-neutral-400 font-mono">
-            Press <kbd className="px-1 border rounded bg-neutral-800 text-[9px]">Esc</kbd> or click outside to dismiss
+            Press <kbd className="px-1 border rounded bg-neutral-800 text-[9px]">Esc</kbd> or click
+            outside to dismiss
           </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="eng-btn primary text-[11px]"
-          >
+          <button type="button" onClick={onClose} className="eng-btn primary text-[11px]">
             Got It
           </button>
         </div>

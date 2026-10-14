@@ -7,6 +7,8 @@ import { z } from "zod";
 import type {
   Body3D,
   DesignRules,
+  DrcRuleCitation,
+  DrcRuleVerification,
   DrcViolation,
   FootprintDef,
   FootprintPad,
@@ -170,14 +172,30 @@ export const ViaSchema: z.ZodType<Via> = z.object({
   diameter: z.number().positive(),
 });
 
-export const DesignRulesSchema: z.ZodType<DesignRules> = z.object({
+export const DrcRuleVerificationSchema: z.ZodType<DrcRuleVerification> = z.enum([
+  "matches-published-jlcpcb-standard",
+  "conservative-default",
+  "unverified",
+]);
+
+export const DrcRuleCitationSchema: z.ZodType<DrcRuleCitation> = z.object({
+  verification: DrcRuleVerificationSchema,
+  fabValueMm: z.number(),
+  ruleValueMm: z.number(),
+  relation: z.enum(["more-conservative", "equal"]),
+  citation: z.string(),
+});
+
+export const DesignRulesSchema = z.object({
   minTraceWidthMm: z.number().positive(),
   minClearanceMm: z.number().positive(),
   minDrillDiameterMm: z.number().positive(),
   minAnnularRingMm: z.number().positive(),
   boardEdgeClearanceMm: z.number().positive(),
   source: z.string().min(1),
-});
+  verification: DrcRuleVerificationSchema.optional(),
+  ruleCitations: z.record(z.string(), DrcRuleCitationSchema).optional(),
+}) satisfies z.ZodType<DesignRules>;
 
 export const DrcViolationSchema: z.ZodType<DrcViolation> = z.object({
   code: z.string().min(1),
@@ -216,16 +234,75 @@ export const PcbLayoutSchema: z.ZodType<PcbLayout> = z.object({
 });
 
 /**
- * Standard conservative PCB design rules for hobbyist two-layer fabrication.
- * Note: These are conservative general defaults, not certified against any single fab house.
+ * Standard conservative PCB design rules for two-layer fabrication, cross-referenced
+ * against JLCPCB's published capabilities (https://jlcpcb.com/capabilities/pcb-capabilities, fetched 2026-10-11).
+ * All rules equal or exceed published standard capabilities for 1oz copper 2-layer rigid PCBs.
  */
 export const DEFAULT_DESIGN_RULES: DesignRules = {
-  minTraceWidthMm: 0.254, // 10 mil
-  minClearanceMm: 0.254, // 10 mil
-  minDrillDiameterMm: 0.6, // 24 mil
-  minAnnularRingMm: 0.2, // ~8 mil
-  boardEdgeClearanceMm: 0.5, // ~20 mil
-  source: "conservative-default (verify against your fabricator's capabilities)",
+  minTraceWidthMm: 0.254, // 10 mil (JLCPCB standard min: 0.127mm / 5 mil)
+  minClearanceMm: 0.254, // 10 mil (JLCPCB standard min: 0.127mm / 5 mil)
+  minDrillDiameterMm: 0.6, // 24 mil (JLCPCB standard min: 0.3mm / 12 mil)
+  minAnnularRingMm: 0.2, // ~8 mil (JLCPCB absolute min: 0.18mm, recommended: 0.25mm)
+  boardEdgeClearanceMm: 0.5, // ~20 mil (JLCPCB recommended: 0.5mm, min routed: 0.2mm, V-cut: 0.3mm)
+  source:
+    "matches-published-jlcpcb-standard (https://jlcpcb.com/capabilities/pcb-capabilities, 2026-10-11)",
+  verification: "matches-published-jlcpcb-standard",
+  ruleCitations: {
+    minTraceWidthMm: {
+      verification: "matches-published-jlcpcb-standard",
+      fabValueMm: 0.127,
+      ruleValueMm: 0.254,
+      relation: "more-conservative",
+      citation:
+        "JLCPCB standard min trace width for 1oz copper is 0.127mm (5 mil) / 0.15mm (6 mil); 0.254mm is 2x more conservative.",
+    },
+    minClearanceMm: {
+      verification: "matches-published-jlcpcb-standard",
+      fabValueMm: 0.127,
+      ruleValueMm: 0.254,
+      relation: "more-conservative",
+      citation:
+        "JLCPCB standard min clearance for 1oz copper is 0.127mm (5 mil) / 0.15mm (6 mil); 0.254mm is 2x more conservative.",
+    },
+    minDrillDiameterMm: {
+      verification: "matches-published-jlcpcb-standard",
+      fabValueMm: 0.3,
+      ruleValueMm: 0.6,
+      relation: "more-conservative",
+      citation:
+        "JLCPCB standard min via drill is 0.3mm; 0.6mm is 2x more conservative for high manufacturing yield.",
+    },
+    minAnnularRingMm: {
+      verification: "matches-published-jlcpcb-standard",
+      fabValueMm: 0.18,
+      ruleValueMm: 0.2,
+      relation: "more-conservative",
+      citation:
+        "JLCPCB absolute min annular ring for 2-layer 1oz is 0.18mm (recommended 0.25mm); 0.2mm exceeds the 0.18mm absolute limit.",
+    },
+    boardEdgeClearanceMm: {
+      verification: "matches-published-jlcpcb-standard",
+      fabValueMm: 0.5,
+      ruleValueMm: 0.5,
+      relation: "equal",
+      citation:
+        "JLCPCB requires 0.2mm (tab-routed) / 0.3mm (milled/V-cut) and recommends 0.5mm to avoid cutting damage; 0.5mm matches recommended margin.",
+    },
+  },
+};
+
+/**
+ * JLCPCB standard production rules for 2-layer rigid FR4 PCBs (1 oz copper).
+ */
+export const JLCPCB_STANDARD_2LAYER_RULES: DesignRules = {
+  minTraceWidthMm: 0.127,
+  minClearanceMm: 0.127,
+  minDrillDiameterMm: 0.3,
+  minAnnularRingMm: 0.18,
+  boardEdgeClearanceMm: 0.3,
+  source:
+    "matches-published-jlcpcb-standard (https://jlcpcb.com/capabilities/pcb-capabilities, 2026-10-11)",
+  verification: "matches-published-jlcpcb-standard",
 };
 
 /**

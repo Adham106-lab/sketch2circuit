@@ -140,7 +140,10 @@ describe("@s2c/render-schematic package (M3)", () => {
 
   // (d) Zero-collision invariant: automated post-layout bounding-box overlap verification
   it("(d) asserts zero bounding-box overlaps on the multi-peripheral circuit (user_multi_peripheral.ino)", () => {
-    const fixturePath = path.resolve(__dirname, "../../../fixtures/sketches/user_multi_peripheral.ino");
+    const fixturePath = path.resolve(
+      __dirname,
+      "../../../fixtures/sketches/user_multi_peripheral.ino",
+    );
     expect(fs.existsSync(fixturePath)).toBe(true);
 
     const sketchCode = fs.readFileSync(fixturePath, "utf-8");

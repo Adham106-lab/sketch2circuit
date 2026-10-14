@@ -94,4 +94,3 @@ export interface SchematicCollisionReport {
   collisions: SchematicCollision[];
   boundingBoxes: ElementBoundingBox[];
 }
-
