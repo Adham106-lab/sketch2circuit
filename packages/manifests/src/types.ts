@@ -74,6 +74,7 @@ export interface DriverStageRecommendation {
   type: "NFET" | "NPN";
   part: string;
   gateResistor?: string;
+  baseResistor?: string;
   pullDownResistor?: string;
   flybackDiode?: string;
 }

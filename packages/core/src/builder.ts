@@ -386,12 +386,13 @@ export class CircuitBuilder {
       voltage?: number;
     },
   ): this {
-    this.net(netId, options?.kind ?? "signal", options?.voltage);
     if (options?.provenance) {
       this.netProvenances.set(netId, options.provenance);
     }
-    this.connectNet(netId, portA);
-    this.connectNet(netId, portB);
+    this.connectNet(netId, [portA, portB], {
+      kind: options?.kind,
+      voltage: options?.voltage,
+    });
     return this;
   }
 

@@ -6,6 +6,7 @@
       "name": "sketch2circuit",
       "dependencies": {
         "@tailwindcss/vite": "^4.3.3",
+        "@vercel/analytics": "^2.0.1",
         "@vitejs/plugin-react": "^6.1.1",
         "@xyflow/react": "12.12.0",
         "lucide-react": "^0.546.0",
@@ -52,6 +53,7 @@
         "@s2c/core": "workspace:*",
         "@s2c/export": "workspace:*",
         "@s2c/export-ato": "workspace:*",
+        "@s2c/export-gerber": "workspace:*",
         "@s2c/footprints": "workspace:*",
         "@s2c/parts": "workspace:*",
         "@s2c/pcb-json": "workspace:*",
@@ -112,6 +114,14 @@
       "name": "@s2c/core",
       "version": "0.1.0",
     },
+    "packages/erc": {
+      "name": "@s2c/erc",
+      "version": "0.1.0",
+      "dependencies": {
+        "@s2c/circuit-json": "workspace:*",
+        "@s2c/manifests": "workspace:*",
+      },
+    },
     "packages/export": {
       "name": "@s2c/export",
       "version": "0.1.0",
@@ -136,9 +146,18 @@
         "@s2c/pcb-json": "workspace:*",
       },
       "devDependencies": {
+        "@hpcreery/tracespace-parser": "^5.0.4",
         "@s2c/arduino": "workspace:*",
         "@s2c/footprints": "workspace:*",
         "@s2c/pcb-layout": "workspace:*",
+        "gerber-parser": "^4.2.7",
+      },
+    },
+    "packages/exporters": {
+      "name": "@s2c/exporters",
+      "version": "0.1.0",
+      "dependencies": {
+        "@s2c/circuit-json": "workspace:*",
       },
     },
     "packages/footprints": {
@@ -146,6 +165,20 @@
       "version": "0.1.0",
       "dependencies": {
         "@s2c/pcb-json": "workspace:*",
+      },
+    },
+    "packages/layout": {
+      "name": "@s2c/layout",
+      "version": "0.1.0",
+      "dependencies": {
+        "@s2c/circuit-json": "workspace:*",
+      },
+    },
+    "packages/manifests": {
+      "name": "@s2c/manifests",
+      "version": "0.1.0",
+      "dependencies": {
+        "@s2c/circuit-json": "workspace:*",
       },
     },
     "packages/parts": {
@@ -426,13 +459,21 @@
 
     "@s2c/core": ["@s2c/core@workspace:packages/core"],
 
+    "@s2c/erc": ["@s2c/erc@workspace:packages/erc"],
+
     "@s2c/export": ["@s2c/export@workspace:packages/export"],
 
     "@s2c/export-ato": ["@s2c/export-ato@workspace:packages/export-ato"],
 
     "@s2c/export-gerber": ["@s2c/export-gerber@workspace:packages/export-gerber"],
 
+    "@s2c/exporters": ["@s2c/exporters@workspace:packages/exporters"],
+
     "@s2c/footprints": ["@s2c/footprints@workspace:packages/footprints"],
+
+    "@s2c/layout": ["@s2c/layout@workspace:packages/layout"],
+
+    "@s2c/manifests": ["@s2c/manifests@workspace:packages/manifests"],
 
     "@s2c/parts": ["@s2c/parts@workspace:packages/parts"],
 
@@ -521,6 +562,8 @@
     "@types/whatwg-mimetype": ["@types/whatwg-mimetype@3.0.2", "", {}, "sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA=="],
 
     "@types/ws": ["@types/ws@8.18.2", "", { "dependencies": { "@types/node": "*" } }, "sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w=="],
+
+    "@vercel/analytics": ["@vercel/analytics@2.0.1", "", { "peerDependencies": { "@remix-run/react": "^2", "@sveltejs/kit": "^1 || ^2", "next": ">= 13", "nuxt": ">= 3", "react": "^18 || ^19 || ^19.0.0-rc", "svelte": ">= 4", "vue": "^3", "vue-router": "^4" }, "optionalPeers": ["@remix-run/react", "@sveltejs/kit", "next", "nuxt", "react", "svelte", "vue", "vue-router"] }, "sha512-MTQG6V9qQrt1tsDeF+2Uoo5aPjqbVPys1xvnIftXSJYG2SrwXRHnqEvVoYID7BTruDz4lCd2Z7rM1BdkUehk2g=="],
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.1.1", "", { "dependencies": { "@rolldown/pluginutils": "1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "oxc-transform-react": "^0.145.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler", "oxc-transform-react"] }, "sha512-yxLaQV9gkhS8ezJqCM6+ndU7mDY6gqAg75NQ+0IjwEI8IYOmQCgkRwHKVSfWXW076DsqMo0Dk+0FK1U+M5RgFw=="],
 

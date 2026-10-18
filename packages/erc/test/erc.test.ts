@@ -103,7 +103,7 @@ describe("Electrical Rule Check (ERC) Pass (Task 2)", () => {
         },
         {
           id: "SOL1",
-          kind: "solenoid",
+          kind: "relay",
           name: "12V Lock Solenoid",
           properties: { peakCurrentMa: 600 },
           ports: [

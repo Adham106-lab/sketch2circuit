@@ -6,7 +6,7 @@
 import type { Circuit } from "@s2c/circuit-json";
 import type { ErcContext, ErcDiagnostic, ErcRule } from "../types.js";
 
-const HIGH_CURRENT_KINDS = new Set(["relay", "solenoid", "motor", "buzzer"]);
+const HIGH_CURRENT_KINDS = new Set<string>(["relay", "buzzer"]);
 
 export const CurrentProtectionRule: ErcRule = {
   id: "erc.direct-actuator-gpio",
@@ -59,7 +59,7 @@ export const CurrentProtectionRule: ErcRule = {
 
           if (!hasTransistorDriver) {
             const mcuPortStr = mcuPortsInNet.join(", ");
-            const estCurrent = actuator.properties?.peakCurrentMa ?? (actuator.kind === "relay" || actuator.kind === "solenoid" ? 500 : 60);
+            const estCurrent = actuator.properties?.peakCurrentMa ?? (actuator.kind === "relay" ? 500 : 60);
 
             diagnostics.push({
               ruleId: "erc.direct-actuator-gpio",

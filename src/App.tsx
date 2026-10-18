@@ -35,6 +35,8 @@ import { PcbViewer } from "./components/PcbViewer.js";
 import { SchematicViewer } from "./components/SchematicViewer.js";
 import { SimulationTab } from "./components/SimulationTab.js";
 import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
+import { GitHubStarButton } from "./components/GitHubStarButton.js";
+import { Analytics } from "@vercel/analytics/react";
 
 export default function App() {
   // Theme state: "dark" (Oscilloscope) vs "light" (Drafting Sheet)
@@ -233,8 +235,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Zone 3: Genuine Actionable Badges & Plain Theme Toggle */}
-          <div className="flex items-center gap-3">
+          {/* Zone 3: Genuine Actionable Badges, GitHub Star CTA & Plain Theme Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Real Actionable Warning Status Badge */}
             <button
               id="status-routing-badge"
@@ -258,6 +260,9 @@ export default function App() {
               </span>
             </button>
 
+            {/* Prominent High-Conversion GitHub Star CTA Button */}
+            <GitHubStarButton />
+
             {/* Plain Theme Toggle Switch (Setting control, not a bordered badge) */}
             <button
               id="theme-toggle-switch"
@@ -270,10 +275,16 @@ export default function App() {
               title="Toggle Visual Identity: Drafting Sheet (Light) / Oscilloscope (Dark)"
             >
               <span
-                className="uppercase tracking-wider font-semibold"
+                className="uppercase tracking-wider font-semibold hidden md:inline"
                 style={{ color: "var(--text-main)" }}
               >
                 {theme === "dark" ? "Oscilloscope" : "Drafting Sheet"}
+              </span>
+              <span
+                className="uppercase tracking-wider font-semibold md:hidden"
+                style={{ color: "var(--text-main)" }}
+              >
+                {theme === "dark" ? "Dark" : "Light"}
               </span>
               <span
                 className="w-6 h-3.5 rounded-full p-0.5 flex items-center transition-colors"
@@ -1371,6 +1382,9 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Vercel Web Analytics */}
+      <Analytics />
     </div>
   );
 }
