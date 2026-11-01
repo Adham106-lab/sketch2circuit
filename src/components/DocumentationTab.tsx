@@ -13,14 +13,17 @@ import {
   CheckCircle2,
   ClipboardCopy,
   Cpu,
+  Download,
+  FileText,
   Layers,
   Tv,
 } from "lucide-react";
 import { useState } from "react";
+import { TECHNICAL_HANDOFF_MARKDOWN } from "./technical-handoff-text.js";
 
 export function DocumentationTab() {
-  const [subSection, setSubSection] = useState<"comparison" | "video" | "limitations">(
-    "comparison",
+  const [subSection, setSubSection] = useState<"comparison" | "video" | "limitations" | "handoff">(
+    "handoff",
   );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -198,6 +201,24 @@ export function DocumentationTab() {
               style={{ color: subSection === "limitations" ? "var(--border-strong)" : "inherit" }}
             />
             <span>KNOWN LIMITATIONS (M8)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubSection("handoff")}
+            className="px-3 py-1.5 border rounded-none flex items-center gap-1.5 transition font-bold uppercase text-[11px]"
+            style={{
+              backgroundColor: subSection === "handoff" ? "var(--bg-panel)" : "transparent",
+              borderColor:
+                subSection === "handoff" ? "var(--border-strong)" : "var(--border-app)",
+              color: subSection === "handoff" ? "var(--text-main)" : "var(--text-muted)",
+            }}
+          >
+            <FileText
+              className="w-3.5 h-3.5"
+              style={{ color: subSection === "handoff" ? "var(--border-strong)" : "inherit" }}
+            />
+            <span>TECHNICAL HANDOFF (M20)</span>
           </button>
         </div>
 
@@ -1040,6 +1061,179 @@ export function DocumentationTab() {
                     silkscreen before applying power.
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SUBSECTION: TECHNICAL HANDOFF & ARCHITECTURE DOCUMENT (M20)               */}
+        {/* ========================================================================= */}
+        {subSection === "handoff" && (
+          <div className="space-y-4 max-w-5xl">
+            {/* Header with Quick Actions */}
+            <div
+              className="p-4 border rounded-none flex flex-wrap items-center justify-between gap-3"
+              style={{
+                backgroundColor: "var(--bg-subpanel)",
+                borderColor: "var(--border-strong)",
+              }}
+            >
+              <div>
+                <h3 className="font-bold text-sm tracking-tight flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-amber-400" />
+                  <span>Technical Handoff &amp; Context Document</span>
+                </h3>
+                <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  Deep-dive architectural handoff covering Monorepo, M0–M20 Milestones, AI Pipeline, and Roadmap.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const blob = new Blob([TECHNICAL_HANDOFF_MARKDOWN], {
+                      type: "text/markdown;charset=utf-8",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "TECHNICAL_HANDOFF.md";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="px-3 py-1.5 border rounded-none font-bold text-xs uppercase flex items-center gap-1.5 transition hover:brightness-110 cursor-pointer"
+                  style={{
+                    backgroundColor: "rgba(245, 158, 11, 0.15)",
+                    borderColor: "#f59e0b",
+                    color: "#fbbf24",
+                  }}
+                  title="Download complete technical handoff document as TECHNICAL_HANDOFF.md"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download .MD Document</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(TECHNICAL_HANDOFF_MARKDOWN, "handoff-all")}
+                  className="px-3 py-1.5 border rounded-none text-xs uppercase flex items-center gap-1.5 transition"
+                  style={{
+                    backgroundColor: "var(--bg-panel)",
+                    borderColor: "var(--border-app)",
+                    color: "var(--text-main)",
+                  }}
+                  title="Copy complete markdown text to clipboard"
+                >
+                  {copiedKey === "handoff-all" ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardCopy className="w-3.5 h-3.5" />
+                      <span>Copy Markdown</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div
+                className="p-3 border rounded-none"
+                style={{ backgroundColor: "var(--bg-subpanel)", borderColor: "var(--border-app)" }}
+              >
+                <span className="text-[10px] uppercase font-bold block" style={{ color: "var(--text-muted)" }}>
+                  Architecture
+                </span>
+                <span className="font-bold text-xs block mt-1" style={{ color: "var(--text-main)" }}>
+                  Strict Bipartite Net Graph
+                </span>
+                <span className="text-[10px] mt-0.5 block" style={{ color: "var(--text-muted)" }}>
+                  Components ── Ports ── Nets
+                </span>
+              </div>
+
+              <div
+                className="p-3 border rounded-none"
+                style={{ backgroundColor: "var(--bg-subpanel)", borderColor: "var(--border-app)" }}
+              >
+                <span className="text-[10px] uppercase font-bold block" style={{ color: "var(--text-muted)" }}>
+                  ERC Middle-End
+                </span>
+                <span className="font-bold text-xs block mt-1 text-emerald-400">
+                  18 Quantitative Rules
+                </span>
+                <span className="text-[10px] mt-0.5 block" style={{ color: "var(--text-muted)" }}>
+                  Shorts, Pin Contention, Pullups
+                </span>
+              </div>
+
+              <div
+                className="p-3 border rounded-none"
+                style={{ backgroundColor: "var(--bg-subpanel)", borderColor: "var(--border-app)" }}
+              >
+                <span className="text-[10px] uppercase font-bold block" style={{ color: "var(--text-muted)" }}>
+                  AI Integration
+                </span>
+                <span className="font-bold text-xs block mt-1 text-amber-400">
+                  Deterministic First
+                </span>
+                <span className="text-[10px] mt-0.5 block" style={{ color: "var(--text-muted)" }}>
+                  Zod Schema &amp; Conf ≤ 0.60
+                </span>
+              </div>
+
+              <div
+                className="p-3 border rounded-none"
+                style={{ backgroundColor: "var(--bg-subpanel)", borderColor: "var(--border-app)" }}
+              >
+                <span className="text-[10px] uppercase font-bold block" style={{ color: "var(--text-muted)" }}>
+                  PCB &amp; Manufacturing
+                </span>
+                <span className="font-bold text-xs block mt-1 text-sky-400">
+                  RS-274X &amp; Excellon
+                </span>
+                <span className="text-[10px] mt-0.5 block" style={{ color: "var(--text-muted)" }}>
+                  8-file Gerber Zip Archive
+                </span>
+              </div>
+            </div>
+
+            {/* Document Content View */}
+            <div
+              className="p-4 border rounded-none"
+              style={{
+                backgroundColor: "var(--bg-panel)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <div className="flex items-center justify-between pb-2 border-b mb-3" style={{ borderColor: "var(--border-app)" }}>
+                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                  DOCUMENT PREVIEW: docs/TECHNICAL_HANDOFF.md
+                </span>
+                <span className="text-[10px] font-mono text-amber-400">
+                  Version 0.1.0 · Complete Technical Handoff
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <pre
+                  className="p-3 text-[11px] font-mono leading-relaxed overflow-x-auto max-h-[650px] border whitespace-pre-wrap select-text"
+                  style={{
+                    backgroundColor: "var(--bg-sunken)",
+                    borderColor: "var(--border-subtle)",
+                    color: "var(--text-main)",
+                  }}
+                >
+                  {TECHNICAL_HANDOFF_MARKDOWN}
+                </pre>
               </div>
             </div>
           </div>
