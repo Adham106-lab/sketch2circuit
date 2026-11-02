@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
+    "build": "vite build && node -e \"import('node:fs').then(fs => fs.cpSync('dist', 'build', { recursive: true }))\"",
     "preview": "vite preview",
     "check:deps": "node scripts/check-dependency-majors.mjs",
     "typecheck": "tsc --noEmit",
