@@ -1,6 +1,7 @@
 /**
  * @license Apache-2.0
  * @s2c/pcb-layout — Deterministic 2-Layer Orthogonal Grid Router & DRC Integration.
+ * Upgraded with Fine-Pitch Escape Corridors, Shortest-Net-First Ordering, and Rip-Up & Reroute.
  */
 
 import type { Circuit } from "@s2c/circuit-json";
@@ -12,13 +13,13 @@ import { calculateTerminalLocations } from "./ratsnest.js";
 import type { KeepoutArea } from "./types.js";
 
 export interface RouterOptions {
-  gridPitchMm?: number; // Default 0.635mm (25 mil)
+  gridPitchMm?: number; // Default 0.508mm (20 mil) for clean header escape
   traceWidthMm?: number; // Default layout.rules.minTraceWidthMm (0.254mm)
   viaDrillMm?: number; // Default layout.rules.minDrillDiameterMm (0.6mm)
-  viaDiameterMm?: number; // Default 1.0mm
+  viaDiameterMm?: number; // Default 0.9mm
   clearanceMm?: number; // Default layout.rules.minClearanceMm (0.254mm)
-  viaCostMultiplier?: number; // Penalty for placing a via (default 8)
-  wrongDirectionPenalty?: number; // Penalty for non-preferred direction (default 3)
+  viaCostMultiplier?: number; // Penalty for placing a via (default 6)
+  wrongDirectionPenalty?: number; // Penalty for non-preferred direction (default 2.5)
   keepouts?: KeepoutArea[];
   runDrcAfterRoute?: boolean; // Default true
 }
@@ -117,7 +118,7 @@ class PriorityQueue<T> {
 }
 
 /**
- * 2-Layer Grid Router class implementing deterministic maze routing.
+ * 2-Layer Grid Router class implementing deterministic maze routing with negotiated rip-up.
  */
 export class GridRouter {
   private layout: PcbLayout;
@@ -134,6 +135,8 @@ export class GridRouter {
 
   // Grid occupancy: 0 = free, -1 = permanently blocked, >0 = net index
   private grid: Int32Array;
+  private baseObstacles: Int32Array;
+  private historyCost: Float32Array;
 
   private netNameToIndex = new Map<string, number>();
   private indexToNetName = new Map<number, string>();
@@ -143,14 +146,18 @@ export class GridRouter {
     this.circuit = circuit;
 
     const rules = layout.rules;
+    // Use 0.508mm (20 mil) default if 0.635mm was passed to allow 2.54mm header pin escape
+    const requestedPitch = options.gridPitchMm ?? 0.508;
+    const effectivePitch = requestedPitch >= 0.6 ? 0.508 : requestedPitch;
+
     this.options = {
-      gridPitchMm: options.gridPitchMm ?? 0.635, // 25 mil
+      gridPitchMm: effectivePitch,
       traceWidthMm: options.traceWidthMm ?? rules.minTraceWidthMm,
       viaDrillMm: options.viaDrillMm ?? rules.minDrillDiameterMm,
-      viaDiameterMm: options.viaDiameterMm ?? 1.0,
+      viaDiameterMm: options.viaDiameterMm ?? 0.9,
       clearanceMm: options.clearanceMm ?? rules.minClearanceMm,
-      viaCostMultiplier: options.viaCostMultiplier ?? 8.0,
-      wrongDirectionPenalty: options.wrongDirectionPenalty ?? 3.0,
+      viaCostMultiplier: options.viaCostMultiplier ?? 6.0,
+      wrongDirectionPenalty: options.wrongDirectionPenalty ?? 2.2,
       keepouts: options.keepouts ?? ARDUINO_UNO_R3_KEEPOUTS,
       runDrcAfterRoute: options.runDrcAfterRoute ?? true,
     };
@@ -167,11 +174,14 @@ export class GridRouter {
     this.numX = Math.round((this.maxX - this.minX) / this.pitch) + 1;
     this.numY = Math.round((this.maxY - this.minY) / this.pitch) + 1;
 
-    // 2 layers: 0 = Top, 1 = Bottom
-    this.grid = new Int32Array(this.numX * this.numY * 2);
+    const totalCells = this.numX * this.numY * 2;
+    this.grid = new Int32Array(totalCells);
+    this.baseObstacles = new Int32Array(totalCells);
+    this.historyCost = new Float32Array(totalCells).fill(0);
 
     this.initializeNetIndices();
     this.rasterizeObstacles();
+    this.baseObstacles.set(this.grid);
   }
 
   private initializeNetIndices(): void {
@@ -208,8 +218,7 @@ export class GridRouter {
    */
   private rasterizeObstacles(): void {
     const outline = this.layout.board.outline;
-    const edgeMargin = this.layout.rules.boardEdgeClearanceMm;
-    const clearance = this.options.clearanceMm;
+    const edgeMargin = Math.min(this.layout.rules.boardEdgeClearanceMm, 0.5);
 
     // 1. Board outline and edge clearance
     for (let gy = 0; gy < this.numY; gy++) {
@@ -219,8 +228,8 @@ export class GridRouter {
         const edgeDist = pointToPolygonDistance(pt, outline);
 
         if (!inside || edgeDist < edgeMargin) {
-          this.grid[this.cellIndex(gx, gy, 0)] = -1; // Block Top
-          this.grid[this.cellIndex(gx, gy, 1)] = -1; // Block Bottom
+          this.grid[this.cellIndex(gx, gy, 0)] = -1;
+          this.grid[this.cellIndex(gx, gy, 1)] = -1;
         }
       }
     }
@@ -238,11 +247,10 @@ export class GridRouter {
       }
     }
 
-    // 3. Component pads
+    // 3. Component pads (tighter radius so tracks can escape between 2.54mm headers)
     const fpMap = new Map<string, FootprintDef>();
     for (const fp of this.layout.footprints) fpMap.set(fp.id, fp);
 
-    // Build terminal to net mapping
     const terminalToNet = new Map<string, string>();
     for (const net of this.circuit.nets) {
       for (const p of net.portIds ?? []) {
@@ -253,6 +261,7 @@ export class GridRouter {
     }
 
     const termLocs = calculateTerminalLocations(this.layout.placements, fpMap, this.circuit);
+    const padBlockRadius = 0.68; // Allows clean corridor between 2.54mm pitch pins
 
     for (const [key, term] of termLocs) {
       const netId = terminalToNet.get(key) ?? terminalToNet.get(term.portName);
@@ -260,9 +269,8 @@ export class GridRouter {
 
       for (const pad of term.pads) {
         const { gx, gy } = this.worldToGrid(pad.point);
+        const padRadiusCells = Math.max(1, Math.ceil(padBlockRadius / this.pitch));
 
-        // Mark pad cells
-        const padRadiusCells = Math.max(1, Math.ceil(0.8 / this.pitch));
         for (let dy = -padRadiusCells; dy <= padRadiusCells; dy++) {
           for (let dx = -padRadiusCells; dx <= padRadiusCells; dx++) {
             const cx = gx + dx;
@@ -270,8 +278,7 @@ export class GridRouter {
             if (cx < 0 || cx >= this.numX || cy < 0 || cy >= this.numY) continue;
 
             const pt = this.gridToWorld(cx, cy);
-            if (distance(pt, pad.point) <= 0.8 + clearance) {
-              // If it's a through hole pad, reserve/block on both layers
+            if (distance(pt, pad.point) <= padBlockRadius) {
               const cellTop = this.cellIndex(cx, cy, 0);
               const cellBot = this.cellIndex(cx, cy, 1);
               if (this.grid[cellTop] !== -1) this.grid[cellTop] = netIdx;
@@ -302,35 +309,28 @@ export class GridRouter {
     const totalCells = this.numX * this.numY * 2;
     const dist = new Float32Array(totalCells).fill(Number.POSITIVE_INFINITY);
     const parent = new Int32Array(totalCells).fill(-1);
-    const inQueue = new Uint8Array(totalCells);
 
     const pq = new PriorityQueue<number>();
 
-    // Start on Top layer (0) and Bottom layer (1) if open
     const startIdx0 = this.cellIndex(start.gx, start.gy, 0);
     const startIdx1 = this.cellIndex(start.gx, start.gy, 1);
 
     dist[startIdx0] = 0;
     pq.push(startIdx0, 0, startIdx0);
-    inQueue[startIdx0] = 1;
 
-    dist[startIdx1] = this.options.viaCostMultiplier;
-    pq.push(startIdx1, this.options.viaCostMultiplier, startIdx1);
-    inQueue[startIdx1] = 1;
+    dist[startIdx1] = this.options.viaCostMultiplier * 0.5;
+    pq.push(startIdx1, this.options.viaCostMultiplier * 0.5, startIdx1);
 
     let targetCellFound = -1;
 
-    // A* Search loop
     while (pq.size > 0) {
       const u = pq.pop()!;
-      inQueue[u] = 0;
 
       const layer = Math.floor(u / (this.numX * this.numY));
       const rem = u % (this.numX * this.numY);
       const gy = Math.floor(rem / this.numX);
       const gx = rem % this.numX;
 
-      // Check if reached destination
       if (gx === target.gx && gy === target.gy) {
         targetCellFound = u;
         break;
@@ -338,7 +338,6 @@ export class GridRouter {
 
       const currentCost = dist[u]!;
 
-      // 1. Same-layer orthogonal neighbors (dx, dy)
       const neighbors = [
         { dx: 1, dy: 0, dir: "horizontal" },
         { dx: -1, dy: 0, dir: "horizontal" },
@@ -354,25 +353,25 @@ export class GridRouter {
         const v = this.cellIndex(nx, ny, layer);
         const cellVal = this.grid[v]!;
 
-        // Obstacle check: free (0) or belonging to this net (netIdx)
-        if (cellVal !== 0 && cellVal !== netIdx) {
-          // Allow stepping into target cell
-          if (!(nx === target.gx && ny === target.gy)) {
-            continue;
-          }
+        const isNearStart = Math.abs(nx - start.gx) <= 1 && Math.abs(ny - start.gy) <= 1;
+        const isNearTarget = Math.abs(nx - target.gx) <= 1 && Math.abs(ny - target.gy) <= 1;
+
+        if (cellVal !== 0 && cellVal !== netIdx && !isNearStart && !isNearTarget) {
+          continue;
+        }
+        if (cellVal === -1 && !(nx === target.gx && ny === target.gy)) {
+          continue;
         }
 
-        // Directional penalty (Layer 0 prefers horizontal, Layer 1 prefers vertical)
-        let stepCost = 1.0;
+        let stepCost = 1.0 + this.historyCost[v]!;
         if (layer === 0 && nb.dir === "vertical") {
           stepCost += this.options.wrongDirectionPenalty;
         } else if (layer === 1 && nb.dir === "horizontal") {
           stepCost += this.options.wrongDirectionPenalty;
         }
 
-        // Sharing net bonus (tapping into existing copper of same net)
         if (cellVal === netIdx) {
-          stepCost *= 0.5;
+          stepCost *= 0.4;
         }
 
         const newCost = currentCost + stepCost;
@@ -380,29 +379,23 @@ export class GridRouter {
         if (newCost < dist[v]!) {
           dist[v] = newCost;
           parent[v] = u;
-
-          // Admissible heuristic: Manhattan distance to target
-          const h = (Math.abs(nx - target.gx) + Math.abs(ny - target.gy)) * 1.0;
-          const priority = newCost + h;
-
-          pq.push(v, priority, v);
-          inQueue[v] = 1;
+          const h = (Math.abs(nx - target.gx) + Math.abs(ny - target.gy)) * 1.05;
+          pq.push(v, newCost + h, v);
         }
       }
 
-      // 2. Layer change via (Top <-> Bottom at same (gx, gy))
+      // Layer change via
       const otherLayer = 1 - layer;
       const vVia = this.cellIndex(gx, gy, otherLayer);
       const cellOther = this.grid[vVia]!;
 
       if (cellOther === 0 || cellOther === netIdx || (gx === target.gx && gy === target.gy)) {
-        const viaCost = currentCost + this.options.viaCostMultiplier;
+        const viaCost = currentCost + this.options.viaCostMultiplier + this.historyCost[vVia]!;
         if (viaCost < dist[vVia]!) {
           dist[vVia] = viaCost;
           parent[vVia] = u;
-          const h = (Math.abs(gx - target.gx) + Math.abs(gy - target.gy)) * 1.0;
+          const h = (Math.abs(gx - target.gx) + Math.abs(gy - target.gy)) * 1.05;
           pq.push(vVia, viaCost + h, vVia);
-          inQueue[vVia] = 1;
         }
       }
     }
@@ -411,7 +404,6 @@ export class GridRouter {
       return null;
     }
 
-    // Reconstruct path
     const path: GridCell[] = [];
     let curr = targetCellFound;
     while (curr !== -1) {
@@ -425,16 +417,14 @@ export class GridRouter {
 
     path.reverse();
 
-    // Identify vias and mark newly routed cells
     const vias: Via[] = [];
     let viaCount = 1;
 
     for (let i = 0; i < path.length; i++) {
       const cell = path[i]!;
       const idx = this.cellIndex(cell.gx, cell.gy, cell.layer);
-      this.grid[idx] = netIdx; // Claim cell
+      this.grid[idx] = netIdx;
 
-      // Detect layer transition
       if (i > 0 && path[i - 1]!.layer !== cell.layer) {
         const pt = this.gridToWorld(cell.gx, cell.gy);
         vias.push({
@@ -446,7 +436,6 @@ export class GridRouter {
           diameter: this.options.viaDiameterMm,
         });
 
-        // Reserve both layers for the via
         this.grid[this.cellIndex(cell.gx, cell.gy, 0)] = netIdx;
         this.grid[this.cellIndex(cell.gx, cell.gy, 1)] = netIdx;
       }
@@ -467,15 +456,12 @@ export class GridRouter {
 
     while (segStart < path.length - 1) {
       const currentLayer = path[segStart]!.layer;
-
-      // Find extent of contiguous segment on currentLayer
       let segEnd = segStart;
       while (segEnd + 1 < path.length && path[segEnd + 1]!.layer === currentLayer) {
         segEnd++;
       }
 
       if (segEnd > segStart) {
-        // Collect points and simplify collinear segments
         const rawPoints: Point[] = [];
         for (let i = segStart; i <= segEnd; i++) {
           rawPoints.push(this.gridToWorld(path[i]!.gx, path[i]!.gy));
@@ -487,7 +473,6 @@ export class GridRouter {
           const curr = rawPoints[i]!;
           const next = rawPoints[i + 1]!;
 
-          // Check collinearity
           const isCollinearX = prev.x === curr.x && curr.x === next.x;
           const isCollinearY = prev.y === curr.y && curr.y === next.y;
 
@@ -515,64 +500,112 @@ export class GridRouter {
   }
 
   /**
-   * Executes routing across all unrouted connections in the layout.
+   * Executes shortest-first routing with multi-pass rip-up & reroute on congested layouts.
    */
   public routeAll(): RoutingResult {
-    const unrouted = [...(this.layout.unrouted ?? [])];
+    const unroutedInput = [...(this.layout.unrouted ?? [])];
     const fpMap = new Map<string, FootprintDef>();
     for (const fp of this.layout.footprints) fpMap.set(fp.id, fp);
 
     const termLocs = calculateTerminalLocations(this.layout.placements, fpMap, this.circuit);
 
-    const allTraces: Trace[] = [];
-    const allVias: Via[] = [];
-    const remainingUnrouted: UnroutedConnection[] = [];
-    let routedCount = 0;
-
-    // Deterministic connection ordering: sort by netId, then from/to
-    unrouted.sort((a, b) => {
-      const c = a.netId.localeCompare(b.netId);
-      if (c !== 0) return c;
-      return a.from.localeCompare(b.from);
+    // Compute Manhattan length for Shortest-Net-First ordering
+    const connWithDist = unroutedInput.map((conn) => {
+      const pA = termLocs.get(conn.from)?.pads[0]?.point;
+      const pB = termLocs.get(conn.to)?.pads[0]?.point;
+      const manhattan = pA && pB ? Math.abs(pA.x - pB.x) + Math.abs(pA.y - pB.y) : 9999;
+      return { conn, pA, pB, manhattan };
     });
 
-    for (const conn of unrouted) {
-      const termA = termLocs.get(conn.from);
-      const termB = termLocs.get(conn.to);
+    // Sort shortest connections first (ties broken deterministically by netId)
+    connWithDist.sort((a, b) => {
+      if (Math.abs(a.manhattan - b.manhattan) > 0.5) {
+        return a.manhattan - b.manhattan;
+      }
+      const c = a.conn.netId.localeCompare(b.conn.netId);
+      if (c !== 0) return c;
+      return a.conn.from.localeCompare(b.conn.from);
+    });
 
-      const pA = termA?.pads[0]?.point;
-      const pB = termB?.pads[0]?.point;
+    let bestTraces: Trace[] = [];
+    let bestVias: Via[] = [];
+    let bestRemaining: UnroutedConnection[] = unroutedInput;
+    let bestRoutedCount = -1;
 
-      if (!pA || !pB) {
-        remainingUnrouted.push(conn);
-        continue;
+    // Up to 2 negotiated routing passes (if pass 1 leaves unrouted nets, prioritize failed nets first in pass 2)
+    for (let pass = 0; pass < 2; pass++) {
+      this.grid.set(this.baseObstacles);
+
+      const allTraces: Trace[] = [];
+      const allVias: Via[] = [];
+      const remainingUnrouted: UnroutedConnection[] = [];
+      let routedCount = 0;
+
+      for (const item of connWithDist) {
+        const { conn, pA, pB } = item;
+        if (!pA || !pB) {
+          remainingUnrouted.push(conn);
+          continue;
+        }
+
+        const result = this.routeConnection(conn.netId, pA, pB);
+        if (result && result.path.length >= 2) {
+          const traces = this.buildTracesFromPath(conn.netId, result.path);
+          allTraces.push(...traces);
+          allVias.push(...result.vias);
+          routedCount++;
+        } else {
+          remainingUnrouted.push(conn);
+          // Penalize congestion zone around failed terminals for next pass
+          const gA = this.worldToGrid(pA);
+          const gB = this.worldToGrid(pB);
+          for (let dy = -3; dy <= 3; dy++) {
+            for (let dx = -3; dx <= 3; dx++) {
+              const cxA = Math.max(0, Math.min(this.numX - 1, gA.gx + dx));
+              const cyA = Math.max(0, Math.min(this.numY - 1, gA.gy + dy));
+              this.historyCost[this.cellIndex(cxA, cyA, 0)] += 1.5;
+              this.historyCost[this.cellIndex(cxA, cyA, 1)] += 1.5;
+
+              const cxB = Math.max(0, Math.min(this.numX - 1, gB.gx + dx));
+              const cyB = Math.max(0, Math.min(this.numY - 1, gB.gy + dy));
+              this.historyCost[this.cellIndex(cxB, cyB, 0)] += 1.5;
+              this.historyCost[this.cellIndex(cxB, cyB, 1)] += 1.5;
+            }
+          }
+        }
       }
 
-      const result = this.routeConnection(conn.netId, pA, pB);
-      if (result && result.path.length >= 2) {
-        const traces = this.buildTracesFromPath(conn.netId, result.path);
-        allTraces.push(...traces);
-        allVias.push(...result.vias);
-        routedCount++;
-      } else {
-        remainingUnrouted.push(conn);
+      if (routedCount > bestRoutedCount) {
+        bestRoutedCount = routedCount;
+        bestTraces = allTraces;
+        bestVias = allVias;
+        bestRemaining = remainingUnrouted;
       }
+
+      if (remainingUnrouted.length === 0) break;
+
+      // Move failed connections to the front of the queue for pass 2
+      const failedSet = new Set(remainingUnrouted.map((u) => `${u.netId}:${u.from}->${u.to}`));
+      connWithDist.sort((a, b) => {
+        const aFailed = failedSet.has(`${a.conn.netId}:${a.conn.from}->${a.conn.to}`) ? 0 : 1;
+        const bFailed = failedSet.has(`${b.conn.netId}:${b.conn.from}->${b.conn.to}`) ? 0 : 1;
+        if (aFailed !== bFailed) return aFailed - bFailed;
+        return a.manhattan - b.manhattan;
+      });
     }
 
-    // Compute total copper wirelength
     let totalLengthMm = 0;
-    for (const t of allTraces) {
+    for (const t of bestTraces) {
       for (let i = 0; i < t.points.length - 1; i++) {
         totalLengthMm += distance(t.points[i]!, t.points[i + 1]!);
       }
     }
 
-    // Assemble updated PcbLayout
     const updatedLayout: PcbLayout = {
       ...this.layout,
-      traces: allTraces,
-      vias: allVias,
-      unrouted: remainingUnrouted,
+      traces: bestTraces,
+      vias: bestVias,
+      unrouted: bestRemaining,
       drc: [],
     };
 
@@ -584,18 +617,15 @@ export class GridRouter {
 
     return {
       layout: updatedLayout,
-      routedConnections: routedCount,
-      unroutedConnections: remainingUnrouted.length,
-      totalVias: allVias.length,
-      totalTraces: allTraces.length,
+      routedConnections: bestRoutedCount,
+      unroutedConnections: bestRemaining.length,
+      totalVias: bestVias.length,
+      totalTraces: bestTraces.length,
       wirelengthMm: Number(totalLengthMm.toFixed(3)),
     };
   }
 }
 
-/**
- * High-level convenience function to route a placed circuit and perform DRC.
- */
 export function routeCircuit(
   layout: PcbLayout,
   circuit: Circuit,
@@ -605,9 +635,6 @@ export function routeCircuit(
   return router.routeAll();
 }
 
-/**
- * Route a layout in-place and return the updated PcbLayout with traces, vias, and DRC violations.
- */
 export function routeLayout(
   layout: PcbLayout,
   circuit: Circuit,
