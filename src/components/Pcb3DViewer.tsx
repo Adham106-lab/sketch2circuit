@@ -39,6 +39,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
 export type MechatronicsProjectId =
   | "tennis_shooter"
@@ -268,6 +270,22 @@ interface WirePulseStream {
   baseColor: THREE.Color;
 }
 
+/**
+ * Animation handles plus GPU resources that must be released when the
+ * renderer effect tears down (textures, decal geometries, rounded geometries).
+ */
+interface WorkbenchAnimRefs {
+  rotors: THREE.Object3D[];
+  servoHorns: THREE.Object3D[];
+  leds: THREE.Mesh[];
+  buttonCap: THREE.Object3D | null;
+  tennisBall: THREE.Object3D | null;
+  pulseStreams: WirePulseStream[];
+  textures: THREE.Texture[];
+  geometries: THREE.BufferGeometry[];
+  materials: THREE.Material[];
+}
+
 interface Pcb3DViewerProps {
   circuit: Circuit;
   layout?: PcbLayout;
@@ -282,6 +300,208 @@ type ViewPreset = "iso" | "top" | "front" | "left" | "right";
 type StudioMode = "workbench" | "pcb_shield";
 
 /**
+ * Offscreen Arduino Uno R3 silkscreen artwork: title block, digital / power /
+ * analog pin legends, LED legends and faint trace hints.
+ */
+function createArduinoSilkscreenTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 800;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    const fallback = new THREE.CanvasTexture(canvas);
+    fallback.colorSpace = THREE.SRGBColorSpace;
+    return fallback;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#d7e3f4";
+  ctx.strokeStyle = "#d7e3f4";
+
+  // Title block
+  ctx.font = "bold 40px monospace";
+  ctx.fillText("ARDUINO", 44, 52);
+  ctx.font = "bold 26px monospace";
+  ctx.fillText("UNO  R3", 44, 96);
+
+  // Digital pin header legend
+  ctx.font = "bold 18px monospace";
+  ctx.fillText("DIGITAL (PWM~)", 430, 40);
+  const digitalPins = [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+  ];
+  digitalPins.forEach((pin, i) => {
+    const x = 430 + i * 40;
+    ctx.font = "bold 18px monospace";
+    ctx.fillText(pin, x, 74);
+    ctx.fillRect(x - 6, 92, 22, 4);
+  });
+
+  // Power header legend
+  ctx.font = "bold 18px monospace";
+  ctx.fillText("POWER", 44, 640);
+  const powerPins = ["IOREF", "RESET", "3V3", "5V", "GND", "GND", "VIN"];
+  powerPins.forEach((pin, i) => {
+    const x = 44 + i * 62;
+    ctx.font = "bold 13px monospace";
+    ctx.fillText(pin, x, 676);
+    ctx.fillRect(x - 4, 694, 30, 4);
+  });
+
+  // Analog header legend
+  ctx.font = "bold 18px monospace";
+  ctx.fillText("ANALOG IN", 560, 640);
+  const analogPins = ["A0", "A1", "A2", "A3", "A4", "A5"];
+  analogPins.forEach((pin, i) => {
+    const x = 560 + i * 62;
+    ctx.font = "bold 13px monospace";
+    ctx.fillText(pin, x, 676);
+    ctx.fillRect(x - 4, 694, 30, 4);
+  });
+
+  // TX / RX / LED legends
+  ctx.font = "bold 16px monospace";
+  ctx.fillText("TX", 44, 150);
+  ctx.fillText("RX", 44, 180);
+  ctx.fillText("L", 44, 210);
+  ctx.fillText("ON", 44, 240);
+
+  // Faint trace hints
+  ctx.strokeStyle = "rgba(215, 227, 244, 0.32)";
+  ctx.lineWidth = 2;
+  const traces: Array<[number, number, number, number]> = [
+    [300, 120, 300, 420],
+    [340, 120, 340, 520],
+    [380, 120, 380, 300],
+    [420, 120, 420, 560],
+    [460, 120, 460, 380],
+  ];
+  for (const [x1, y1, x2, y2] of traces) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  // Board outline
+  ctx.strokeStyle = "rgba(215, 227, 244, 0.22)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * Offscreen solderless breadboard artwork: tie-point pitch grid, row/column
+ * coordinates and the red/blue power rails.
+ */
+function createBreadboardTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 1600;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    const fallback = new THREE.CanvasTexture(canvas);
+    fallback.colorSpace = THREE.SRGBColorSpace;
+    return fallback;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.textBaseline = "middle";
+
+  // Board spans x: -27..27 mm, y: -42..42 mm
+  const toU = (x: number) => ((x + 27) / 54) * canvas.width;
+  const toV = (y: number) => ((42 - y) / 84) * canvas.height;
+  const mmToPxX = (mm: number) => (mm / 54) * canvas.width;
+  const mmToPxY = (mm: number) => (mm / 84) * canvas.height;
+
+  // Center channel groove
+  ctx.strokeStyle = "rgba(30, 41, 59, 0.55)";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(toU(0), 0);
+  ctx.lineTo(toU(0), canvas.height);
+  ctx.stroke();
+
+  // Tie-point sockets (matches the 3D instanced hole grid)
+  ctx.fillStyle = "rgba(51, 65, 85, 0.85)";
+  for (let r = 0; r < 24; r++) {
+    const y = -34.5 + r * 3.0;
+    for (let c = 0; c < 5; c++) {
+      const xs = [-14.2 + c * 2.54, 3.8 + c * 2.54];
+      for (const x of xs) {
+        ctx.fillRect(
+          toU(x) - mmToPxX(0.55),
+          toV(y) - mmToPxY(0.55),
+          mmToPxX(1.1),
+          mmToPxY(1.1),
+        );
+      }
+    }
+  }
+
+  // Row coordinate letters
+  ctx.fillStyle = "rgba(71, 85, 105, 0.95)";
+  ctx.font = "bold 22px monospace";
+  for (let r = 0; r < 24; r++) {
+    const y = -34.5 + r * 3.0;
+    const letter = String.fromCharCode(65 + r);
+    ctx.fillText(letter, toU(-26.4), toV(y));
+    ctx.fillText(letter, toU(24.8), toV(y));
+  }
+
+  // Column coordinate numbers
+  ctx.font = "bold 20px monospace";
+  for (let c = 0; c < 5; c++) {
+    ctx.fillText(String(c + 1), toU(-14.2 + c * 2.54), toV(-38.6));
+    ctx.fillText(String(c + 6), toU(3.8 + c * 2.54), toV(-38.6));
+  }
+
+  // Power rails
+  const drawRail = (x: number, color: string, label: string) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(toU(x), toV(38));
+    ctx.lineTo(toU(x), toV(-38));
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = "bold 26px monospace";
+    ctx.fillText(label, toU(x) - 8, toV(40.4));
+  };
+  drawRail(-24.7, "#ef4444", "+");
+  drawRail(-22.3, "#0891b2", "-");
+  drawRail(22.3, "#ef4444", "+");
+  drawRail(24.7, "#0891b2", "-");
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
  * Builds the Obsidian & Gold 3D Digital Twin Workbench:
  * - Matte Black & 24k Gold Arduino Uno R3 on dark anodized aluminum baseplate
  * - Translucent Smoked Frost Solderless Breadboard with glowing LEDs, resistors, and tactile switches
@@ -290,21 +510,32 @@ type StudioMode = "workbench" | "pcb_shield";
  */
 function buildObsidianWorkbenchGroup(
   activeProject: MechatronicsProjectId,
-  animRefs: {
-    rotors: THREE.Object3D[];
-    servoHorns: THREE.Object3D[];
-    leds: THREE.Mesh[];
-    buttonCap: THREE.Object3D | null;
-    tennisBall: THREE.Object3D | null;
-    pulseStreams: WirePulseStream[];
-  },
+  animRefs: WorkbenchAnimRefs,
 ): THREE.Group {
   const root = new THREE.Group();
   root.name = "OBSIDIAN_TWIN_ROOT";
 
+  // Rounded-box factory: every instance is tracked so it can be disposed.
+  const roundedBox = (
+    width: number,
+    height: number,
+    depth: number,
+    radius: number,
+    segments = 2,
+  ): RoundedBoxGeometry => {
+    const geometry = new RoundedBoxGeometry(width, height, depth, segments, radius);
+    animRefs.geometries.push(geometry);
+    return geometry;
+  };
+
   // Subtle gold/metallic edge accent helper
-  const addMetallicEdges = (mesh: THREE.Mesh, colorHex = 0x334155, opacity = 0.45) => {
-    const edges = new THREE.EdgesGeometry(mesh.geometry, 24);
+  const addMetallicEdges = (
+    mesh: THREE.Mesh,
+    colorHex = 0x334155,
+    opacity = 0.45,
+    thresholdAngle = 24,
+  ) => {
+    const edges = new THREE.EdgesGeometry(mesh.geometry, thresholdAngle);
     const line = new THREE.LineSegments(
       edges,
       new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity }),
@@ -344,7 +575,7 @@ function buildObsidianWorkbenchGroup(
 
   // Matte Black Soldermask PCB Slab
   const unoPcb = new THREE.Mesh(
-    new THREE.BoxGeometry(68.6, 53.3, 2.0),
+    roundedBox(68.6, 53.3, 2.0, 0.6),
     new THREE.MeshPhysicalMaterial({
       color: "#090d14",
       roughness: 0.25,
@@ -354,8 +585,26 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   unoPcb.position.set(0, 0, 1.0);
-  addMetallicEdges(unoPcb, 0xd97706, 0.65);
+  addMetallicEdges(unoPcb, 0xd97706, 0.65, 50);
   unoGroup.add(unoPcb);
+
+  // Silkscreen Decal: pin labels, title block and trace hints on the PCB top
+  const silkscreenTexture = createArduinoSilkscreenTexture();
+  animRefs.textures.push(silkscreenTexture);
+  const silkscreenGeometry = new THREE.PlaneGeometry(68.6, 53.3);
+  animRefs.geometries.push(silkscreenGeometry);
+  const silkscreenMaterial = new THREE.MeshBasicMaterial({
+    map: silkscreenTexture,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  animRefs.materials.push(silkscreenMaterial);
+  const silkscreenDecal = new THREE.Mesh(silkscreenGeometry, silkscreenMaterial);
+  silkscreenDecal.position.set(0, 0, 2.02);
+  silkscreenDecal.renderOrder = 1;
+  unoGroup.add(silkscreenDecal);
 
   // Decorative 24k Gold ENIG Copper Trace Lines on Uno Top Surface
   for (let i = 0; i < 9; i++) {
@@ -375,7 +624,7 @@ function buildObsidianWorkbenchGroup(
 
   // Brushed Stainless USB Type-B Port
   const usbBox = new THREE.Mesh(
-    new THREE.BoxGeometry(16.0, 12.2, 10.8),
+    roundedBox(16.0, 12.2, 10.8, 0.9),
     new THREE.MeshPhysicalMaterial({
       color: "#e2e8f0",
       metalness: 0.92,
@@ -384,25 +633,25 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   usbBox.position.set(-28.5, 13.0, 7.2);
-  addMetallicEdges(usbBox, 0x94a3b8, 0.5);
+  addMetallicEdges(usbBox, 0x94a3b8, 0.5, 50);
   unoGroup.add(usbBox);
 
   // Matte Black DC Power Barrel Jack
   const dcJack = new THREE.Mesh(
-    new THREE.BoxGeometry(14.2, 9.2, 10.4),
+    roundedBox(14.2, 9.2, 10.4, 0.9),
     new THREE.MeshPhysicalMaterial({ color: "#111827", roughness: 0.3, clearcoat: 0.4 }),
   );
   dcJack.position.set(-29.0, -17.5, 7.0);
-  addMetallicEdges(dcJack, 0x475569, 0.5);
+  addMetallicEdges(dcJack, 0x475569, 0.5, 50);
   unoGroup.add(dcJack);
 
   // ATmega328P DIP-28 Microcontroller Package + Gold Pin Socket
   const dipBody = new THREE.Mesh(
-    new THREE.BoxGeometry(35.0, 7.6, 4.2),
+    roundedBox(35.0, 7.6, 4.2, 0.5),
     new THREE.MeshPhysicalMaterial({ color: "#111827", roughness: 0.3, metalness: 0.2 }),
   );
   dipBody.position.set(6.5, -9.0, 4.1);
-  addMetallicEdges(dipBody, 0x64748b, 0.55);
+  addMetallicEdges(dipBody, 0x64748b, 0.55, 50);
   unoGroup.add(dipBody);
 
   for (let i = 0; i < 14; i++) {
@@ -473,7 +722,7 @@ function buildObsidianWorkbenchGroup(
   bbGroup.position.set(32, 16, 0.2);
 
   const bbSlab = new THREE.Mesh(
-    new THREE.BoxGeometry(54.0, 84.0, 9.2),
+    roundedBox(54.0, 84.0, 9.2, 1.2),
     new THREE.MeshPhysicalMaterial({
       color: "#e2e8f0",
       roughness: 0.22,
@@ -485,8 +734,26 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   bbSlab.position.set(0, 0, 4.6);
-  addMetallicEdges(bbSlab, 0x64748b, 0.45);
+  addMetallicEdges(bbSlab, 0x64748b, 0.45, 50);
   bbGroup.add(bbSlab);
+
+  // Breadboard Decal: tie-point pitch, coordinates and power rails
+  const breadboardTexture = createBreadboardTexture();
+  animRefs.textures.push(breadboardTexture);
+  const breadboardGeometry = new THREE.PlaneGeometry(54.0, 84.0);
+  animRefs.geometries.push(breadboardGeometry);
+  const breadboardMaterial = new THREE.MeshBasicMaterial({
+    map: breadboardTexture,
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  animRefs.materials.push(breadboardMaterial);
+  const breadboardDecal = new THREE.Mesh(breadboardGeometry, breadboardMaterial);
+  breadboardDecal.position.set(0, 0, 9.21);
+  breadboardDecal.renderOrder = 1;
+  bbGroup.add(breadboardDecal);
 
   // Center Channel Groove
   const groove = new THREE.Mesh(
@@ -629,7 +896,7 @@ function buildObsidianWorkbenchGroup(
   srvGroup.position.set(-42, 54, 0.2);
 
   const srvBody = new THREE.Mesh(
-    new THREE.BoxGeometry(23.0, 12.2, 16.5),
+    roundedBox(23.0, 12.2, 16.5, 1.0),
     new THREE.MeshPhysicalMaterial({
       color: "#0284c7",
       transmission: 0.45,
@@ -640,7 +907,7 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   srvBody.position.set(0, 0, 8.25);
-  addMetallicEdges(srvBody, 0x38bdf8, 0.5);
+  addMetallicEdges(srvBody, 0x38bdf8, 0.5, 50);
   srvGroup.add(srvBody);
 
   const srvBoss = new THREE.Mesh(
@@ -910,6 +1177,7 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.25;
     container.innerHTML = "";
@@ -920,6 +1188,12 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     controls.dampingFactor = 0.08;
     controls.target.copy(center);
     controlsRef.current = controls;
+
+    // Studio Environment: PMREM-filtered RoomEnvironment for PBR reflections
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const roomEnvironment = new RoomEnvironment();
+    const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
+    scene.environment = environmentTarget.texture;
 
     // Dramatic Obsidian Studio Lighting
     scene.add(new THREE.AmbientLight(0xdbeafe, 0.8));
@@ -942,13 +1216,16 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     grid.rotation.x = Math.PI / 2;
     scene.add(grid);
 
-    const animRefs = {
-      rotors: [] as THREE.Object3D[],
-      servoHorns: [] as THREE.Object3D[],
-      leds: [] as THREE.Mesh[],
-      buttonCap: null as THREE.Object3D | null,
-      tennisBall: null as THREE.Object3D | null,
-      pulseStreams: [] as WirePulseStream[],
+    const animRefs: WorkbenchAnimRefs = {
+      rotors: [],
+      servoHorns: [],
+      leds: [],
+      buttonCap: null,
+      tennisBall: null,
+      pulseStreams: [],
+      textures: [],
+      geometries: [],
+      materials: [],
     };
 
     if (studioMode === "workbench") {
@@ -1034,6 +1311,28 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
+
+      // Release the studio environment
+      scene.environment = null;
+      environmentTarget.dispose();
+      pmremGenerator.dispose();
+      roomEnvironment.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.geometry?.dispose();
+        const mat = mesh.material;
+        if (Array.isArray(mat)) {
+          mat.forEach((m) => m.dispose());
+        } else {
+          mat?.dispose();
+        }
+      });
+
+      // Release decal textures, decal geometries and rounded geometries
+      for (const texture of animRefs.textures) texture.dispose();
+      for (const geometry of animRefs.geometries) geometry.dispose();
+      for (const material of animRefs.materials) material.dispose();
+
       renderer.dispose();
       controls.dispose();
       if (container.contains(renderer.domElement)) {

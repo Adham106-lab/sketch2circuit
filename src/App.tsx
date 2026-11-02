@@ -14,7 +14,6 @@ import {
   Camera,
   Code2,
   Cpu,
-  Eye,
   FileSpreadsheet,
   KeyRound,
   Layers,
@@ -47,7 +46,7 @@ import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
 import { Analytics } from "@vercel/analytics/react";
 
 export default function App() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme] = useState<"dark" | "light">("dark");
 
   const [activeMainTab, setActiveMainTab] = useState<
     | "studio"
@@ -195,7 +194,7 @@ export default function App() {
       {/* TOP OBSIDIAN HEADER BAR (Matches Image 2 Header!)                         */}
       {/* ========================================================================= */}
       <header className="border-b border-white/10 bg-[#0b1019] shrink-0 z-30">
-        {/* Top Row: Brand + Muse Badge + Routing Pill + GitHub Star + Oscilloscope Toggle */}
+        {/* Top Row: Brand + Muse Badge + Routing Pill + GitHub Star */}
         <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-3 border-b border-white/5">
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex items-center gap-2">
@@ -232,12 +231,6 @@ export default function App() {
               </span>
             )}
             <GitHubStarButton />
-            <div className="flex items-center gap-2 text-[10px] text-slate-300 font-bold uppercase">
-              <span>OSCILLOSCOPE</span>
-              <span className="w-7 h-3.5 rounded-full bg-cyan-950 border border-cyan-500/50 p-0.5 flex items-center justify-end">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
-              </span>
-            </div>
           </div>
         </div>
 
