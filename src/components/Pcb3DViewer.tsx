@@ -6,6 +6,8 @@
  * - Live Bioluminescent Signal Pulse Animation streaming along 3D Bezier Wire Harnesses
  * - Frosted Obsidian Glassmorphic Floating HUDs (View Presets, Transport Rig Controls, Project Selector #1-#5)
  * - Dual Mode: 3D Arduino + Breadboard + Mechatronics Rigs vs. Manufacturable FR4/Obsidian PCB Shield
+ * - Interactive Isometric Technical Illustration: CAD ink outlines, 3D-anchored callout cards with
+ *   dashed SVG leader lines, and a floating viewport control pill.
  */
 
 import type { Circuit } from "@s2c/circuit-json";
@@ -300,6 +302,18 @@ type ViewPreset = "iso" | "top" | "front" | "left" | "right";
 type StudioMode = "workbench" | "pcb_shield";
 
 /**
+ * A technical callout card anchored to a 3D point on the board.
+ * `anchorKey` maps into the world-space anchor registry populated by the
+ * workbench builder (USB, power jack, MCU, pin headers, LED, resistor...).
+ */
+interface CalloutDefinition {
+  id: string;
+  label: string;
+  description: string;
+  anchorKey: string;
+}
+
+/**
  * Offscreen Arduino Uno R3 silkscreen artwork: title block, digital / power /
  * analog pin legends, LED legends and faint trace hints.
  */
@@ -507,13 +521,19 @@ function createBreadboardTexture(): THREE.CanvasTexture {
  * - Translucent Smoked Frost Solderless Breadboard with glowing LEDs, resistors, and tactile switches
  * - Bioluminescent fiber-optic jumper wires with animated energy pulse beads
  * - Detailed SG90 Micro-Servo, HC-SR04 Ultrasonic Sensor, and Mechatronics Rig
+ * - CAD ink outlines + glowing cyan anchor dots for the technical callout system
  */
 function buildObsidianWorkbenchGroup(
   activeProject: MechatronicsProjectId,
   animRefs: WorkbenchAnimRefs,
+  blueprintTheme: boolean,
+  anchors: Record<string, THREE.Vector3>,
 ): THREE.Group {
   const root = new THREE.Group();
   root.name = "OBSIDIAN_TWIN_ROOT";
+
+  // CAD ink color: drafting-pencil black on blueprint paper, gold on obsidian.
+  const inkColor = blueprintTheme ? 0x18181b : 0xd4af37;
 
   // Rounded-box factory: every instance is tracked so it can be disposed.
   const roundedBox = (
@@ -528,19 +548,48 @@ function buildObsidianWorkbenchGroup(
     return geometry;
   };
 
-  // Subtle gold/metallic edge accent helper
+  // Subtle gold/metallic edge accent helper.
+  // Passing `undefined` for `colorHex` uses the theme-aware CAD ink color.
   const addMetallicEdges = (
     mesh: THREE.Mesh,
-    colorHex = 0x334155,
+    colorHex?: number,
     opacity = 0.45,
     thresholdAngle = 24,
   ) => {
     const edges = new THREE.EdgesGeometry(mesh.geometry, thresholdAngle);
     const line = new THREE.LineSegments(
       edges,
-      new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity }),
+      new THREE.LineBasicMaterial({
+        color: colorHex ?? inkColor,
+        transparent: true,
+        opacity,
+      }),
     );
     mesh.add(line);
+  };
+
+  // Glowing cyan anchor dots marking callout attachment points.
+  const anchorDots: Array<{ key: string; dot: THREE.Mesh }> = [];
+  const addAnchorDot = (
+    key: string,
+    parent: THREE.Object3D,
+    x: number,
+    y: number,
+    z: number,
+  ) => {
+    const dot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.95, 14, 14),
+      new THREE.MeshStandardMaterial({
+        color: "#06b6d4",
+        emissive: "#06b6d4",
+        emissiveIntensity: 2.4,
+        roughness: 0.15,
+        metalness: 0.1,
+      }),
+    );
+    dot.position.set(x, y, z);
+    parent.add(dot);
+    anchorDots.push({ key, dot });
   };
 
   // =========================================================================
@@ -556,7 +605,7 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   traySlab.position.set(-4, 16, -1.2);
-  addMetallicEdges(traySlab, 0x38bdf8, 0.28);
+  addMetallicEdges(traySlab, undefined, 0.28);
   root.add(traySlab);
 
   // Subtle Gold Chamfer Frame on Baseplate
@@ -585,7 +634,7 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   unoPcb.position.set(0, 0, 1.0);
-  addMetallicEdges(unoPcb, 0xd97706, 0.65, 50);
+  addMetallicEdges(unoPcb, undefined, 0.65, 50);
   unoGroup.add(unoPcb);
 
   // Silkscreen Decal: pin labels, title block and trace hints on the PCB top
@@ -633,8 +682,9 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   usbBox.position.set(-28.5, 13.0, 7.2);
-  addMetallicEdges(usbBox, 0x94a3b8, 0.5, 50);
+  addMetallicEdges(usbBox, undefined, 0.5, 50);
   unoGroup.add(usbBox);
+  addAnchorDot("usb", unoGroup, -28.5, 13.0, 13.4);
 
   // Matte Black DC Power Barrel Jack
   const dcJack = new THREE.Mesh(
@@ -642,8 +692,9 @@ function buildObsidianWorkbenchGroup(
     new THREE.MeshPhysicalMaterial({ color: "#111827", roughness: 0.3, clearcoat: 0.4 }),
   );
   dcJack.position.set(-29.0, -17.5, 7.0);
-  addMetallicEdges(dcJack, 0x475569, 0.5, 50);
+  addMetallicEdges(dcJack, undefined, 0.5, 50);
   unoGroup.add(dcJack);
+  addAnchorDot("power", unoGroup, -29.0, -17.5, 13.0);
 
   // ATmega328P DIP-28 Microcontroller Package + Gold Pin Socket
   const dipBody = new THREE.Mesh(
@@ -651,8 +702,9 @@ function buildObsidianWorkbenchGroup(
     new THREE.MeshPhysicalMaterial({ color: "#111827", roughness: 0.3, metalness: 0.2 }),
   );
   dipBody.position.set(6.5, -9.0, 4.1);
-  addMetallicEdges(dipBody, 0x64748b, 0.55, 50);
+  addMetallicEdges(dipBody, undefined, 0.55, 50);
   unoGroup.add(dipBody);
+  addAnchorDot("mcu", unoGroup, 6.5, -9.0, 6.9);
 
   for (let i = 0; i < 14; i++) {
     const px = -9.5 + i * 2.45;
@@ -691,7 +743,7 @@ function buildObsidianWorkbenchGroup(
       new THREE.MeshStandardMaterial({ color: "#0f172a", roughness: 0.4 }),
     );
     hdr.position.set(5.0, hy, 6.2);
-    addMetallicEdges(hdr, 0xf59e0b, 0.45);
+    addMetallicEdges(hdr, undefined, 0.45);
     unoGroup.add(hdr);
 
     // Gold pin sockets along top of header
@@ -704,6 +756,11 @@ function buildObsidianWorkbenchGroup(
       unoGroup.add(holeRing);
     }
   }
+
+  // Anchor dots for the digital (pin 13), power and analog headers
+  addAnchorDot("digital", unoGroup, -14.5 + 13 * 2.54, 23.8, 11.6);
+  addAnchorDot("powerPins", unoGroup, -14.5, -23.8, 11.6);
+  addAnchorDot("analog", unoGroup, -14.5 + 13 * 2.54, -23.8, 11.6);
 
   // Glowing Bioluminescent Emerald ON LED on Arduino
   const onLed = new THREE.Mesh(
@@ -734,7 +791,7 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   bbSlab.position.set(0, 0, 4.6);
-  addMetallicEdges(bbSlab, 0x64748b, 0.45, 50);
+  addMetallicEdges(bbSlab, undefined, 0.45, 50);
   bbGroup.add(bbSlab);
 
   // Breadboard Decal: tie-point pitch, coordinates and power rails
@@ -823,9 +880,53 @@ function buildObsidianWorkbenchGroup(
     );
     dome.rotation.x = Math.PI / 2;
     dome.position.set(ls.x, ls.y, 13.5);
+    addMetallicEdges(dome, undefined, 0.5, 40);
     bbGroup.add(dome);
     animRefs.leds.push(dome);
   }
+  addAnchorDot("led", bbGroup, 6.5, -6.0, 17.6);
+
+  // Carbon Film Resistor (Series Current Limiter) with Color Code Bands
+  const resGroup = new THREE.Group();
+  resGroup.position.set(-9.12, 4.5, 12.2);
+
+  const resBody = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.15, 1.15, 6.4, 20),
+    new THREE.MeshPhysicalMaterial({
+      color: "#d6d3d1",
+      roughness: 0.55,
+      metalness: 0.05,
+      clearcoat: 0.35,
+    }),
+  );
+  resBody.rotation.z = Math.PI / 2;
+  addMetallicEdges(resBody, undefined, 0.55, 40);
+  resGroup.add(resBody);
+
+  // Brown - Black - Red - Gold (220R) color code bands
+  const bandColors = ["#7c2d12", "#111827", "#dc2626", "#f59e0b"];
+  bandColors.forEach((bandColor, i) => {
+    const band = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.2, 1.2, 0.55, 20),
+      new THREE.MeshStandardMaterial({ color: bandColor, roughness: 0.4 }),
+    );
+    band.rotation.z = Math.PI / 2;
+    band.position.x = -2.4 + i * 1.6;
+    resGroup.add(band);
+  });
+
+  // Tinned bent leads
+  for (const lx of [-3.6, 3.6]) {
+    const lead = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.28, 0.28, 3.4, 10),
+      new THREE.MeshStandardMaterial({ color: "#cbd5e1", metalness: 0.9, roughness: 0.25 }),
+    );
+    lead.rotation.z = Math.PI / 2;
+    lead.position.set(lx, 0, -1.5);
+    resGroup.add(lead);
+  }
+  bbGroup.add(resGroup);
+  addAnchorDot("resistor", bbGroup, -9.12, 4.5, 14.2);
 
   // Interactive Tactile Pushbutton on Breadboard
   const swBase = new THREE.Mesh(
@@ -862,7 +963,7 @@ function buildObsidianWorkbenchGroup(
       clearcoat: 0.5,
     }),
   );
-  addMetallicEdges(sonarPcb, 0x38bdf8, 0.5);
+  addMetallicEdges(sonarPcb, undefined, 0.5);
   sonarGroup.add(sonarPcb);
 
   for (const sx of [-11.5, 11.5]) {
@@ -876,6 +977,7 @@ function buildObsidianWorkbenchGroup(
       }),
     );
     can.position.set(sx, -6.0, 0);
+    addMetallicEdges(can, undefined, 0.45, 40);
     sonarGroup.add(can);
 
     const meshFace = new THREE.Mesh(
@@ -907,7 +1009,7 @@ function buildObsidianWorkbenchGroup(
     }),
   );
   srvBody.position.set(0, 0, 8.25);
-  addMetallicEdges(srvBody, 0x38bdf8, 0.5, 50);
+  addMetallicEdges(srvBody, undefined, 0.5, 50);
   srvGroup.add(srvBody);
 
   const srvBoss = new THREE.Mesh(
@@ -1036,6 +1138,14 @@ function buildObsidianWorkbenchGroup(
     });
   }
 
+  // =========================================================================
+  // 5. PUBLISH WORLD-SPACE ANCHOR POSITIONS FOR THE CALLOUT LEADER LINES
+  // =========================================================================
+  root.updateMatrixWorld(true);
+  for (const { key, dot } of anchorDots) {
+    anchors[key] = dot.getWorldPosition(new THREE.Vector3());
+  }
+
   return root;
 }
 
@@ -1059,6 +1169,11 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
   const [simSpeedMultiplier, setSimSpeedMultiplier] = useState<number>(1.0);
   const [thermalFaultMode, setThermalFaultMode] = useState<boolean>(false);
 
+  // --- Interactive Isometric Technical Illustration state -------------------
+  const [isometricMode, setIsometricMode] = useState<boolean>(true);
+  const [blueprintTheme, setBlueprintTheme] = useState<boolean>(false);
+  const [showCallouts, setShowCallouts] = useState<boolean>(true);
+
   const simParamsRef = useRef({
     active: true,
     pwmThrottle: 72,
@@ -1080,6 +1195,23 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
   const hierarchyRef = useRef<ThreePcbHierarchy | null>(null);
   const boardCenterRef = useRef<THREE.Vector3>(new THREE.Vector3(-4, 18, 4));
 
+  // --- Callout plumbing ----------------------------------------------------
+  const anchorsRef = useRef<Record<string, THREE.Vector3>>({});
+  const calloutLineRefs = useRef<Map<string, SVGLineElement>>(new Map());
+  const calloutCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const calloutDefsRef = useRef<CalloutDefinition[]>([]);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const isometricModeRef = useRef<boolean>(isometricMode);
+  const showCalloutsRef = useRef<boolean>(showCallouts);
+
+  useEffect(() => {
+    isometricModeRef.current = isometricMode;
+  }, [isometricMode]);
+
+  useEffect(() => {
+    showCalloutsRef.current = showCallouts;
+  }, [showCallouts]);
+
   const routedLayout = useMemo(() => {
     if (providedLayout) return providedLayout;
     try {
@@ -1094,14 +1226,107 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
 
   const scene3d: PcbScene3D = useMemo(() => {
     return buildPcbScene3D(routedLayout, circuit, {
-      solderMaskColor: "#0b1320",
-      copperColor: "#f59e0b",
-      padColor: "#fbbf24",
+      solderMaskColor: blueprintTheme ? "#e9e1d1" : "#0b1320",
+      copperColor: blueprintTheme ? "#8a6d3b" : "#f59e0b",
+      padColor: blueprintTheme ? "#b08d57" : "#fbbf24",
     });
-  }, [routedLayout, circuit]);
+  }, [routedLayout, circuit, blueprintTheme]);
 
   const currentPreset =
     MECHATRONICS_PROJECTS.find((p) => p.id === activeProject) ?? MECHATRONICS_PROJECTS[0]!;
+
+  // --- Which optional callouts are relevant for the current circuit? --------
+  const circuitCapabilities = useMemo(() => {
+    const comps = circuit?.components ?? [];
+    const hasKind = (kind: string) =>
+      comps.some((c) => (c as unknown as { kind?: string }).kind === kind);
+    const hasPin13 = comps.some((c) => {
+      const ports =
+        (c as unknown as { ports?: Array<{ name?: string; id?: string }> }).ports ?? [];
+      return ports.some((p) => {
+        const n = (p.name ?? p.id ?? "").toUpperCase();
+        return n === "13" || n === "D13" || n.endsWith("_13") || n.endsWith("-13");
+      });
+    });
+    return {
+      hasLed: hasKind("led"),
+      hasResistor: hasKind("resistor"),
+      hasPin13: hasPin13 || hasKind("mcu"),
+    };
+  }, [circuit]);
+
+  const calloutDefs = useMemo<CalloutDefinition[]>(() => {
+    const base: CalloutDefinition[] = [
+      {
+        id: "usb",
+        label: "USB PORT",
+        description: "Connects to your computer for programming and power.",
+        anchorKey: "usb",
+      },
+      {
+        id: "power",
+        label: "POWER JACK",
+        description: "External DC power (7-12V recommended).",
+        anchorKey: "power",
+      },
+      {
+        id: "mcu",
+        label: "MICROCONTROLLER",
+        description: "ATmega328P runs your code.",
+        anchorKey: "mcu",
+      },
+      {
+        id: "digital",
+        label: "DIGITAL PINS",
+        description: "Pins 0-13 for digital input/output.",
+        anchorKey: "digital",
+      },
+      {
+        id: "powerPins",
+        label: "POWER PINS",
+        description: "5V, 3.3V, GND and VIN for power.",
+        anchorKey: "powerPins",
+      },
+      {
+        id: "analog",
+        label: "ANALOG PINS",
+        description: "A0-A5 analog inputs (0-5V).",
+        anchorKey: "analog",
+      },
+    ];
+
+    const dynamic: CalloutDefinition[] = [];
+    if (circuitCapabilities.hasPin13) {
+      dynamic.push({
+        id: "pin13",
+        label: "PIN 13",
+        description: "Digital pin 13 drives the on-board LED.",
+        anchorKey: "digital",
+      });
+    }
+    if (circuitCapabilities.hasLed) {
+      dynamic.push({
+        id: "led",
+        label: "LED",
+        description: "Solid-state indicator with a series current-limiter.",
+        anchorKey: "led",
+      });
+    }
+    if (circuitCapabilities.hasResistor) {
+      dynamic.push({
+        id: "resistor",
+        label: "RESISTOR",
+        description: "Limits current to protect the LED and MCU pins.",
+        anchorKey: "resistor",
+      });
+    }
+
+    return [...base, ...dynamic];
+  }, [circuitCapabilities]);
+
+  useEffect(() => {
+    calloutDefsRef.current = calloutDefs;
+  }, [calloutDefs]);
 
   const handleChooseProject = (proj: MechatronicsProjectPreset) => {
     setInternalProject(proj.id);
@@ -1120,7 +1345,7 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
 
     switch (preset) {
       case "iso":
-        camera.position.set(center.x - 45, center.y - 98, 86);
+        camera.position.set(center.x - 62, center.y - 62, 62);
         camera.up.set(0, 0, 1);
         break;
       case "top":
@@ -1145,6 +1370,29 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     controls.update();
   };
 
+  /** Orbit the camera around the orbit target by an arbitrary angle (degrees). */
+  const rotateCameraBy = (degrees: number) => {
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls) return;
+    const offset = camera.position.clone().sub(controls.target);
+    offset.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(degrees));
+    camera.position.copy(controls.target).add(offset);
+    controls.update();
+  };
+
+  /** Dolly the camera in/out along the current view vector. */
+  const zoomCameraBy = (factor: number) => {
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls) return;
+    const offset = camera.position.clone().sub(controls.target);
+    const dist = THREE.MathUtils.clamp(offset.length() * factor, 26, 420);
+    offset.setLength(dist);
+    camera.position.copy(controls.target).add(offset);
+    controls.update();
+  };
+
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
@@ -1153,7 +1401,7 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     const height = container.clientHeight || 580;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#070a10");
+    scene.background = new THREE.Color(blueprintTheme ? "#f5efe6" : "#070a10");
 
     const center =
       studioMode === "workbench"
@@ -1167,7 +1415,11 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
 
     const camera = new THREE.PerspectiveCamera(36, width / height, 0.5, 1200);
     if (studioMode === "workbench") {
-      camera.position.set(center.x - 42, center.y - 96, 84);
+      if (isometricModeRef.current) {
+        camera.position.set(center.x - 62, center.y - 62, 62);
+      } else {
+        camera.position.set(center.x - 42, center.y - 96, 84);
+      }
     } else {
       camera.position.set(center.x + 40, center.y - 60, 68);
     }
@@ -1195,23 +1447,34 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
     scene.environment = environmentTarget.texture;
 
-    // Dramatic Obsidian Studio Lighting
-    scene.add(new THREE.AmbientLight(0xdbeafe, 0.8));
+    // Dramatic Obsidian Studio Lighting (or warm drafting-paper lighting)
+    scene.add(new THREE.AmbientLight(blueprintTheme ? 0xfff6e8 : 0xdbeafe, blueprintTheme ? 1.4 : 0.8));
 
-    const keyLight = new THREE.DirectionalLight(0xfffbeb, 1.75);
+    const keyLight = new THREE.DirectionalLight(
+      blueprintTheme ? 0xfff3dd : 0xfffbeb,
+      blueprintTheme ? 1.35 : 1.75,
+    );
     keyLight.position.set(60, -80, 110);
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.15);
+    const rimLight = new THREE.DirectionalLight(
+      blueprintTheme ? 0x9fb6c9 : 0x38bdf8,
+      blueprintTheme ? 0.75 : 1.15,
+    );
     rimLight.position.set(-85, 75, 70);
     scene.add(rimLight);
 
-    const goldFill = new THREE.PointLight(0xf59e0b, 1.2, 160);
+    const goldFill = new THREE.PointLight(0xf59e0b, blueprintTheme ? 0.55 : 1.2, 160);
     goldFill.position.set(-10, 20, 42);
     scene.add(goldFill);
 
-    // Subtle Carbon Dot-Matrix Technical Grid Floor
-    const grid = new THREE.GridHelper(280, 44, 0x1e293b, 0x0f172a);
+    // Subtle Carbon Dot-Matrix Technical Grid Floor (warm drafting paper in blueprint mode)
+    const grid = new THREE.GridHelper(
+      280,
+      44,
+      blueprintTheme ? 0xb9ac93 : 0x1e293b,
+      blueprintTheme ? 0xd9cfba : 0x0f172a,
+    );
     grid.position.set(center.x, center.y, -2.5);
     grid.rotation.x = Math.PI / 2;
     scene.add(grid);
@@ -1229,7 +1492,13 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     };
 
     if (studioMode === "workbench") {
-      const wb = buildObsidianWorkbenchGroup(activeProject, animRefs);
+      anchorsRef.current = {};
+      const wb = buildObsidianWorkbenchGroup(
+        activeProject,
+        animRefs,
+        blueprintTheme,
+        anchorsRef.current,
+      );
       scene.add(wb);
       hierarchyRef.current = null;
     } else {
@@ -1253,6 +1522,48 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     let pulsePhase = 0;
     let lastTime = performance.now();
     let animId: number;
+
+    // Scratch vector reused for the callout projection math.
+    const tmpVec = new THREE.Vector3();
+
+    /**
+     * Projects every 3D anchor to screen space and drives the dashed SVG
+     * leader lines so they stay glued to the cyan dots while orbiting/zooming.
+     */
+    const updateCalloutLeaders = (cam: THREE.PerspectiveCamera) => {
+      const overlay = overlayRef.current;
+      if (!overlay || !showCalloutsRef.current) return;
+      const rect = overlay.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+
+      for (const def of calloutDefsRef.current) {
+        const line = calloutLineRefs.current.get(def.id);
+        const card = calloutCardRefs.current.get(def.id);
+        const anchor = anchorsRef.current[def.anchorKey];
+        if (!line || !card || !anchor) continue;
+
+        // Camera space first (to detect points behind the camera), then project.
+        tmpVec.copy(anchor);
+        tmpVec.applyMatrix4(cam.matrixWorldInverse);
+        const inFront = tmpVec.z < 0;
+        tmpVec.applyMatrix4(cam.projectionMatrix);
+
+        const x = (tmpVec.x * 0.5 + 0.5) * rect.width;
+        const y = (-tmpVec.y * 0.5 + 0.5) * rect.height;
+
+        const cardRect = card.getBoundingClientRect();
+        const cardLeft = cardRect.left - rect.left;
+        const cardRight = cardRect.right - rect.left;
+        const cardMidY = cardRect.top - rect.top + cardRect.height / 2;
+        const endX = x <= cardLeft ? cardLeft : x >= cardRight ? cardRight : cardLeft;
+
+        line.setAttribute("x1", x.toFixed(1));
+        line.setAttribute("y1", y.toFixed(1));
+        line.setAttribute("x2", endX.toFixed(1));
+        line.setAttribute("y2", cardMidY.toFixed(1));
+        line.style.opacity = inFront ? "1" : "0";
+      }
+    };
 
     const animate = (now: number) => {
       animId = requestAnimationFrame(animate);
@@ -1304,6 +1615,8 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
       }
 
       controls.update();
+      camera.updateMatrixWorld();
+      updateCalloutLeaders(camera);
       renderer.render(scene, camera);
     };
     animId = requestAnimationFrame(animate);
@@ -1339,7 +1652,23 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
         container.removeChild(renderer.domElement);
       }
     };
-  }, [scene3d, studioMode, activeProject]);
+  }, [scene3d, studioMode, activeProject, blueprintTheme]);
+
+  // Keep the camera framing in sync with the isometric / perspective toggle.
+  useEffect(() => {
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls) return;
+    const center = boardCenterRef.current;
+    camera.up.set(0, 0, 1);
+    if (isometricMode) {
+      camera.position.set(center.x - 62, center.y - 62, 62);
+    } else {
+      camera.position.set(center.x - 42, center.y - 96, 84);
+    }
+    controls.target.copy(center);
+    controls.update();
+  }, [isometricMode]);
 
   const handleExportGlb = () => {
     const h = hierarchyRef.current;
@@ -1361,11 +1690,76 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     );
   };
 
+  const pillBtnBase =
+    "w-7 h-7 rounded-full flex items-center justify-center text-[13px] leading-none transition cursor-pointer select-none";
+  const pillBtnIdle = `${pillBtnBase} text-slate-300 hover:text-white hover:bg-white/10`;
+  const pillBtnActive = `${pillBtnBase} bg-cyan-500/20 text-cyan-300 border border-cyan-400/60`;
+
   return (
     <div className="flex flex-col h-full w-full relative select-none overflow-hidden bg-[#070a10] text-slate-100">
       {/* Full-Bleed 3D WebGL Canvas */}
       <div className="flex-1 relative w-full h-full min-h-[540px]">
         <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+
+        {/* =================================================================== */}
+        {/* 3D-ANCHORED CALLOUT CARDS + DASHED SVG LEADER LINES                 */}
+        {/* =================================================================== */}
+        {showCallouts && studioMode === "workbench" && (
+          <div ref={overlayRef} className="absolute inset-0 pointer-events-none z-10">
+            <svg className="absolute inset-0 w-full h-full overflow-visible">
+              {calloutDefs.map((def) => (
+                <line
+                  key={def.id}
+                  ref={(el) => {
+                    if (el) calloutLineRefs.current.set(def.id, el);
+                    else calloutLineRefs.current.delete(def.id);
+                  }}
+                  strokeDasharray="4 4"
+                  stroke="#06b6d4"
+                  strokeWidth={1.25}
+                  strokeOpacity={0.85}
+                  x1={0}
+                  y1={0}
+                  x2={0}
+                  y2={0}
+                />
+              ))}
+            </svg>
+
+            <div className="absolute left-3 top-[70px] w-[196px] max-h-[calc(100%-110px)] overflow-y-auto flex flex-col gap-1.5 pointer-events-auto">
+              {calloutDefs.map((def) => (
+                <div
+                  key={def.id}
+                  ref={(el) => {
+                    if (el) calloutCardRefs.current.set(def.id, el);
+                    else calloutCardRefs.current.delete(def.id);
+                  }}
+                  className={`rounded-[3px] border px-2 py-1.5 backdrop-blur-xl shadow-xl ${
+                    blueprintTheme
+                      ? "border-zinc-800/50 bg-[#fdfaf3]/92 text-zinc-800"
+                      : "border-cyan-400/40 bg-[#0d131f]/85 text-slate-100"
+                  }`}
+                >
+                  <div
+                    className={`text-[9px] font-bold tracking-wider uppercase flex items-center gap-1 ${
+                      blueprintTheme ? "text-cyan-800" : "text-cyan-300"
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                    {def.label}
+                  </div>
+                  <div
+                    className={`text-[9px] leading-snug mt-0.5 ${
+                      blueprintTheme ? "text-zinc-600" : "text-slate-300"
+                    }`}
+                  >
+                    {def.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Top-Left Mode Switcher Pill (3D Obsidian Twin vs PCB Shield) */}
         <div className="absolute top-3 left-3 flex items-center gap-1.5 p-1 rounded-[4px] border border-white/10 bg-[#0d131f]/85 backdrop-blur-xl z-20 shadow-2xl">
@@ -1584,6 +1978,74 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
               })}
             </div>
           </div>
+        </div>
+
+        {/* =================================================================== */}
+        {/* FLOATING VIEWPORT CONTROL PILL (Bottom-Right)                        */}
+        {/* =================================================================== */}
+        <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1 px-1.5 py-1.5 rounded-full border border-white/15 bg-[#0d131f]/88 backdrop-blur-xl shadow-2xl">
+          <button
+            type="button"
+            onClick={() => rotateCameraBy(-45)}
+            title="Rotate Left 45°"
+            className={pillBtnIdle}
+          >
+            ↺
+          </button>
+          <button
+            type="button"
+            onClick={() => rotateCameraBy(45)}
+            title="Rotate Right 45°"
+            className={pillBtnIdle}
+          >
+            ↻
+          </button>
+
+          <span className="w-px h-4 bg-white/10" />
+
+          <button
+            type="button"
+            onClick={() => zoomCameraBy(1.18)}
+            title="Zoom Out"
+            className={pillBtnIdle}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={() => zoomCameraBy(0.85)}
+            title="Zoom In"
+            className={pillBtnIdle}
+          >
+            +
+          </button>
+
+          <span className="w-px h-4 bg-white/10" />
+
+          <button
+            type="button"
+            onClick={() => setShowCallouts(!showCallouts)}
+            title="Toggle Callouts"
+            className={showCallouts ? pillBtnActive : pillBtnIdle}
+          >
+            ⓘ
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsometricMode(!isometricMode)}
+            title="Toggle Isometric / Perspective"
+            className={isometricMode ? pillBtnActive : pillBtnIdle}
+          >
+            △
+          </button>
+          <button
+            type="button"
+            onClick={() => setBlueprintTheme(!blueprintTheme)}
+            title="Toggle Blueprint / Obsidian Theme"
+            className={blueprintTheme ? pillBtnActive : pillBtnIdle}
+          >
+            〰
+          </button>
         </div>
       </div>
     </div>
