@@ -9,7 +9,6 @@ import { placeCircuit, type RoutingResult, routeCircuit } from "@s2c/pcb-layout"
 import {
   Activity,
   Boxes,
-  Camera,
   Check,
   ChevronDown,
   Code2,
@@ -21,8 +20,7 @@ import {
   ShieldAlert,
   Wrench,
 } from "lucide-react";
-import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BomViewerTab } from "./components/BomViewerTab.js";
 import { CalculatorsTab } from "./components/CalculatorsTab.js";
 import { DocumentationTab } from "./components/DocumentationTab.js";
@@ -31,6 +29,7 @@ import { ExportArtifacts } from "./components/ExportArtifacts.js";
 import { GitHubStarButton } from "./components/GitHubStarButton.js";
 import { MuseAgentPanel } from "./components/MuseAgentPanel.js";
 import { PartsCatalogBrowser } from "./components/PartsCatalogBrowser.js";
+import { PhysicalVerifier } from "./components/PhysicalVerifier.js";
 import {
   MECHATRONICS_PROJECTS,
   type MechatronicsProjectId,
@@ -41,6 +40,7 @@ import { PcbViewer } from "./components/PcbViewer.js";
 import { Schematic2DViewer } from "./components/Schematic2DViewer.js";
 import { SimulationTab } from "./components/SimulationTab.js";
 import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
+import { expectedFromCircuit } from "./lib/physicalScan.js";
 import { Analytics } from "@vercel/analytics/react";
 
 export default function App() {
@@ -75,9 +75,6 @@ export default function App() {
   const [agentStatusMsg, setAgentStatusMsg] = useState<string | null>(null);
   const [isRepairing, setIsRepairing] = useState<boolean>(false);
   const [repairDoneSummary, setRepairDoneSummary] = useState<string | null>(null);
-  const [isScanning, setIsScanning] = useState<boolean>(false);
-  const [scanDoneSummary, setScanDoneSummary] = useState<string | null>(null);
-  const quickScanInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -178,24 +175,10 @@ export default function App() {
     }, 4500);
   };
 
-  // Hero Action 2: Meta SAM 3.1 Breadboard Scanner
-  const handleQuickSamScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsScanning(true);
-    setScanDoneSummary(null);
-    setAgentStatusMsg(`Segmenting "${file.name}" topology…`);
-    await new Promise((r) => setTimeout(r, 750));
-    const preset = MECHATRONICS_PROJECTS[0]!;
-    handleSelectProject(preset);
-    setIsScanning(false);
-    setScanDoneSummary("Twin rebuilt");
-    setAgentStatusMsg("SAM 3.1 + Muse Spark rebuilt circuit from breadboard photo");
-    setTimeout(() => {
-      setAgentStatusMsg(null);
-      setScanDoneSummary(null);
-    }, 4500);
-  };
+  const expectedScan = useMemo(
+    () => expectedFromCircuit(synthesis.circuit),
+    [synthesis.circuit],
+  );
 
   const errorCount = synthesis.diagnostics.filter((d) => d.severity === "error").length;
   const warningCount = synthesis.diagnostics.filter((d) => d.severity === "warning").length;
@@ -289,38 +272,8 @@ export default function App() {
               )}
             </button>
 
-            {/* Hero Action 2: Scan Breadboard (Secondary Outlined Button) */}
-            <input
-              ref={quickScanInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleQuickSamScan}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => quickScanInputRef.current?.click()}
-              disabled={isScanning}
-              title="Upload a breadboard photo to rebuild the circuit"
-              className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100 font-medium text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0"
-            >
-              {isScanning ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#06b6d4] shrink-0" />
-                  <span>Scanning…</span>
-                </>
-              ) : scanDoneSummary ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Scan Breadboard · {scanDoneSummary}</span>
-                </>
-              ) : (
-                <>
-                  <Camera className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                  <span>Scan Breadboard</span>
-                </>
-              )}
-            </button>
+            {/* Hero Action 2: Scan Breadboard (Physical Circuit Verifier) */}
+            <PhysicalVerifier expected={expectedScan} theme={theme} mode="trigger" />
 
             <GitHubStarButton />
 
@@ -562,12 +515,13 @@ export default function App() {
                   setDebouncedSource(code);
                 }}
               />
+              <PhysicalVerifier expected={expectedScan} theme={theme} mode="hud" />
             </div>
           </div>
         )}
 
         {activeMainTab === "pcb3d" && (
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 relative">
             <Pcb3DViewer
               circuit={synthesis.circuit}
               layout={routedResult?.layout}
@@ -580,6 +534,7 @@ export default function App() {
                 setDebouncedSource(code);
               }}
             />
+            <PhysicalVerifier expected={expectedScan} theme={theme} mode="hud" />
           </div>
         )}
 

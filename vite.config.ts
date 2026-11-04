@@ -11,6 +11,7 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         "@": path.resolve(rootDir, "."),
+        "@s2c/core/jsx-runtime": path.resolve(rootDir, "packages/core/src/jsx-runtime.ts"),
         "@s2c/core": path.resolve(rootDir, "packages/core/src/index.ts"),
         "@s2c/circuit-json": path.resolve(rootDir, "packages/circuit-json/src/index.ts"),
         "@s2c/units": path.resolve(rootDir, "packages/units/src/index.ts"),
@@ -27,6 +28,10 @@ export default defineConfig(() => {
         "@s2c/cli": path.resolve(rootDir, "packages/cli/src/index.ts"),
         "@s2c/sim-engine": path.resolve(rootDir, "packages/sim-engine/src/index.ts"),
         "@s2c/block-diagram": path.resolve(rootDir, "packages/block-diagram/src/index.ts"),
+        "@s2c/manifests": path.resolve(rootDir, "packages/manifests/src/index.ts"),
+        "@s2c/erc": path.resolve(rootDir, "packages/erc/src/index.ts"),
+        "@s2c/layout": path.resolve(rootDir, "packages/layout/src/index.ts"),
+        "@s2c/exporters": path.resolve(rootDir, "packages/exporters/src/index.ts"),
       },
     },
     server: {

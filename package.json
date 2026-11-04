@@ -9,10 +9,7 @@
     "preview": "vite preview",
     "check:deps": "node scripts/check-dependency-majors.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit && biome check .",
-    "format": "biome format --write .",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -21,38 +18,20 @@
     "@xyflow/react": "12.12.0",
     "lucide-react": "^0.546.0",
     "mathjs": "^15.2.0",
-    "motion": "^12.23.24",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "three": "^0.186.1",
-    "tree-sitter-cpp": "0.23.4",
     "vite": "^8.3.0",
     "web-tree-sitter": "0.27.0",
     "zod": "3.24.2",
     "zod-to-json-schema": "3.24.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@changesets/cli": "3.0.3",
-    "@hpcreery/tracespace-parser": "^5.0.4",
-    "@monaco-editor/react": "4.7.0",
     "@types/node": "^22.14.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
-    "esbuild": "0.25.0",
-    "fast-check": "4.10.2",
-    "gerber-parser": "^4.2.7",
-    "happy-dom": "^20.14.5",
-    "monaco-editor": "0.56.0",
     "tailwindcss": "^4.3.3",
-    "tsup": "8.5.1",
-    "tsx": "^4.21.0",
-    "typescript": "5.8.3",
-    "vitest": "5.0.1"
-  },
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ]
+    "typescript": "5.8.3"
+  }
 }

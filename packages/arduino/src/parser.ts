@@ -27,11 +27,10 @@ export async function getParser(): Promise<Parser> {
         });
         wasmPath = "/tree-sitter-cpp.wasm";
       } else {
-        // Node.js environment: dynamic require to avoid bundling issues in browsers
+        // Node.js environment: resolve from public directory
         await Parser.init();
-        const { createRequire } = await import("node:module");
-        const require = createRequire(import.meta.url);
-        wasmPath = require.resolve("tree-sitter-cpp/tree-sitter-cpp.wasm");
+        const path = await import("node:path");
+        wasmPath = path.resolve(process.cwd(), "public/tree-sitter-cpp.wasm");
       }
 
       const CppLanguage = await Language.load(wasmPath);
