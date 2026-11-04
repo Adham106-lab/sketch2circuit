@@ -4,7 +4,17 @@
  * Pure TypeScript logic (zero React dependencies).
  */
 
-export type ScanComponentType = "led" | "resistor" | "button" | "ultrasonic" | "other";
+export type ScanComponentType =
+  | "led"
+  | "resistor"
+  | "button"
+  | "ultrasonic"
+  | "servo"
+  | "potentiometer"
+  | "ldr"
+  | "buzzer"
+  | "motor"
+  | "other";
 
 export interface ScanComponent {
   type: ScanComponentType;
@@ -32,9 +42,16 @@ export interface ScanProgressUpdate {
   isFallback: boolean;
 }
 
+export interface GroupedScanErrors {
+  components: string[];
+  wiring: string[];
+  power: string[];
+}
+
 export interface ScanVerificationReport {
   passed: boolean;
   errors: string[];
+  groupedErrors: GroupedScanErrors;
   matched: number;
   total: number;
 }
@@ -323,6 +340,15 @@ function normalizeComponentType(raw: unknown): ScanComponentType {
   ) {
     return "ultrasonic";
   }
+  if (lower === "servo" || lower.includes("servo") || lower.includes("sg90")) return "servo";
+  if (lower === "potentiometer" || lower.includes("pot") || lower.includes("variable resistor")) {
+    return "potentiometer";
+  }
+  if (lower === "ldr" || lower.includes("ldr") || lower.includes("photoresistor") || lower.includes("photocell")) {
+    return "ldr";
+  }
+  if (lower === "buzzer" || lower.includes("buzzer") || lower.includes("piezo")) return "buzzer";
+  if (lower === "motor" || lower.includes("dc motor") || lower.includes("motor")) return "motor";
   return "other";
 }
 
@@ -891,40 +917,92 @@ function isMcuPin(ep: string): boolean {
   return /^D\d{1,2}$/.test(ep) || /^A\d$/.test(ep) || ep === "5V" || ep === "3.3V" || ep === "GND";
 }
 
+function formatReadableEndpoint(ep: string): string {
+  return ep
+    .replace(/\.ANODE$/i, " anode")
+    .replace(/\.CATHODE$/i, " cathode");
+}
+
 /**
- * Compares the scanned physical breadboard graph against the expected digital twin.
+ * Compares the scanned physical breadboard graph against the expected digital twin,
+ * returning actionable fix instructions grouped into Components, Wiring, and Power.
  */
 export function verifyScan(expected: ScanResult, found: ScanResult): ScanVerificationReport {
-  const errors: string[] = [];
-  const componentTypes: ScanComponentType[] = ["led", "resistor", "button", "ultrasonic", "other"];
+  const groupedErrors: GroupedScanErrors = {
+    components: [],
+    wiring: [],
+    power: [],
+  };
+
+  const componentTypes: ScanComponentType[] = [
+    "led",
+    "resistor",
+    "button",
+    "ultrasonic",
+    "servo",
+    "potentiometer",
+    "ldr",
+    "buzzer",
+    "motor",
+    "other",
+  ];
   const typeLabels: Record<ScanComponentType, string> = {
     led: "LED",
     resistor: "resistor",
     button: "push button",
     ultrasonic: "ultrasonic sensor",
-    other: "auxiliary component",
+    servo: "servo",
+    potentiometer: "potentiometer",
+    ldr: "LDR photoresistor",
+    buzzer: "piezo buzzer",
+    motor: "DC motor",
+    other: "component",
   };
 
   let totalComponents = 0;
   let matchedComponents = 0;
 
+  const expResistorCount = expected.components.filter((c) => c.type === "resistor").length;
+  const fndResistorCount = found.components.filter((c) => c.type === "resistor").length;
+
   for (const t of componentTypes) {
-    const expCount = expected.components.filter((c) => c.type === t).length;
-    const fndCount = found.components.filter((c) => c.type === t).length;
+    const expItems = expected.components.filter((c) => c.type === t);
+    const fndItems = found.components.filter((c) => c.type === t);
+    const expCount = expItems.length;
+    const fndCount = fndItems.length;
     totalComponents += expCount;
     matchedComponents += Math.min(expCount, fndCount);
 
     if (fndCount < expCount) {
       const diff = expCount - fndCount;
-      errors.push(
+      // Special actionable guidance if a series resistor between MCU pin and LED is missing
+      if (t === "resistor") {
+        const expLed = expected.components.find((c) => c.type === "led");
+        const expMcuConn = expected.connections.find(
+          (c) => /^D\d+$/i.test(normalizeEndpoint(c.from)) || /^D\d+$/i.test(normalizeEndpoint(c.to)),
+        );
+        const mcuPin = expMcuConn
+          ? /^D\d+$/i.test(normalizeEndpoint(expMcuConn.from))
+            ? normalizeEndpoint(expMcuConn.from)
+            : normalizeEndpoint(expMcuConn.to)
+          : null;
+        if (expLed && mcuPin) {
+          groupedErrors.components.push(
+            `Add a resistor between ${mcuPin} and ${expLed.label ?? "LED1"}`,
+          );
+          continue;
+        }
+      }
+      const missingLabel = expItems[fndCount]?.label;
+      groupedErrors.components.push(
         diff === 1 && expCount === 1
-          ? `Missing ${typeLabels[t]}`
-          : `Missing ${diff} ${typeLabels[t]}${diff > 1 ? "s" : ""} (expected ${expCount}, found ${fndCount})`,
+          ? `Add missing ${typeLabels[t]}${missingLabel ? ` (${missingLabel})` : ""}`
+          : `Add ${diff} missing ${typeLabels[t]}${diff > 1 ? "s" : ""} (expected ${expCount}, found ${fndCount})`,
       );
     } else if (fndCount > expCount) {
       const diff = fndCount - expCount;
-      errors.push(
-        `Unexpected extra ${typeLabels[t]} (+${diff}: expected ${expCount}, found ${fndCount})`,
+      groupedErrors.components.push(
+        `Remove ${diff} extra ${typeLabels[t]}${diff > 1 ? "s" : ""} (expected ${expCount}, found ${fndCount})`,
       );
     }
   }
@@ -944,37 +1022,178 @@ export function verifyScan(expected: ScanResult, found: ScanResult): ScanVerific
       continue;
     }
 
+    const isPowerOrGnd =
+      exp.a === "GND" ||
+      exp.b === "GND" ||
+      exp.a === "5V" ||
+      exp.b === "5V" ||
+      exp.a === "3.3V" ||
+      exp.b === "3.3V";
+
+    if (isPowerOrGnd) {
+      const rail =
+        exp.a === "GND" || exp.a === "5V" || exp.a === "3.3V" ? exp.a : exp.b;
+      const target = rail === exp.a ? exp.b : exp.a;
+      groupedErrors.power.push(`Connect ${rail} to ${formatReadableEndpoint(target)}`);
+      continue;
+    }
+
     // Check if one side is an MCU pin and the other side was wired to the wrong MCU pin
     const expMcu = isMcuPin(exp.a) ? exp.a : isMcuPin(exp.b) ? exp.b : null;
     const expCompEnd = expMcu ? (exp.a === expMcu ? exp.b : exp.a) : null;
 
     if (expMcu && expCompEnd) {
+      const expPrefix = expCompEnd.split(".")[0] ?? expCompEnd;
       const wrongPinIdx = unmatchedFound.findIndex((f) => {
-        const other = f.a === expCompEnd ? f.b : f.b === expCompEnd ? f.a : null;
-        return other !== null && isMcuPin(other);
+        const fMcu = isMcuPin(f.a) ? f.a : isMcuPin(f.b) ? f.b : null;
+        if (!fMcu || fMcu === "GND" || fMcu === "5V" || fMcu === "3.3V") return false;
+        const other = f.a === fMcu ? f.b : f.a;
+        const otherPrefix = other.split(".")[0] ?? other;
+        return other === expCompEnd || otherPrefix === expPrefix;
       });
 
       if (wrongPinIdx !== -1) {
         const wrong = unmatchedFound[wrongPinIdx]!;
-        const foundPin = wrong.a === expCompEnd ? wrong.b : wrong.a;
+        const foundPin = isMcuPin(wrong.a) ? wrong.a : wrong.b;
         unmatchedFound.splice(wrongPinIdx, 1);
-        errors.push(`Expected wire on ${expMcu}, found on ${foundPin} (${expCompEnd})`);
+        groupedErrors.wiring.push(
+          `Move the wire from ${foundPin} to ${expMcu} (${formatReadableEndpoint(expCompEnd)})`,
+        );
         continue;
       }
     }
 
-    errors.push(`Missing connection: ${exp.a} ↔ ${exp.b}`);
+    // If a series resistor was omitted and the user wired MCU directly to LED
+    if (fndResistorCount < expResistorCount && (/^R\d+\./.test(exp.a) || /^R\d+\./.test(exp.b))) {
+      const nonRes = /^R\d+\./.test(exp.a) ? exp.b : exp.a;
+      groupedErrors.wiring.push(`Connect resistor lead to ${formatReadableEndpoint(nonRes)}`);
+      continue;
+    }
+
+    groupedErrors.wiring.push(
+      `Connect ${formatReadableEndpoint(exp.a)} to ${formatReadableEndpoint(exp.b)}`,
+    );
   }
 
+  const errors = [
+    ...groupedErrors.components,
+    ...groupedErrors.wiring,
+    ...groupedErrors.power,
+  ];
   const total = totalComponents + expPairs.length;
   const matched = matchedComponents + matchedConnections;
 
   return {
     passed: errors.length === 0,
     errors,
+    groupedErrors,
     matched,
     total,
   };
+}
+
+/**
+ * Uses the existing `VISION_MODEL_CHAIN` fallback sequence with a text-only prompt
+ * to enrich a generated Arduino sketch with concise line-by-line comments without
+ * changing any pin numbers or structure.
+ */
+export async function explainSketchWithMuseSpark(
+  deterministicCode: string,
+  externalSignal?: AbortSignal,
+): Promise<{ code: string; modelShortName: string }> {
+  const { apiKey, proxyUrl } = getVisionEnv();
+  if (!apiKey && !proxyUrl) {
+    throw new ScanError("unconfigured", "Vision API not configured");
+  }
+
+  const { extractSketchPinSignature } = await import("./codegen.js");
+  const expectedPinSig = extractSketchPinSignature(deterministicCode);
+
+  const chain = await resolveVisionModelChain(externalSignal);
+  const endpoint = proxyUrl || FIREWORKS_CHAT_URL;
+
+  for (const model of chain) {
+    const shortName = shortModelName(model);
+    const isMuse = model.includes("muse-spark");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), isMuse ? 45_000 : 25_000);
+    const onAbort = () => controller.abort();
+    externalSignal?.addEventListener("abort", onAbort, { once: true });
+
+    try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (apiKey) {
+        headers.Authorization = `Bearer ${apiKey}`;
+      }
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        signal: controller.signal,
+        body: JSON.stringify({
+          model,
+          temperature: 0,
+          max_tokens: isMuse ? 4096 : 2048,
+          ...(isMuse ? { reasoning_effort: "low" } : {}),
+          messages: [
+            {
+              role: "system",
+              content:
+                "Add concise comments explaining each line of this Arduino sketch. Return ONLY the full sketch, no markdown fences.",
+            },
+            {
+              role: "user",
+              content: deterministicCode,
+            },
+          ],
+        }),
+      });
+
+      if (res.status === 401) {
+        throw new ScanError("http", "Invalid API key", 401);
+      }
+      if (!res.ok) continue;
+
+      const data = (await res.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const rawContent = data.choices?.[0]?.message?.content ?? "";
+      const cleaned = rawContent
+        .replace(/^```(?:cpp|c|arduino)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+
+      if (!cleaned.includes("void setup") || !cleaned.includes("void loop")) {
+        console.warn(`[scan] Explain output from ${shortName} missing setup/loop; rejecting.`);
+        continue;
+      }
+
+      const candidatePinSig = extractSketchPinSignature(cleaned);
+      if (candidatePinSig !== expectedPinSig) {
+        console.warn(
+          `[scan] Explain output from ${shortName} altered pin signature (${candidatePinSig} !== ${expectedPinSig}); rejecting.`,
+        );
+        continue;
+      }
+
+      sessionWinnerModel = model;
+      return { code: cleaned, modelShortName: shortName };
+    } catch (err: unknown) {
+      if (externalSignal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+      if (err instanceof ScanError && err.status === 401) {
+        throw err;
+      }
+    } finally {
+      clearTimeout(timer);
+      externalSignal?.removeEventListener("abort", onAbort);
+    }
+  }
+
+  throw new ScanError("parse", "Couldn't improve comments");
 }
 
 // ============================================================================

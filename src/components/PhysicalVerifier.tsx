@@ -6,20 +6,27 @@
 import {
   AlertTriangle,
   Camera,
+  Check,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Code2,
+  Copy,
+  Download,
   Loader2,
   RefreshCw,
+  Send,
   Sparkles,
   X,
   XCircle,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { type GeneratedSketchResult, generateSketch } from "../lib/codegen.js";
 import {
   analyzePhysicalCircuit,
   downscaleImageFile,
+  explainSketchWithMuseSpark,
   getVisionEnv,
   isVisionConfigured,
   mockScan,
@@ -39,6 +46,8 @@ export interface PhysicalVerifierProps {
    * "hud": renders only the absolute HUD overlay over the 3D viewer.
    */
   mode?: "full" | "trigger" | "hud";
+  sketchName?: string;
+  onSendToEditor?: (code: string) => void;
 }
 
 type VerifierStatus = "idle" | "scanning" | "done" | "error";
@@ -57,6 +66,15 @@ interface SharedScanState {
   errorKind: string | null;
   collapsed: boolean;
   showAllErrors: boolean;
+  detectedExpanded: boolean;
+  excludedComponents: number[];
+  excludedConnections: number[];
+  generatedSketch: GeneratedSketchResult | null;
+  deterministicCode: string | null;
+  explaining: boolean;
+  explainStatusMsg: string | null;
+  copied: boolean;
+  sentToEditor: boolean;
 }
 
 function getInitialDemoMode(): boolean {
@@ -82,6 +100,15 @@ let sharedState: SharedScanState = {
   errorKind: null,
   collapsed: false,
   showAllErrors: false,
+  detectedExpanded: false,
+  excludedComponents: [],
+  excludedConnections: [],
+  generatedSketch: null,
+  deterministicCode: null,
+  explaining: false,
+  explainStatusMsg: null,
+  copied: false,
+  sentToEditor: false,
 };
 
 const listeners = new Set<() => void>();
@@ -111,6 +138,8 @@ export function PhysicalVerifier({
   expected,
   theme = "dark",
   mode = "full",
+  sketchName = "ScannedBreadboard",
+  onSendToEditor,
 }: PhysicalVerifierProps) {
   const [state, setState] = useSharedScanState();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -194,6 +223,15 @@ export function PhysicalVerifier({
         errorKind: null,
         collapsed: false,
         showAllErrors: false,
+        detectedExpanded: false,
+        excludedComponents: [],
+        excludedConnections: [],
+        generatedSketch: null,
+        deterministicCode: null,
+        explaining: false,
+        explainStatusMsg: null,
+        copied: false,
+        sentToEditor: false,
       });
 
       try {
@@ -349,7 +387,132 @@ export function PhysicalVerifier({
       found: null,
       errorMsg: null,
       errorKind: null,
+      generatedSketch: null,
+      deterministicCode: null,
+      explaining: false,
+      explainStatusMsg: null,
     });
+  };
+
+  const getFilteredFound = (): ScanResult | null => {
+    if (!state.found) return null;
+    const compExcl = new Set(state.excludedComponents);
+    const connExcl = new Set(state.excludedConnections);
+
+    const removedPrefixes = new Set<string>();
+    const components = state.found.components.filter((c, i) => {
+      if (compExcl.has(i)) {
+        if (c.label) removedPrefixes.add(c.label.trim().toUpperCase());
+        return false;
+      }
+      return true;
+    });
+
+    const connections = state.found.connections.filter((conn, i) => {
+      if (connExcl.has(i)) return false;
+      const fromPrefix = (conn.from.split(".")[0] ?? conn.from).trim().toUpperCase();
+      const toPrefix = (conn.to.split(".")[0] ?? conn.to).trim().toUpperCase();
+      if (removedPrefixes.has(fromPrefix) || removedPrefixes.has(toPrefix)) {
+        return false;
+      }
+      return true;
+    });
+
+    return {
+      ...state.found,
+      components,
+      connections,
+    };
+  };
+
+  const handleToggleComponent = (idx: number) => {
+    if (state.generatedSketch !== null) return; // Editable only before generating
+    const exists = state.excludedComponents.includes(idx);
+    const next = exists
+      ? state.excludedComponents.filter((i) => i !== idx)
+      : [...state.excludedComponents, idx];
+    setState({ excludedComponents: next });
+  };
+
+  const handleToggleConnection = (idx: number) => {
+    if (state.generatedSketch !== null) return; // Editable only before generating
+    const exists = state.excludedConnections.includes(idx);
+    const next = exists
+      ? state.excludedConnections.filter((i) => i !== idx)
+      : [...state.excludedConnections, idx];
+    setState({ excludedConnections: next });
+  };
+
+  const handleGenerateCode = () => {
+    const filtered = getFilteredFound();
+    if (!filtered) return;
+    const generated = generateSketch(filtered, { board: "uno" });
+    setState({
+      generatedSketch: generated,
+      deterministicCode: generated.code,
+      explainStatusMsg: null,
+      copied: false,
+      sentToEditor: false,
+    });
+  };
+
+  const handleCopyCode = async () => {
+    if (!state.generatedSketch) return;
+    try {
+      await navigator.clipboard.writeText(state.generatedSketch.code);
+      setState({ copied: true });
+      setTimeout(() => setState({ copied: false }), 2000);
+    } catch {
+      // Clipboard API unavailable in some restricted frames
+    }
+  };
+
+  const handleDownloadIno = () => {
+    if (!state.generatedSketch) return;
+    const safeName =
+      sketchName.replace(/[^A-Za-z0-9_-]/g, "_").replace(/^_+/, "") || "ScannedSketch";
+    const blob = new Blob([state.generatedSketch.code], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safeName}.ino`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 250);
+    }
+  };
+
+  const handleSendToEditor = () => {
+    if (!state.generatedSketch || !onSendToEditor) return;
+    onSendToEditor(state.generatedSketch.code);
+    setState({ sentToEditor: true });
+    setTimeout(() => setState({ sentToEditor: false }), 2200);
+  };
+
+  const handleExplainWithMuseSpark = async () => {
+    if (!state.generatedSketch || !state.deterministicCode || state.mockMode || state.explaining) {
+      return;
+    }
+    setState({ explaining: true, explainStatusMsg: null });
+    try {
+      const res = await explainSketchWithMuseSpark(state.deterministicCode);
+      setState({
+        explaining: false,
+        generatedSketch: {
+          ...state.generatedSketch,
+          code: res.code,
+        },
+        explainStatusMsg: `Comments enhanced (${res.modelShortName})`,
+      });
+    } catch {
+      setState({
+        explaining: false,
+        explainStatusMsg: "Couldn't improve comments",
+      });
+    }
   };
 
   const renderTriggerButton = () => (
@@ -410,6 +573,35 @@ export function PhysicalVerifier({
     </div>
   );
 
+  const renderErrorGroup = (title: string, items: string[]) => {
+    if (items.length === 0) return null;
+    const shown = state.showAllErrors ? items : items.slice(0, 6);
+    const extra = Math.max(0, items.length - shown.length);
+    return (
+      <div className="space-y-1">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-rose-300/90">
+          {title}
+        </div>
+        <ul className="space-y-0.5 text-[11px] list-disc list-inside text-rose-100/95">
+          {shown.map((err, i) => (
+            <li key={`${title}-${err}-${i}`} className="leading-snug">
+              <span className="font-mono">{err}</span>
+            </li>
+          ))}
+        </ul>
+        {extra > 0 && (
+          <button
+            type="button"
+            onClick={() => setState({ showAllErrors: true })}
+            className="text-[10px] font-medium text-[#06b6d4] hover:underline cursor-pointer"
+          >
+            +{extra} more
+          </button>
+        )}
+      </div>
+    );
+  };
+
   const renderHudOverlay = () => {
     if (state.status === "idle") return null;
 
@@ -420,27 +612,30 @@ export function PhysicalVerifier({
     const subtleText = isDark ? "text-slate-400" : "text-slate-500";
     const mutedBg = isDark ? "bg-slate-900/90 border-slate-800" : "bg-slate-100 border-slate-200";
 
-    const visibleErrors = state.report
-      ? state.showAllErrors
-        ? state.report.errors
-        : state.report.errors.slice(0, 6)
-      : [];
-    const hiddenErrorCount = state.report
-      ? Math.max(0, state.report.errors.length - visibleErrors.length)
+    const totalDetectedCount = state.found
+      ? state.found.components.length + state.found.connections.length
       : 0;
+    const activeDetectedCount = Math.max(
+      0,
+      totalDetectedCount -
+        state.excludedComponents.length -
+        state.excludedConnections.length,
+    );
+
+    const isLockedForCodegen = state.generatedSketch !== null;
 
     return (
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-none absolute top-14 right-3 z-30 w-80 max-w-[calc(100%-1.5rem)] motion-safe:transition-opacity motion-safe:duration-150"
+        className="pointer-events-none absolute top-14 right-3 z-30 w-96 max-w-[calc(100%-1.5rem)] max-h-[calc(100%-4.25rem)] flex flex-col motion-safe:transition-opacity motion-safe:duration-150"
       >
         <div
-          className={`pointer-events-auto rounded-xl border backdrop-blur-md overflow-hidden ${cardSurface}`}
+          className={`pointer-events-auto rounded-xl border backdrop-blur-md overflow-hidden flex flex-col max-h-full ${cardSurface}`}
         >
           {/* Card Header */}
           <div
-            className={`px-3.5 py-2.5 border-b flex items-center justify-between gap-2 ${
+            className={`px-3.5 py-2.5 border-b flex items-center justify-between gap-2 shrink-0 ${
               isDark ? "border-slate-800" : "border-slate-200"
             }`}
           >
@@ -480,6 +675,7 @@ export function PhysicalVerifier({
                 type="button"
                 onClick={() => setState({ collapsed: !state.collapsed })}
                 title={state.collapsed ? "Expand verification details" : "Collapse card"}
+                aria-label={state.collapsed ? "Expand verification details" : "Collapse card"}
                 className={`p-1 rounded-md transition cursor-pointer ${
                   isDark
                     ? "hover:bg-slate-800 text-slate-400 hover:text-slate-200"
@@ -496,6 +692,7 @@ export function PhysicalVerifier({
                 type="button"
                 onClick={handleDismiss}
                 title="Dismiss (Esc)"
+                aria-label="Dismiss verification panel"
                 className={`p-1 rounded-md transition cursor-pointer ${
                   isDark
                     ? "hover:bg-slate-800 text-slate-400 hover:text-slate-200"
@@ -509,7 +706,7 @@ export function PhysicalVerifier({
 
           {/* Card Body */}
           {!state.collapsed && (
-            <div className="p-3.5 space-y-3 text-xs">
+            <div className="p-3.5 space-y-3 text-xs overflow-y-auto">
               {/* Thumbnail + File metadata */}
               {state.previewUrl && (
                 <div className={`flex items-center gap-2.5 p-2 rounded-lg border ${mutedBg}`}>
@@ -565,37 +762,299 @@ export function PhysicalVerifier({
                 </div>
               )}
 
-              {/* Done: FAIL */}
+              {/* Done: FAIL (Grouped: Components / Wiring / Power) */}
               {state.status === "done" && state.report && !state.report.passed && (
                 <div className="space-y-2">
-                  <div className="p-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-200 space-y-1.5">
+                  <div className="p-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-200 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-rose-300">Mismatch detected</span>
                       <span className="font-mono text-[11px] text-rose-300">
                         {state.report.matched}/{state.report.total} matched
                       </span>
                     </div>
-                    <ul className="space-y-1 text-[11px] list-disc list-inside text-rose-100/95">
-                      {visibleErrors.map((err, i) => (
-                        <li key={`${err}-${i}`} className="leading-snug">
-                          <span className="font-mono">{err}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    {hiddenErrorCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setState({ showAllErrors: true })}
-                        className="text-[11px] font-medium text-[#06b6d4] hover:underline cursor-pointer pt-0.5"
-                      >
-                        +{hiddenErrorCount} more issue{hiddenErrorCount > 1 ? "s" : ""}
-                      </button>
-                    )}
+                    {renderErrorGroup("Components", state.report.groupedErrors.components)}
+                    {renderErrorGroup("Wiring", state.report.groupedErrors.wiring)}
+                    {renderErrorGroup("Power", state.report.groupedErrors.power)}
                   </div>
                   {state.modelShortName && (
                     <div className={`text-[10px] font-mono ${subtleText}`}>
                       Model: {state.modelShortName}
                       {state.elapsedSec !== null ? ` · ${state.elapsedSec}s` : ""}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Collapsible "Detected circuit" list + Generate Arduino code section */}
+              {state.status === "done" && state.found && (
+                <div className={`rounded-lg border ${mutedBg} overflow-hidden`}>
+                  <div className="px-2.5 py-2 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setState({ detectedExpanded: !state.detectedExpanded })}
+                      className="flex items-center gap-1.5 text-left font-medium text-[11px] cursor-pointer"
+                    >
+                      {state.detectedExpanded ? (
+                        <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                      )}
+                      <span>Detected circuit</span>
+                      <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
+                        Detected {activeDetectedCount}/{totalDetectedCount}
+                      </span>
+                    </button>
+
+                    {isLockedForCodegen && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setState({
+                            generatedSketch: null,
+                            deterministicCode: null,
+                            explainStatusMsg: null,
+                            detectedExpanded: true,
+                          })
+                        }
+                        className="text-[10px] text-[#06b6d4] hover:underline cursor-pointer"
+                      >
+                        Edit detections
+                      </button>
+                    )}
+                  </div>
+
+                  {state.detectedExpanded && (
+                    <div
+                      className={`px-2.5 pb-2.5 pt-1 border-t space-y-2 max-h-40 overflow-y-auto ${
+                        isDark ? "border-slate-800" : "border-slate-200"
+                      }`}
+                    >
+                      {state.found.components.length > 0 && (
+                        <div className="space-y-1">
+                          <div className={`text-[10px] font-medium ${subtleText}`}>
+                            Components ({state.found.components.length})
+                          </div>
+                          {state.found.components.map((comp, idx) => {
+                            const checked = !state.excludedComponents.includes(idx);
+                            return (
+                              <label
+                                key={`comp-${comp.type}-${comp.label ?? idx}`}
+                                className={`flex items-center gap-2 text-[11px] font-mono ${
+                                  isLockedForCodegen
+                                    ? "opacity-70 cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={isLockedForCodegen}
+                                  onChange={() => handleToggleComponent(idx)}
+                                  className="rounded border-slate-600 accent-[#06b6d4]"
+                                />
+                                <span className={checked ? "" : "line-through opacity-50"}>
+                                  {comp.label ? `${comp.label} (${comp.type})` : comp.type}
+                                  {comp.value ? ` · ${comp.value}` : ""}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {state.found.connections.length > 0 && (
+                        <div className="space-y-1">
+                          <div className={`text-[10px] font-medium ${subtleText}`}>
+                            Connections ({state.found.connections.length})
+                          </div>
+                          {state.found.connections.map((conn, idx) => {
+                            const checked = !state.excludedConnections.includes(idx);
+                            return (
+                              <label
+                                key={`conn-${conn.from}-${conn.to}-${idx}`}
+                                className={`flex items-center gap-2 text-[11px] font-mono ${
+                                  isLockedForCodegen
+                                    ? "opacity-70 cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={isLockedForCodegen}
+                                  onChange={() => handleToggleConnection(idx)}
+                                  className="rounded border-slate-600 accent-[#06b6d4]"
+                                />
+                                <span className={checked ? "" : "line-through opacity-50"}>
+                                  {conn.from} ↔ {conn.to}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Primary Button: Generate Arduino code */}
+              {state.status === "done" && state.found && (
+                <div className="space-y-2.5">
+                  <button
+                    type="button"
+                    onClick={handleGenerateCode}
+                    aria-label="Generate Arduino code from scanned circuit"
+                    className="w-full py-1.5 px-3 rounded-lg bg-[#06b6d4] hover:bg-cyan-400 text-slate-950 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    <span>Generate Arduino code</span>
+                  </button>
+
+                  {state.generatedSketch && (
+                    <div className="space-y-2">
+                      {/* Secondary Action Buttons: Copy, Download .ino, Send to editor, Explain */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyCode()}
+                          aria-label="Copy generated Arduino code"
+                          className={`px-2 py-1 rounded-md border text-[11px] font-medium flex items-center gap-1 transition cursor-pointer ${
+                            isDark
+                              ? "border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200"
+                              : "border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800"
+                          }`}
+                        >
+                          {state.copied ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-400" />
+                              <span>Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleDownloadIno}
+                          aria-label="Download .ino sketch file"
+                          className={`px-2 py-1 rounded-md border text-[11px] font-medium flex items-center gap-1 transition cursor-pointer ${
+                            isDark
+                              ? "border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200"
+                              : "border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800"
+                          }`}
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Download .ino</span>
+                        </button>
+
+                        {onSendToEditor && (
+                          <button
+                            type="button"
+                            onClick={handleSendToEditor}
+                            aria-label="Send generated sketch to code editor"
+                            className={`px-2 py-1 rounded-md border text-[11px] font-medium flex items-center gap-1 transition cursor-pointer ${
+                              state.sentToEditor
+                                ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                                : "border-[#06b6d4]/40 bg-[#06b6d4]/15 hover:bg-[#06b6d4]/25 text-[#06b6d4]"
+                            }`}
+                          >
+                            {state.sentToEditor ? (
+                              <>
+                                <Check className="w-3 h-3" />
+                                <span>Sent to editor</span>
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-3 h-3" />
+                                <span>Send to editor</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          disabled={state.mockMode || state.explaining}
+                          onClick={() => void handleExplainWithMuseSpark()}
+                          title={
+                            state.mockMode
+                              ? "Explain with Muse Spark requires live API mode (disabled in offline Demo mode)"
+                              : "Add concise line-by-line comments with Muse Spark"
+                          }
+                          aria-label="Explain sketch with Muse Spark"
+                          className={`px-2 py-1 rounded-md border text-[11px] font-medium flex items-center gap-1 transition cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
+                            isDark
+                              ? "border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200"
+                              : "border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800"
+                          }`}
+                        >
+                          {state.explaining ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin text-[#06b6d4]" />
+                              <span>Explaining…</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3 h-3 text-[#06b6d4]" />
+                              <span>Explain with Muse Spark</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {state.explainStatusMsg && (
+                        <div className={`text-[10px] font-mono ${subtleText}`}>
+                          {state.explainStatusMsg}
+                        </div>
+                      )}
+
+                      {/* Read-only scrollable code preview (max-height 240px) */}
+                      <pre
+                        className={`p-2.5 rounded-lg border font-mono text-[10px] leading-relaxed overflow-auto max-h-[240px] select-all ${
+                          isDark
+                            ? "bg-[#080c13] border-slate-800 text-slate-200"
+                            : "bg-slate-900 border-slate-300 text-slate-100"
+                        }`}
+                      >
+                        <code>{state.generatedSketch.code}</code>
+                      </pre>
+
+                      {/* Warnings list (amber) */}
+                      {state.generatedSketch.warnings.length > 0 && (
+                        <div className="p-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-200 space-y-1">
+                          <div className="font-semibold text-[10px] uppercase tracking-wider text-amber-300">
+                            Warnings ({state.generatedSketch.warnings.length})
+                          </div>
+                          <ul className="space-y-0.5 text-[11px] list-disc list-inside">
+                            {state.generatedSketch.warnings.map((w, i) => (
+                              <li key={`warn-${i}`} className="leading-snug">
+                                {w}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Notes list (neutral) */}
+                      {state.generatedSketch.notes.length > 0 && (
+                        <div className={`p-2 rounded-lg border ${mutedBg} space-y-1`}>
+                          <div className={`font-semibold text-[10px] uppercase tracking-wider ${subtleText}`}>
+                            Notes
+                          </div>
+                          <ul className={`space-y-0.5 text-[11px] list-disc list-inside ${subtleText}`}>
+                            {state.generatedSketch.notes.map((n, i) => (
+                              <li key={`note-${i}`} className="leading-snug">
+                                {n}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

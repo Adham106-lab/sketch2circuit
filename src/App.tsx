@@ -511,7 +511,16 @@ export default function App() {
           </div>
         )}
 
-        <PhysicalVerifier expected={expectedScan} theme={theme} mode="hud" />
+        <PhysicalVerifier
+          expected={expectedScan}
+          theme={theme}
+          mode="hud"
+          sketchName={selectedSketchId || "Sketch2Circuit_Scan"}
+          onSendToEditor={(code) => {
+            handleApplyAgentSketch(code);
+            setActiveMainTab("studio");
+          }}
+        />
 
         {activeMainTab === "pcb" && (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
