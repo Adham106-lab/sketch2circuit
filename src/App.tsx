@@ -491,6 +491,10 @@ export default function App() {
                 theme="dark"
                 activeProject={activeProject}
                 onSelectProject={handleSelectProject}
+                onSelectPresetSketch={(code) => {
+                  setSketchSource(code);
+                  setDebouncedSource(code);
+                }}
               />
 
               {/* BOTTOM CENTER FLOATING ACTION BAR (Matches Image 2 Bottom Buttons!) */}
@@ -547,6 +551,10 @@ export default function App() {
               theme="dark"
               activeProject={activeProject}
               onSelectProject={handleSelectProject}
+              onSelectPresetSketch={(code) => {
+                setSketchSource(code);
+                setDebouncedSource(code);
+              }}
             />
           </div>
         )}
