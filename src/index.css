@@ -1,11 +1,16 @@
 @import "tailwindcss";
 
 :root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Monospace for entire app */
-body, button, input, select, textarea, table, th, td, code, pre, span, p, h1, h2, h3, h4, h5, h6, div, nav, header, main, footer {
+/* Sans-serif for UI labels, tabs, buttons, and cards; monospace only for code, pin names, net names, and numeric values */
+body, button, input, select, table, th, td, span, p, h1, h2, h3, h4, h5, h6, div, nav, header, main, footer {
+  font-family: var(--font-sans);
+}
+
+code, pre, textarea, .font-mono {
   font-family: var(--font-mono);
 }
 

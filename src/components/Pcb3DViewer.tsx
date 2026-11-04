@@ -52,6 +52,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { WIRE_COLORS } from "./circuit2d/circuitModel.js";
+import { Schematic2DViewer } from "./Schematic2DViewer.js";
 
 export type MechatronicsProjectId =
   | "tennis_shooter"
@@ -258,14 +260,10 @@ export interface ExtractedPartInfo {
   wireColorCss: string;
 }
 
-const WIRE_PALETTE: { hex: number; css: string }[] = [
-  { hex: 0xf59e0b, css: "#f59e0b" }, // Amber
-  { hex: 0x22c55e, css: "#22c55e" }, // Green
-  { hex: 0x3b82f6, css: "#3b82f6" }, // Blue
-  { hex: 0xa855f7, css: "#a855f7" }, // Purple
-  { hex: 0x06b6d4, css: "#06b6d4" }, // Cyan
-  { hex: 0xec4899, css: "#ec4899" }, // Pink
-];
+const WIRE_PALETTE: { hex: number; css: string }[] = WIRE_COLORS.PALETTE.map((css) => ({
+  hex: Number.parseInt(css.replace("#", ""), 16),
+  css,
+}));
 
 /**
  * Inspects any `@s2c/circuit-json` `Circuit` object flexibly (supporting both
@@ -276,16 +274,19 @@ function extractCircuitParts(circuit: Circuit): ExtractedPartInfo[] {
   const rawCircuit = circuit as unknown as {
     components?: Array<{
       id: string;
+      partNumber?: string;
       partId?: string;
       kind?: string;
       type?: string;
       label?: string;
       value?: string | number;
       properties?: Record<string, unknown>;
+      ports?: Array<{ id: string; name?: string; netId?: string }>;
     }>;
     nets?: Array<{
       id: string;
       name?: string;
+      portIds?: string[];
       ports?: Array<string | { componentId: string; portId?: string; pin?: string }>;
       connections?: Array<string | { componentId: string; portId?: string; pin?: string }>;
     }>;
@@ -299,12 +300,29 @@ function extractCircuitParts(circuit: Circuit): ExtractedPartInfo[] {
   const netMcuPins = new Map<string, Set<string>>();
 
   for (const c of components) {
-    compNets.set(c.id, new Set());
+    const netSet = new Set<string>();
+    compNets.set(c.id, netSet);
+    for (const port of c.ports ?? []) {
+      if (port?.netId) {
+        netSet.add(port.netId);
+        if (!netMcuPins.has(port.netId)) netMcuPins.set(port.netId, new Set());
+        const isMcu =
+          c.id === "U1" ||
+          c.kind === "mcu" ||
+          c.id.toLowerCase().includes("uno") ||
+          c.id.toLowerCase().includes("mcu") ||
+          c.id.toLowerCase().includes("arduino");
+        if (isMcu) {
+          const rawPin = port.name || port.id.split(/[.:]/).slice(1).join(".");
+          if (rawPin) netMcuPins.get(port.netId)!.add(rawPin.toUpperCase());
+        }
+      }
+    }
   }
 
   for (const net of nets) {
     const netId = net.id || net.name || "NET";
-    const portList = net.ports ?? net.connections ?? [];
+    const portList = net.portIds ?? net.ports ?? net.connections ?? [];
     if (!netMcuPins.has(netId)) netMcuPins.set(netId, new Set());
 
     for (const p of portList) {
@@ -1457,8 +1475,16 @@ function buildIllustrativeTwinScene(
 
         // Add Dynamic 3D-Anchored Callout Card (up to 6 clear callouts to prevent overlap)
         if (dynamicCallouts.length < 6) {
-          const pinSummary =
-            part.mcuPins.length > 0 ? `Pins: ${part.mcuPins.join(" · ")}` : `Nets: ${part.nets.slice(0, 2).join(", ")}`;
+          const nonEmptyNets = part.nets.filter((n) => n.trim().length > 0);
+          const nonEmptyPins = part.mcuPins.filter((p) => p.trim().length > 0);
+          const netAndPinSuffix =
+            nonEmptyPins.length > 0 && nonEmptyNets.length > 0
+              ? ` — Pins: ${nonEmptyPins.join(" · ")} · Nets: ${nonEmptyNets.slice(0, 3).join(", ")}`
+              : nonEmptyPins.length > 0
+                ? ` — Pins: ${nonEmptyPins.join(" · ")}`
+                : nonEmptyNets.length > 0
+                  ? ` — Nets: ${nonEmptyNets.slice(0, 3).join(", ")}`
+                  : "";
           const iconMap: Record<ExtractedPartInfo["kind"], CalloutIconKind> = {
             mcu: "chip",
             led: "led",
@@ -1476,8 +1502,8 @@ function buildIllustrativeTwinScene(
           };
           dynamicCallouts.push({
             id: `dyn-${part.id}`,
-            title: `${part.id} · ${part.kind.toUpperCase()}`,
-            description: `${part.label} (${part.valueText}) — ${pinSummary}`,
+            title: `${part.id} · ${part.kind.charAt(0).toUpperCase() + part.kind.slice(1)}`,
+            description: `${part.label} (${part.valueText})${netAndPinSuffix}`,
             icon: iconMap[part.kind] ?? "pins",
             anchor3D: [worldX, 13.0, worldZ],
             cardOffset: cardOffsets[dynamicCallouts.length % cardOffsets.length]!,
@@ -1491,8 +1517,8 @@ function buildIllustrativeTwinScene(
         const firstPinPos = getArduinoPin3DPosition(allMcuPins[0]!, unoOffsetX);
         dynamicCallouts.push({
           id: "dyn-mcu-pins",
-          title: `ACTIVE PINS (${allMcuPins.slice(0, 4).join(", ")})`,
-          description: `Synthesized directly from your sketch AST (${extractedParts.length} parts).`,
+          title: `Active Pins (${allMcuPins.slice(0, 4).join(", ")})`,
+          description: `Synthesized from sketch AST (${extractedParts.length} parts).`,
           icon: "chip",
           anchor3D: firstPinPos,
           cardOffset: [-195, -135],
@@ -2315,7 +2341,14 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
         const w = renderer.domElement.clientWidth || width;
         const h = renderer.domElement.clientHeight || height;
 
-        const nextProjected: ProjectedCallout[] = calloutsToProject.map((c) => {
+        const cardWidth = 225;
+        const cardHeight = 76;
+        const padX = 12;
+        const padY = 12;
+        const maxCardX = Math.max(padX, w - cardWidth - padX);
+        const maxCardY = Math.max(padY, h - cardHeight - 48);
+
+        const rawProjected: ProjectedCallout[] = calloutsToProject.map((c, idx) => {
           tempVec.set(...c.anchor3D);
           tempVec.applyMatrix4(masterGroup.matrixWorld);
           tempVec.project(camera);
@@ -2323,8 +2356,11 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
           const sx = (tempVec.x * 0.5 + 0.5) * w;
           const sy = (-(tempVec.y * 0.5) + 0.5) * h;
 
-          const cardX = THREE.MathUtils.clamp(sx + c.cardOffset[0], 16, Math.max(20, w - 245));
-          const cardY = THREE.MathUtils.clamp(sy + c.cardOffset[1], 14, Math.max(20, h - 185));
+          // Place in non-overlapping left/right edge columns so cards never overflow or stack on top of each other
+          const preferLeft = c.cardOffset[0] < 0 || (c.cardOffset[0] === 0 && idx % 2 === 0);
+          const rawX = preferLeft ? Math.min(sx + c.cardOffset[0], w * 0.5 - cardWidth - 8) : Math.max(sx + c.cardOffset[0], w * 0.5 + 8);
+          const cardX = THREE.MathUtils.clamp(rawX, padX, maxCardX);
+          const cardY = THREE.MathUtils.clamp(sy + c.cardOffset[1], padY, maxCardY);
 
           const secondaryScreen = c.secondaryAnchors3D?.map((pt) => {
             tempVec.set(...pt);
@@ -2347,7 +2383,42 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
           };
         });
 
-        setProjectedCallouts(nextProjected);
+        // Deterministic vertical collision avoidance per column so cards never overlap each other
+        const resolveColumnCollisions = (cards: ProjectedCallout[]) => {
+          cards.sort((a, b) => a.cardY - b.cardY || a.id.localeCompare(b.id));
+          const minGapY = cardHeight + 8;
+          // Forward pass (push down)
+          for (let i = 1; i < cards.length; i++) {
+            const prev = cards[i - 1]!;
+            const curr = cards[i]!;
+            if (Math.abs(curr.cardX - prev.cardX) < cardWidth + 8 && curr.cardY < prev.cardY + minGapY) {
+              curr.cardY = prev.cardY + minGapY;
+            }
+          }
+          // Clamp bottom & backward pass (push up if bottom overflowed)
+          for (let i = cards.length - 1; i >= 0; i--) {
+            const curr = cards[i]!;
+            if (curr.cardY > maxCardY) {
+              curr.cardY = maxCardY;
+            }
+            if (i > 0) {
+              const prev = cards[i - 1]!;
+              if (
+                Math.abs(curr.cardX - prev.cardX) < cardWidth + 8 &&
+                prev.cardY > curr.cardY - minGapY
+              ) {
+                prev.cardY = Math.max(padY, curr.cardY - minGapY);
+              }
+            }
+          }
+        };
+
+        const leftCards = rawProjected.filter((c) => c.visible && c.cardX < w * 0.45);
+        const rightCards = rawProjected.filter((c) => c.visible && c.cardX >= w * 0.45);
+        resolveColumnCollisions(leftCards);
+        resolveColumnCollisions(rightCards);
+
+        setProjectedCallouts(rawProjected);
       }
     };
 
@@ -2443,14 +2514,15 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
         }}
       >
         <div className="flex items-center gap-2.5">
-          <span className="font-black tracking-wider uppercase text-[11px] flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block animate-pulse" />
-            {sketchName.toUpperCase()} ({extractedParts.length} PARTS)
+          <span className="font-semibold text-xs flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-cyan-500 inline-block" />
+            <span>{sketchName}</span>
+            <span className="font-mono text-[11px] opacity-75">({extractedParts.length} parts)</span>
           </span>
 
-          {/* 3-Way Mode Switcher: 3D TWIN | 2D SCHEMATIC | PCB SHIELD */}
+          {/* 3-Way Mode Switcher: 3D Digital Twin | 2D Schematic | PCB Shield */}
           <div
-            className="flex items-center rounded p-0.5 border text-[10px] font-bold"
+            className="flex items-center rounded-lg p-0.5 border text-[11px] font-medium"
             style={{
               borderColor: isBlueprint ? "#cbbba0" : "#334155",
               backgroundColor: isBlueprint ? "#ebe2d3" : "#0f172a",
@@ -2459,35 +2531,35 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
             <button
               type="button"
               onClick={() => setViewMode("twin")}
-              className={`px-2 py-0.5 rounded transition ${
+              className={`px-2.5 py-0.5 rounded-md transition cursor-pointer ${
                 viewMode === "twin"
-                  ? "bg-cyan-600 text-white shadow-xs"
+                  ? "bg-cyan-600 text-white"
                   : "opacity-70 hover:opacity-100"
               }`}
             >
-              3D DIGITAL TWIN
+              3D Digital Twin
             </button>
             <button
               type="button"
               onClick={() => setViewMode("schematic2d")}
-              className={`px-2 py-0.5 rounded transition ${
+              className={`px-2.5 py-0.5 rounded-md transition cursor-pointer ${
                 viewMode === "schematic2d"
-                  ? "bg-teal-600 text-white shadow-xs"
+                  ? "bg-cyan-600 text-white"
                   : "opacity-70 hover:opacity-100"
               }`}
             >
-              2D SCHEMATIC
+              2D Schematic
             </button>
             <button
               type="button"
               onClick={() => setViewMode("pcb")}
-              className={`px-2 py-0.5 rounded transition ${
+              className={`px-2.5 py-0.5 rounded-md transition cursor-pointer ${
                 viewMode === "pcb"
-                  ? "bg-amber-500 text-slate-950 shadow-xs"
+                  ? "bg-cyan-600 text-white"
                   : "opacity-70 hover:opacity-100"
               }`}
             >
-              PCB SHIELD ({scene3d.metadata.traceCount})
+              PCB Shield <span className="font-mono">({scene3d.metadata.traceCount})</span>
             </button>
           </div>
         </div>
@@ -2498,26 +2570,26 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
             <button
               type="button"
               onClick={() => setShowSchematicOverlay((v) => !v)}
-              className="px-2 py-0.5 rounded border text-[10px] font-bold flex items-center gap-1 transition"
+              className="px-2.5 py-1 rounded-md border text-[11px] font-medium flex items-center gap-1 transition cursor-pointer"
               style={{
-                borderColor: showSchematicOverlay ? "#0d9488" : isBlueprint ? "#c5b8a1" : "#334155",
+                borderColor: showSchematicOverlay ? "#06b6d4" : isBlueprint ? "#c5b8a1" : "#334155",
                 backgroundColor: showSchematicOverlay
-                  ? "rgba(13, 148, 136, 0.18)"
+                  ? "rgba(6, 182, 212, 0.16)"
                   : isBlueprint
                     ? "#fcf9f4"
                     : "#1e293b",
               }}
-              title="Toggle Floating 2D Wiring Schematic Card over 3D View"
+              title="Toggle floating 2D wiring schematic card over 3D view"
             >
               <FileCode2 className="w-3 h-3" />
-              <span>2D WIRING CARD</span>
+              <span>2D Wiring Card</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={handleDownloadSceneJson}
-            className="px-2 py-0.5 rounded border text-[10px] font-mono font-bold flex items-center gap-1 hover:opacity-80"
+            className="px-2.5 py-1 rounded-md border text-[11px] font-mono font-medium flex items-center gap-1 hover:opacity-80 cursor-pointer"
             style={{
               borderColor: isBlueprint ? "#c5b8a1" : "#334155",
               backgroundColor: isBlueprint ? "#fcf9f4" : "#1e293b",
@@ -2530,10 +2602,10 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
           <button
             type="button"
             onClick={handleExportGlb}
-            className="px-2 py-0.5 rounded border text-[10px] font-mono font-bold flex items-center gap-1 text-amber-600 dark:text-amber-400 hover:opacity-80"
+            className="px-2.5 py-1 rounded-md border text-[11px] font-mono font-medium flex items-center gap-1 hover:opacity-80 cursor-pointer"
             style={{
-              borderColor: "#d97706",
-              backgroundColor: isBlueprint ? "#fffbeb" : "rgba(217, 119, 6, 0.12)",
+              borderColor: isBlueprint ? "#c5b8a1" : "#334155",
+              backgroundColor: isBlueprint ? "#fcf9f4" : "#1e293b",
             }}
           >
             <Download className="w-3 h-3" />
@@ -2559,11 +2631,11 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
         }}
       >
         {viewMode === "schematic2d" ? (
-          <Schematic2DCard
+          <Schematic2DViewer
+            circuit={circuit}
             sketchName={sketchName}
-            parts={extractedParts}
-            isBlueprint={isBlueprint}
-            fullMode={true}
+            theme={isBlueprint ? "light" : "dark"}
+            onSwitchTo3D={() => setViewMode("twin")}
           />
         ) : webglSupported ? (
           <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
@@ -2902,22 +2974,22 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
         </div>
       </div>
 
-      {/* Bottom Interactive Lesson / Circuit Preset Carousel Deck */}
+      {/* Bottom Interactive Lesson / Circuit Preset Carousel Deck (Unclipped) */}
       <div
-        className="px-3 py-2.5 border-t z-30"
+        className="px-3 py-2 border-t shrink-0 z-30"
         style={{
           backgroundColor: isBlueprint ? "#f2ece1" : "#0f172a",
           borderColor: isBlueprint ? "#dfd5c3" : "#1e293b",
         }}
       >
         <div
-          className="text-[10px] font-black tracking-widest uppercase mb-1.5"
-          style={{ color: isBlueprint ? "#334155" : "#94a3b8" }}
+          className="text-[10px] font-semibold tracking-wider uppercase mb-1.5"
+          style={{ color: isBlueprint ? "#475569" : "#94a3b8" }}
         >
-          LESSONS & LIVE PROJECT SYNC
+          Lessons &amp; Live Project Sync
         </div>
 
-        <div className="flex items-center gap-2.5 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
           {LESSON_PRESETS.map((preset) => {
             const isSelected = activePresetId === preset.id && viewMode === "twin";
             return (
@@ -2928,23 +3000,21 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
                   setViewMode("twin");
                   handleSelectLesson(preset);
                 }}
-                className="group flex items-center justify-between gap-3 px-3 py-2 rounded-[6px] border min-w-[185px] shrink-0 transition-all text-left"
+                className="group flex items-center justify-between gap-2.5 px-2.5 py-1.5 rounded-lg border shrink-0 transition-all text-left cursor-pointer"
                 style={{
                   backgroundColor: isBlueprint ? "#faf6ee" : "#1e293b",
                   borderColor: isSelected
-                    ? "#0d9488"
+                    ? "#06b6d4"
                     : isBlueprint
                       ? "#d8ccb8"
                       : "#334155",
-                  boxShadow: isSelected ? "0 0 0 1.5px #0d9488" : "none",
                 }}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <span
-                    className="w-7 h-7 rounded flex items-center justify-center font-black text-white text-[10px] shrink-0 shadow-xs"
+                    className="w-6 h-6 rounded-md flex items-center justify-center font-mono font-bold text-white text-[9px] shrink-0"
                     style={{
                       backgroundColor: preset.badgeColor,
-                      border: "1.5px solid #1e293b",
                     }}
                   >
                     {preset.id === "live" && "LIVE"}
@@ -2957,10 +3027,10 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
                   </span>
 
                   <span
-                    className="font-black text-[11px] tracking-wide uppercase"
+                    className="font-medium text-xs whitespace-nowrap"
                     style={{ color: isBlueprint ? "#0f172a" : "#f8fafc" }}
                   >
-                    {preset.id === "live" ? `LIVE (${sketchName})` : preset.title}
+                    {preset.id === "live" ? `Live (${sketchName})` : preset.title}
                   </span>
                 </div>
 

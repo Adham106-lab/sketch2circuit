@@ -11,6 +11,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.0(@types/node@22.20.4)(esbuild@0.25.0)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+      '@vercel/analytics':
+        specifier: ^2.0.1
+        version: 2.0.1(react@19.3.0)
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.0(@types/node@22.20.4)(esbuild@0.25.0)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -228,6 +231,15 @@ importers:
 
   packages/core: {}
 
+  packages/erc:
+    dependencies:
+      '@s2c/circuit-json':
+        specifier: workspace:*
+        version: link:../circuit-json
+      '@s2c/manifests':
+        specifier: workspace:*
+        version: link:../manifests
+
   packages/export:
     dependencies:
       '@s2c/circuit-json':
@@ -271,11 +283,29 @@ importers:
         specifier: ^4.2.7
         version: 4.2.7
 
+  packages/exporters:
+    dependencies:
+      '@s2c/circuit-json':
+        specifier: workspace:*
+        version: link:../circuit-json
+
   packages/footprints:
     dependencies:
       '@s2c/pcb-json':
         specifier: workspace:*
         version: link:../pcb-json
+
+  packages/layout:
+    dependencies:
+      '@s2c/circuit-json':
+        specifier: workspace:*
+        version: link:../circuit-json
+
+  packages/manifests:
+    dependencies:
+      '@s2c/circuit-json':
+        specifier: workspace:*
+        version: link:../circuit-json
 
   packages/parts: {}
 
@@ -1353,6 +1383,35 @@ packages:
 
   '@types/ws@8.18.2':
     resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
+
+  '@vercel/analytics@2.0.1':
+    resolution: {integrity: sha512-MTQG6V9qQrt1tsDeF+2Uoo5aPjqbVPys1xvnIftXSJYG2SrwXRHnqEvVoYID7BTruDz4lCd2Z7rM1BdkUehk2g==}
+    peerDependencies:
+      '@remix-run/react': ^2
+      '@sveltejs/kit': ^1 || ^2
+      next: '>= 13'
+      nuxt: '>= 3'
+      react: ^18 || ^19 || ^19.0.0-rc
+      svelte: '>= 4'
+      vue: ^3
+      vue-router: ^4
+    peerDependenciesMeta:
+      '@remix-run/react':
+        optional: true
+      '@sveltejs/kit':
+        optional: true
+      next:
+        optional: true
+      nuxt:
+        optional: true
+      react:
+        optional: true
+      svelte:
+        optional: true
+      vue:
+        optional: true
+      vue-router:
+        optional: true
 
   '@vitejs/plugin-react@6.1.1':
     resolution: {integrity: sha512-yxLaQV9gkhS8ezJqCM6+ndU7mDY6gqAg75NQ+0IjwEI8IYOmQCgkRwHKVSfWXW076DsqMo0Dk+0FK1U+M5RgFw==}
@@ -3105,6 +3164,10 @@ snapshots:
   '@types/ws@8.18.2':
     dependencies:
       '@types/node': 22.20.4
+
+  '@vercel/analytics@2.0.1(react@19.3.0)':
+    optionalDependencies:
+      react: 19.3.0
 
   '@vitejs/plugin-react@6.1.1(vite@8.3.0(@types/node@22.20.4)(esbuild@0.25.0)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:

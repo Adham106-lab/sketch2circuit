@@ -163,6 +163,8 @@
 | **M18** | `@s2c/block-diagram` | Interactive Simulink-style graphical block-diagram editor with continuous signal flow wiring, algebraic loop detection, and oscilloscope wave plotter. |
 | **M19** | Architectural Upgrades | Strict bipartite net-centric graph IR, declarative board manifests (Uno, ESP32), template passives auto-injector, port-aware ELK layout, and export bridges. |
 | **M20a–c** | `@s2c/export-gerber` | Complete RS-274X Gerber & Excellon drill file exporter (8-file manufacturing archive) verified against `@hpcreery/tracespace-parser`. |
+| **M21** | `circuit2d/*`, `Schematic2DViewer.tsx` | 2D orthogonal schematic & half-size breadboard vector viewer with dedicated per-net vertical channels, non-connecting hop arcs, true 3+ branch junction dots, E24 resistor color bands, and collapsible unused MCU pins (`POWER`, `DIGITAL`, `ANALOG`, `GND`). |
+| **M22** | `App.tsx`, `Pcb3DViewer.tsx` | **Sketch2Circuit V2** UI redesign: theme-aware wire contrast (dark GND `#64748b`), non-overlapping 3D callout cards with live net names, 5 primary tabs + `More` menu, and promoted top-bar **Auto-verify & Repair** (Muse Spark) and **Scan Breadboard** (SAM 3.1) actions. |
 
 ---
 

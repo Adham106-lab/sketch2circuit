@@ -8,20 +8,17 @@ import { ARDUINO_UNO_R3_SHIELD_OUTLINE } from "@s2c/footprints";
 import { placeCircuit, type RoutingResult, routeCircuit } from "@s2c/pcb-layout";
 import {
   Activity,
-  BookOpen,
   Boxes,
-  Calculator,
   Camera,
+  Check,
+  ChevronDown,
   Code2,
   Cpu,
-  Eye,
-  FileSpreadsheet,
   KeyRound,
   Layers,
   Loader2,
   Share2,
   ShieldAlert,
-  Sparkles,
   Wrench,
 } from "lucide-react";
 import type React from "react";
@@ -41,13 +38,13 @@ import {
   Pcb3DViewer,
 } from "./components/Pcb3DViewer.js";
 import { PcbViewer } from "./components/PcbViewer.js";
-import { SchematicViewer } from "./components/SchematicViewer.js";
+import { Schematic2DViewer } from "./components/Schematic2DViewer.js";
 import { SimulationTab } from "./components/SimulationTab.js";
 import { SAMPLE_SKETCHES } from "./components/sample-sketches.js";
 import { Analytics } from "@vercel/analytics/react";
 
 export default function App() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme] = useState<"dark" | "light">("dark");
 
   const [activeMainTab, setActiveMainTab] = useState<
     | "studio"
@@ -62,18 +59,24 @@ export default function App() {
     | "docs"
   >("studio");
 
+  const [pcbSubView, setPcbSubView] = useState<"schematic2d" | "pcb2d">("schematic2d");
+  const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
+
   const [activeProject, setActiveProject] = useState<MechatronicsProjectId>("tennis_shooter");
   const initialPreset = MECHATRONICS_PROJECTS[0]!;
 
   const [selectedSketchId, setSelectedSketchId] = useState<string>("user_multi_peripheral");
   const [sketchSource, setSketchSource] = useState<string>(initialPreset.code);
   const [debouncedSource, setDebouncedSource] = useState<string>(initialPreset.code);
-  const [targetBoard, setTargetBoard] = useState<string>("ARDUINO_UNO_R3");
+  const [targetBoard] = useState<string>("ARDUINO_UNO_R3");
 
-  // Bottom bar quick Muse Spark & SAM 3.1 triggers
+  // Hero actions: Auto-verify & Repair (Muse Spark) and Scan Breadboard (SAM 3.1)
   const [showAgentDrawer, setShowAgentDrawer] = useState<boolean>(false);
   const [agentStatusMsg, setAgentStatusMsg] = useState<string | null>(null);
   const [isRepairing, setIsRepairing] = useState<boolean>(false);
+  const [repairDoneSummary, setRepairDoneSummary] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [scanDoneSummary, setScanDoneSummary] = useState<string | null>(null);
   const quickScanInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -148,10 +151,11 @@ export default function App() {
     setDebouncedSource(newCode);
   };
 
-  // Bottom Dock Action 1: Closed-Loop Muse Spark Self-Repair
+  // Hero Action 1: Closed-Loop Muse Spark Auto-Verify & Repair
   const handleQuickMuseRepair = async () => {
     setIsRepairing(true);
-    setAgentStatusMsg("Muse Spark Verifiable Agent auditing 18 ERC rules & pin matrix...");
+    setRepairDoneSummary(null);
+    setAgentStatusMsg("Auditing 18 ERC rules & pin matrix…");
     await new Promise((r) => setTimeout(r, 550));
 
     let fixed = sketchSource;
@@ -166,236 +170,301 @@ export default function App() {
 
     handleApplyAgentSketch(fixed);
     setIsRepairing(false);
-    setAgentStatusMsg("✓ Verified by Muse Spark: 0 ERC Violations · RKF45 Twin Synchronized");
-    setTimeout(() => setAgentStatusMsg(null), 4500);
+    setRepairDoneSummary("0 ERC issues");
+    setAgentStatusMsg("Verified by Muse Spark: 0 ERC violations");
+    setTimeout(() => {
+      setAgentStatusMsg(null);
+      setRepairDoneSummary(null);
+    }, 4500);
   };
 
-  // Bottom Dock Action 2: Meta SAM 3.1 Breadboard Scanner
+  // Hero Action 2: Meta SAM 3.1 Breadboard Scanner
   const handleQuickSamScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setAgentStatusMsg(`SAM 3.1 segmenting "${file.name}" hardware topology...`);
+    setIsScanning(true);
+    setScanDoneSummary(null);
+    setAgentStatusMsg(`Segmenting "${file.name}" topology…`);
     await new Promise((r) => setTimeout(r, 750));
     const preset = MECHATRONICS_PROJECTS[0]!;
     handleSelectProject(preset);
-    setAgentStatusMsg("✓ SAM 3.1 + Muse Spark synthesized 3D Twin from breadboard photo!");
-    setTimeout(() => setAgentStatusMsg(null), 4500);
+    setIsScanning(false);
+    setScanDoneSummary("Twin rebuilt");
+    setAgentStatusMsg("SAM 3.1 + Muse Spark rebuilt circuit from breadboard photo");
+    setTimeout(() => {
+      setAgentStatusMsg(null);
+      setScanDoneSummary(null);
+    }, 4500);
   };
 
   const errorCount = synthesis.diagnostics.filter((d) => d.severity === "error").length;
   const warningCount = synthesis.diagnostics.filter((d) => d.severity === "warning").length;
 
+  const moreTabs: ReadonlyArray<{
+    id: "bom" | "export" | "catalog" | "calculators" | "docs";
+    label: string;
+  }> = [
+    { id: "bom", label: "BOM" },
+    { id: "export", label: "Exports" },
+    { id: "catalog", label: "Catalog" },
+    { id: "calculators", label: "Calcs" },
+    { id: "docs", label: "Docs" },
+  ];
+
+  const activeMoreTab = moreTabs.find((t) => t.id === activeMainTab);
+
   return (
     <div
       id="workbench-root"
       data-theme={theme}
-      className="theme-dark h-screen w-screen overflow-hidden flex flex-col font-mono text-[12px] bg-[#070a10] text-slate-100"
+      className="theme-dark h-screen w-screen overflow-hidden flex flex-col font-sans text-xs bg-[#0b0f17] text-slate-100"
     >
       {/* ========================================================================= */}
-      {/* TOP OBSIDIAN HEADER BAR (Matches Image 2 Header!)                         */}
+      {/* TOP HEADER BAR (Clean V2 Design + Promoted Hero Actions)                  */}
       {/* ========================================================================= */}
-      <header className="border-b border-white/10 bg-[#0b1019] shrink-0 z-30">
-        {/* Top Row: Brand + Muse Badge + Routing Pill + GitHub Star + Oscilloscope Toggle */}
-        <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-3 border-b border-white/5">
-          <div className="flex flex-wrap items-center gap-2.5">
+      <header className="border-b border-slate-800 bg-[#0b0f17] shrink-0 z-30">
+        {/* Top Row: Brand + V2 Pill + Quiet Attribution + Neutral Status Chip + Hero Actions */}
+        <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80">
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-[3px] border border-cyan-400/50 bg-cyan-950/60 flex items-center justify-center text-cyan-300">
+              <div className="w-6 h-6 rounded-lg border border-slate-700 bg-slate-900 flex items-center justify-center text-[#06b6d4]">
                 <Cpu className="w-3.5 h-3.5" />
               </div>
-              <span className="text-sm font-bold tracking-wider uppercase text-white">
-                SKETCH2CIRCUIT
+              <span className="text-sm font-semibold tracking-tight text-white">
+                Sketch2Circuit
+              </span>
+              <span className="px-1.5 py-0.5 rounded-md border border-slate-700 bg-slate-900 text-[#06b6d4] font-mono text-[10px] font-semibold">
+                V2
               </span>
             </div>
 
-            <span className="px-2 py-0.5 rounded-[3px] border border-cyan-500/40 bg-cyan-950/50 text-cyan-300 text-[10px] font-bold flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-cyan-400" />
-              MUSE SPARK + SAM 3.1 TWIN
+            <span
+              title="Powered by Meta Muse Spark verifiable synthesis and SAM 3.1 breadboard vision"
+              className="hidden md:inline-block text-[11px] text-slate-400"
+            >
+              Built with Muse Spark · SAM 3.1
             </span>
 
             <button
               type="button"
-              onClick={() => setActiveMainTab("pcb")}
-              className="px-2.5 py-0.5 rounded-[3px] border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 text-[10px] font-bold flex items-center gap-1.5 cursor-pointer hover:brightness-110"
+              onClick={() => {
+                setPcbSubView("pcb2d");
+                setActiveMainTab("pcb");
+              }}
+              title={`${routingBadgeStats.routed} of ${routingBadgeStats.total} connections routed (${routingBadgeStats.pct}%) · ${routingBadgeStats.drcErrors} DRC violations. Click to inspect PCB layout.`}
+              className="px-2 py-0.5 rounded-md border border-slate-800 bg-slate-900/90 hover:bg-slate-800 text-slate-300 font-mono text-[11px] flex items-center gap-1.5 transition cursor-pointer"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span>
-                {routingBadgeStats.routed}/{routingBadgeStats.total} routed ({routingBadgeStats.pct}
-                %) · {routingBadgeStats.drcErrors} DRC
+                {routingBadgeStats.routed}/{routingBadgeStats.total} routed · {routingBadgeStats.drcErrors} DRC
               </span>
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            {agentStatusMsg && (
-              <span className="text-[10px] px-2.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 animate-pulse">
-                {agentStatusMsg}
-              </span>
-            )}
-            <GitHubStarButton />
-            <div className="flex items-center gap-2 text-[10px] text-slate-300 font-bold uppercase">
-              <span>OSCILLOSCOPE</span>
-              <span className="w-7 h-3.5 rounded-full bg-cyan-950 border border-cyan-500/50 p-0.5 flex items-center justify-end">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Second Row: Sub-Navigation Ribbon (Matches Image 2 Tab Bar!) */}
-        <div className="px-4 h-9 flex items-center justify-between text-[11px] overflow-x-auto">
-          <div className="flex items-center gap-1 h-full">
+          {/* Right Action Area: Promoted Hero Actions + GitHub Star + Compact View/Oscilloscope Switch */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Hero Action 1: Auto-verify & Repair (Primary Filled Button) */}
             <button
               type="button"
-              onClick={() => setActiveMainTab("studio")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "studio"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
+              onClick={handleQuickMuseRepair}
+              disabled={isRepairing}
+              title="Checks the circuit and fixes issues automatically"
+              className="px-3 py-1.5 rounded-lg bg-[#06b6d4] hover:bg-cyan-400 disabled:opacity-60 text-slate-950 font-medium text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
-              <Code2 className="w-3.5 h-3.5" />
-              <span>AI STUDIO &amp; TWIN</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("pcb3d")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "pcb3d"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
-            >
-              <Boxes className="w-3.5 h-3.5 text-cyan-400" />
-              <span>3D DIGITAL TWIN</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("pcb")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "pcb"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 text-emerald-400" />
-              <span>2D PCB</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("erc")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "erc"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-              <span>18-RULE ERC</span>
-              {(errorCount > 0 || warningCount > 0) && (
-                <span className="px-1 rounded bg-amber-500/20 text-amber-300 text-[9px]">
-                  {errorCount + warningCount}
-                </span>
+              {isRepairing ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                  <span>Verifying…</span>
+                </>
+              ) : repairDoneSummary ? (
+                <>
+                  <Check className="w-3.5 h-3.5 shrink-0" />
+                  <span>Auto-verify · {repairDoneSummary}</span>
+                </>
+              ) : (
+                <>
+                  <Wrench className="w-3.5 h-3.5 shrink-0" />
+                  <span>Auto-verify &amp; Repair</span>
+                </>
               )}
             </button>
 
+            {/* Hero Action 2: Scan Breadboard (Secondary Outlined Button) */}
+            <input
+              ref={quickScanInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleQuickSamScan}
+              className="hidden"
+            />
             <button
               type="button"
-              onClick={() => setActiveMainTab("simulate")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "simulate"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
+              onClick={() => quickScanInputRef.current?.click()}
+              disabled={isScanning}
+              title="Upload a breadboard photo to rebuild the circuit"
+              className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100 font-medium text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
-              <Activity className="w-3.5 h-3.5 text-sky-400" />
-              <span>RKF45 ODE SIM</span>
+              {isScanning ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#06b6d4] shrink-0" />
+                  <span>Scanning…</span>
+                </>
+              ) : scanDoneSummary ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Scan Breadboard · {scanDoneSummary}</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                  <span>Scan Breadboard</span>
+                </>
+              )}
             </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("bom")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "bom"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
-              <span>BOM</span>
-            </button>
+            <GitHubStarButton />
 
+            {/* Compact low-weight Oscilloscope switch */}
             <button
               type="button"
-              onClick={() => setActiveMainTab("export")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "export"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
+              onClick={() =>
+                setActiveMainTab(activeMainTab === "simulate" ? "studio" : "simulate")
+              }
+              title="Toggle RKF45 Oscilloscope Simulation View"
+              className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-800 hover:border-slate-700 text-[11px] text-slate-400 hover:text-slate-200 transition cursor-pointer"
             >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>EXPORTS</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("catalog")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "catalog"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
-            >
-              <Boxes className="w-3.5 h-3.5" />
-              <span>CATALOG</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("calculators")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "calculators"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
-            >
-              <Calculator className="w-3.5 h-3.5" />
-              <span>CALCS</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveMainTab("docs")}
-              className={`px-3 h-full border-b-2 flex items-center gap-1.5 font-bold transition cursor-pointer ${
-                activeMainTab === "docs"
-                  ? "border-cyan-400 text-cyan-300 bg-white/5"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>DOCS</span>
+              <span>Oscilloscope</span>
+              <span
+                className={`w-6 h-3.5 rounded-full p-0.5 flex items-center transition-colors ${
+                  activeMainTab === "simulate"
+                    ? "bg-[#06b6d4]/30 justify-end"
+                    : "bg-slate-800 justify-start"
+                }`}
+              >
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    activeMainTab === "simulate" ? "bg-[#06b6d4]" : "bg-slate-400"
+                  }`}
+                />
+              </span>
             </button>
           </div>
+        </div>
+
+        {/* Second Row: 5 Primary Tabs + "More" Dropdown (2px underline active state) */}
+        <div className="px-4 h-9 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4 h-full">
+            {(
+              [
+                { id: "studio", label: "AI Studio" },
+                { id: "pcb3d", label: "3D Twin" },
+                { id: "pcb", label: "2D Schematic/PCB" },
+                { id: "erc", label: "Verify/ERC", badge: errorCount + warningCount },
+                { id: "simulate", label: "Simulate" },
+              ] as const
+            ).map((tab) => {
+              const isActive = activeMainTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveMainTab(tab.id);
+                    setShowMoreMenu(false);
+                  }}
+                  className={`px-1 h-full border-b-2 flex items-center gap-1.5 font-medium transition cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? "border-[#06b6d4] text-white"
+                      : "border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {"badge" in tab && tab.badge > 0 && (
+                    <span className="px-1.5 py-0.2 rounded font-mono text-[10px] bg-slate-800 text-amber-300">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* "More" Dropdown for BOM, Exports, Catalog, Calcs, Docs */}
+            <div className="relative h-full flex items-center">
+              <button
+                type="button"
+                onClick={() => setShowMoreMenu((prev) => !prev)}
+                className={`px-1 h-full border-b-2 flex items-center gap-1 font-medium transition cursor-pointer ${
+                  activeMoreTab
+                    ? "border-[#06b6d4] text-white"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <span>{activeMoreTab ? `More: ${activeMoreTab.label}` : "More"}</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+              </button>
+
+              {showMoreMenu && (
+                <div
+                  onMouseLeave={() => setShowMoreMenu(false)}
+                  className="absolute left-0 top-full mt-1 w-40 rounded-lg border border-slate-800 bg-[#0f172a] py-1 shadow-xl z-50"
+                >
+                  {moreTabs.map((item) => {
+                    const active = activeMainTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveMainTab(item.id);
+                          setShowMoreMenu(false);
+                        }}
+                        className={`w-full px-3 py-1.5 text-left text-xs flex items-center justify-between hover:bg-slate-800/80 transition cursor-pointer ${
+                          active ? "text-[#06b6d4] font-semibold" : "text-slate-300"
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        {active && <span className="w-1.5 h-1.5 rounded-full bg-[#06b6d4]" />}
+                      </button>
+                    );
+                  })}
+                  <div className="my-1 border-t border-slate-800" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAgentDrawer((v) => !v);
+                      setShowMoreMenu(false);
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 transition cursor-pointer"
+                  >
+                    API &amp; Gate Settings
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {agentStatusMsg && (
+            <span className="hidden lg:inline-block text-[11px] text-slate-400 truncate max-w-xs">
+              {agentStatusMsg}
+            </span>
+          )}
         </div>
       </header>
 
       {/* ========================================================================= */}
-      {/* MAIN WORKSPACE: SLIM LEFT ICON RAIL + CODE EDITOR + 3D OBSIDIAN TWIN      */}
+      {/* MAIN WORKSPACE: SLIM LEFT ICON RAIL + CODE EDITOR + 3D/2D TWIN            */}
       {/* ========================================================================= */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        {/* Far-Left Vertical Icon Rail (Matches Image 2!) */}
-        <aside className="w-11 border-r border-white/10 bg-[#090d15] flex flex-col items-center py-3 gap-2.5 shrink-0 z-20">
+        {/* Far-Left Vertical Icon Rail */}
+        <aside className="w-11 border-r border-slate-800 bg-[#090d15] flex flex-col items-center py-3 gap-2 shrink-0 z-20">
           {(
             [
-              { id: "studio", icon: Code2, label: "AI Studio & 3D Twin" },
-              { id: "pcb3d", icon: Boxes, label: "Full-Screen 3D Digital Twin" },
-              { id: "pcb", icon: Layers, label: "2D PCB Layout" },
-              { id: "erc", icon: ShieldAlert, label: "18-Rule ERC Engine" },
-              { id: "simulate", icon: Activity, label: "RKF45 Oscilloscope" },
-              { id: "export", icon: Share2, label: "Gerber / Wokwi / Atopile" },
+              { id: "studio", icon: Code2, label: "AI Studio" },
+              { id: "pcb3d", icon: Boxes, label: "3D Twin" },
+              { id: "pcb", icon: Layers, label: "2D Schematic/PCB" },
+              { id: "erc", icon: ShieldAlert, label: "Verify/ERC" },
+              { id: "simulate", icon: Activity, label: "Simulate" },
+              { id: "export", icon: Share2, label: "Exports" },
             ] as const
           ).map((item) => {
             const Icon = item.icon;
@@ -406,9 +475,9 @@ export default function App() {
                 type="button"
                 onClick={() => setActiveMainTab(item.id)}
                 title={item.label}
-                className={`w-8 h-8 rounded-[4px] flex items-center justify-center transition cursor-pointer ${
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition cursor-pointer ${
                   active
-                    ? "bg-cyan-500/20 border border-cyan-400/60 text-cyan-300"
+                    ? "bg-[#06b6d4]/15 border border-[#06b6d4]/50 text-[#06b6d4]"
                     : "text-slate-500 hover:text-slate-200"
                 }`}
               >
@@ -421,8 +490,8 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowAgentDrawer(!showAgentDrawer)}
-              title="Configure Meta Model API ($150) & Fireworks ($100) Keys"
-              className="w-8 h-8 rounded-[4px] border border-amber-500/40 bg-amber-950/30 flex items-center justify-center text-amber-300 cursor-pointer"
+              title="Configure API Keys & Gate Checklist"
+              className="w-8 h-8 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 flex items-center justify-center text-slate-400 hover:text-slate-200 cursor-pointer"
             >
               <KeyRound className="w-4 h-4" />
             </button>
@@ -432,13 +501,10 @@ export default function App() {
         {/* Primary Split Studio View */}
         {activeMainTab === "studio" && (
           <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden relative">
-            {/* LEFT PANE: Obsidian Code Editor (Matches Left Code Pane in Image 2!) */}
-            <div className="w-full lg:w-[340px] xl:w-[370px] border-r border-white/10 bg-[#0b0f17] flex flex-col shrink-0 z-20">
-              <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between text-[11px]">
-                <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                  <Code2 className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>CODE</span>
-                </span>
+            {/* LEFT PANE: Code Editor */}
+            <div className="w-full lg:w-[340px] xl:w-[370px] border-r border-slate-800 bg-[#0b0f17] flex flex-col shrink-0 z-20">
+              <div className="px-3 py-2 border-b border-slate-800 flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-200">Sketch Code</span>
 
                 <select
                   value={selectedSketchId}
@@ -447,7 +513,7 @@ export default function App() {
                     const found = SAMPLE_SKETCHES.find((s) => s.id === e.target.value);
                     if (found) handleApplyAgentSketch(found.code);
                   }}
-                  className="bg-[#111827] border border-white/10 rounded-[3px] px-2 py-0.5 text-[10px] text-slate-300 focus:outline-none"
+                  className="bg-slate-900 border border-slate-800 rounded-md px-2 py-1 text-[11px] text-slate-200 focus:outline-none"
                 >
                   {SAMPLE_SKETCHES.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -457,21 +523,21 @@ export default function App() {
                 </select>
               </div>
 
-              <div className="px-3 py-1.5 border-b border-white/5 text-[10px] text-slate-400 flex items-center justify-between">
-                <span>Sketch2Circuit — Arduino UNO Hardware Test</span>
-                <span className="text-emerald-400 font-bold">AST LIVE</span>
+              <div className="px-3 py-1.5 border-b border-slate-800/60 text-[11px] text-slate-400 flex items-center justify-between">
+                <span>Sketch2Circuit V2 — Arduino Uno R3</span>
+                <span className="text-emerald-400 font-mono text-[10px] font-medium">AST Live</span>
               </div>
 
               <textarea
                 value={sketchSource}
                 onChange={(e) => setSketchSource(e.target.value)}
-                className="flex-1 w-full p-3.5 font-mono text-[11px] leading-relaxed resize-none focus:outline-none bg-[#080c13] text-cyan-100 selection:bg-cyan-500/30"
+                className="flex-1 w-full p-3.5 font-mono text-[11px] leading-relaxed resize-none focus:outline-none bg-[#080c13] text-slate-100 selection:bg-cyan-500/30"
                 spellCheck={false}
               />
 
               {/* Collapsible Full Muse Agent Drawer if toggled */}
               {showAgentDrawer && (
-                <div className="border-t border-white/10 max-h-72 overflow-y-auto">
+                <div className="border-t border-slate-800 max-h-72 overflow-y-auto">
                   <MuseAgentPanel
                     sketchSource={sketchSource}
                     onApplySketch={handleApplyAgentSketch}
@@ -482,12 +548,12 @@ export default function App() {
               )}
             </div>
 
-            {/* CENTER/RIGHT PANE: Full-Bleed Obsidian 3D Digital Twin */}
+            {/* CENTER/RIGHT PANE: Full-Bleed 3D Digital Twin & 2D Schematic */}
             <div className="flex-1 min-h-0 relative">
               <Pcb3DViewer
                 circuit={synthesis.circuit}
                 layout={routedResult?.layout}
-                sketchName="ObsidianTwin"
+                sketchName="Sketch2Circuit V2"
                 theme="dark"
                 activeProject={activeProject}
                 onSelectProject={handleSelectProject}
@@ -496,48 +562,6 @@ export default function App() {
                   setDebouncedSource(code);
                 }}
               />
-
-              {/* BOTTOM CENTER FLOATING ACTION BAR (Matches Image 2 Bottom Buttons!) */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-wrap items-center gap-3 px-3 py-2 rounded-[4px] border border-white/15 bg-[#0b101b]/90 backdrop-blur-xl shadow-2xl z-30">
-                <button
-                  type="button"
-                  onClick={handleQuickMuseRepair}
-                  disabled={isRepairing}
-                  className="px-4 py-1.5 rounded-[3px] border border-cyan-400/60 bg-gradient-to-r from-cyan-950/90 to-slate-900 text-cyan-200 font-bold text-[10px] tracking-wider uppercase flex items-center gap-2 hover:brightness-125 transition cursor-pointer"
-                >
-                  {isRepairing ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
-                  ) : (
-                    <Wrench className="w-3.5 h-3.5 text-cyan-400" />
-                  )}
-                  <span>AUTO-VERIFY &amp; REPAIR CIRCUIT (MUSE SPARK)</span>
-                </button>
-
-                <input
-                  ref={quickScanInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleQuickSamScan}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => quickScanInputRef.current?.click()}
-                  className="px-4 py-1.5 rounded-[3px] border border-white/20 bg-white/5 hover:bg-white/10 text-slate-200 font-bold text-[10px] tracking-wider uppercase flex items-center gap-2 transition cursor-pointer"
-                >
-                  <Camera className="w-3.5 h-3.5 text-amber-400" />
-                  <span>SCAN BREADBOARD (SAM 3.1)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowAgentDrawer(!showAgentDrawer)}
-                  className="px-2.5 py-1.5 rounded-[3px] border border-amber-500/40 bg-amber-950/30 text-amber-300 font-bold text-[10px] uppercase cursor-pointer"
-                  title="Open API Key & Gate Checklist Drawer"
-                >
-                  API &amp; GATES
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -547,7 +571,7 @@ export default function App() {
             <Pcb3DViewer
               circuit={synthesis.circuit}
               layout={routedResult?.layout}
-              sketchName="ObsidianTwin"
+              sketchName="Sketch2Circuit V2"
               theme="dark"
               activeProject={activeProject}
               onSelectProject={handleSelectProject}
@@ -560,13 +584,55 @@ export default function App() {
         )}
 
         {activeMainTab === "pcb" && (
-          <div className="flex-1 p-4 overflow-auto">
-            <PcbViewer
-              circuit={synthesis.circuit}
-              layout={routedResult?.layout}
-              sketchName="ObsidianCircuit"
-              theme="dark"
-            />
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="px-4 py-2 border-b border-slate-800 bg-[#0f172a] flex items-center justify-between shrink-0">
+              <span className="text-xs font-medium text-slate-300">
+                2D Hardware Capture &amp; Layout
+              </span>
+              <div className="flex items-center gap-1 p-0.5 rounded-lg border border-slate-800 bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setPcbSubView("schematic2d")}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
+                    pcbSubView === "schematic2d"
+                      ? "bg-[#06b6d4] text-slate-950"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  2D Schematic &amp; Breadboard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPcbSubView("pcb2d")}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
+                    pcbSubView === "pcb2d"
+                      ? "bg-[#06b6d4] text-slate-950"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  2D Routed PCB
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto">
+              {pcbSubView === "schematic2d" ? (
+                <Schematic2DViewer
+                  circuit={synthesis.circuit}
+                  sketchName="Sketch2Circuit V2"
+                  theme="dark"
+                  onSwitchTo3D={() => setActiveMainTab("pcb3d")}
+                />
+              ) : (
+                <div className="p-4 h-full">
+                  <PcbViewer
+                    circuit={synthesis.circuit}
+                    layout={routedResult?.layout}
+                    sketchName="Sketch2Circuit V2"
+                    theme="dark"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
 

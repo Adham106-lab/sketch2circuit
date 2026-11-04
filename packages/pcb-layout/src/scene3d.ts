@@ -261,7 +261,7 @@ function buildComponentBodyNodes(
   const compIdLower = componentId.toLowerCase();
   const circuitComp = circuit?.components.find((c) => c.id === componentId);
   const partInfo =
-    `${componentId} ${fp.id} ${circuitComp?.partId ?? ""} ${circuitComp?.kind ?? ""}`.toLowerCase();
+    `${componentId} ${fp.id} ${circuitComp?.partNumber ?? ""} ${circuitComp?.kind ?? ""}`.toLowerCase();
 
   // 1. MCU / Arduino Shield Header Pins -> Render clean on-board pin headers at every pad
   if (
