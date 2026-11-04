@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useRef, useState } from "react";
+import { VISION_MODEL_CHAIN } from "../lib/physicalScan.js";
 
 interface MuseAgentPanelProps {
   sketchSource: string;
@@ -228,7 +229,7 @@ export const MuseAgentPanel: React.FC<MuseAgentPanelProps> = ({
         const modelName =
           provider === "meta"
             ? "Llama-4-Maverick-17B-128E-Instruct-FP8"
-            : "accounts/fireworks/models/llama-v3p3-70b-instruct";
+            : VISION_MODEL_CHAIN[0];
 
         logs.push({
           step: 2,

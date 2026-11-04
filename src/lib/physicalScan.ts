@@ -20,6 +20,16 @@ export interface ScanConnection {
 export interface ScanResult {
   components: ScanComponent[];
   connections: ScanConnection[];
+  modelUsed?: string;
+  modelShortName?: string;
+  elapsedSec?: number;
+}
+
+export interface ScanProgressUpdate {
+  model: string;
+  shortName: string;
+  label: string;
+  isFallback: boolean;
 }
 
 export interface ScanVerificationReport {
@@ -29,7 +39,14 @@ export interface ScanVerificationReport {
   total: number;
 }
 
-export type ScanErrorKind = "network" | "http" | "parse" | "empty" | "unconfigured";
+export type ScanErrorKind =
+  | "network"
+  | "http"
+  | "parse"
+  | "empty"
+  | "unconfigured"
+  | "timeout"
+  | "image_too_large";
 
 export class ScanError extends Error {
   public readonly kind: ScanErrorKind;
@@ -45,65 +62,245 @@ export class ScanError extends Error {
   }
 }
 
-const DEFAULT_VISION_MODEL = "accounts/fireworks/models/llama-v3p2-90b-vision-instruct";
+export const VISION_MODEL_CHAIN = [
+  "accounts/fireworks/models/muse-spark-open",         // primary (Meta)
+  "accounts/fireworks/models/qwen3p8-flash-next-fp8",  // fallback 1 (fast Qwen)
+  "accounts/fireworks/models/qwen3p8-max",             // fallback 2 (known serverless, most accurate)
+  "accounts/fireworks/models/glm-5p3-flash",           // fallback 3 (cheap)
+] as const;
+
+const FIREWORKS_MODELS_URL = "https://api.fireworks.ai/inference/v1/models";
 const FIREWORKS_CHAT_URL = "https://api.fireworks.ai/inference/v1/chat/completions";
+const MAX_BASE64_BYTES = 2 * 1024 * 1024; // ~2 MB limit
+const MUSE_TIMEOUT_MS = 60_000; // 60s for Muse Spark
+const DEFAULT_TIMEOUT_MS = 30_000; // 30s for other models
 
 const SYSTEM_PROMPT =
   "Analyze this breadboard image. Identify all electronic components (LEDs, resistors, ultrasonic sensors) and wire connections (e.g., Wire from Pin 13 to Breadboard J15). Return ONLY a valid JSON object with keys `components` and `connections`. No markdown, no explanations.\n\n" +
   'Required JSON schema:\n{\n  "components": [\n    { "type": "led" | "resistor" | "button" | "ultrasonic" | "other", "label"?: string, "value"?: string }\n  ],\n  "connections": [\n    { "from": string, "to": string }\n  ]\n}\n' +
   'Use canonical endpoint names where possible such as "D13", "5V", "GND", "R1.1", "R1.2", "LED1.anode", "LED1.cathode", "SW1.1", "U_SONAR.TRIG", "U_SONAR.ECHO".';
 
+export function shortModelName(modelId: string): string {
+  const idx = modelId.lastIndexOf("/");
+  return idx >= 0 ? modelId.slice(idx + 1) : modelId;
+}
+
+export function friendlyModelDisplay(modelId: string): string {
+  const short = shortModelName(modelId);
+  if (short.includes("muse-spark")) return "Muse Spark";
+  if (short.startsWith("qwen")) return `Qwen (${short})`;
+  if (short.startsWith("glm")) return `GLM (${short})`;
+  return short;
+}
+
+function cleanEnvString(val: string | undefined): string {
+  if (!val) return "";
+  const stripped = val.trim().replace(/^["']+|["']+$/g, "").trim();
+  if (stripped === "undefined" || stripped === "null") return "";
+  return stripped;
+}
+
+export function getVisionEnv(): { apiKey: string; model: string; proxyUrl: string } {
+  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
+  const rawProxy = cleanEnvString(env.VITE_VISION_PROXY_URL);
+  const proxyUrl = /^https?:\/\/|^\/api\//i.test(rawProxy) ? rawProxy : "";
+  const apiKey = cleanEnvString(env.VITE_FIREWORKS_API_KEY);
+  const rawModel = cleanEnvString(env.VITE_VISION_MODEL);
+  // Ignore removed legacy llama-v3p2 env values that may linger in container process.env
+  const validRawModel = /llama-v3p2/i.test(rawModel) ? "" : rawModel;
+  const model =
+    validRawModel &&
+    !validRawModel.startsWith("accounts/") &&
+    validRawModel !== "auto" &&
+    !validRawModel.startsWith("firerouter/")
+      ? `accounts/fireworks/models/${validRawModel}`
+      : validRawModel;
+  return { apiKey, model, proxyUrl };
+}
+
 /**
  * Checks whether a Vision API endpoint or Fireworks API key is configured.
  */
 export function isVisionConfigured(): boolean {
-  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
-  const proxyUrl = (env.VITE_VISION_PROXY_URL ?? "").trim();
-  const apiKey = (env.VITE_FIREWORKS_API_KEY ?? "").trim();
+  const { apiKey, proxyUrl } = getVisionEnv();
   return proxyUrl.length > 0 || apiKey.length > 0;
+}
+
+let cachedAllModelIds: Set<string> | null = null;
+let sessionWinnerModel: string | null = null;
+
+/**
+ * Queries `GET https://api.fireworks.ai/inference/v1/models` once per session,
+ * caches the returned model IDs in memory, and returns the available IDs.
+ */
+export async function listVisionModels(signal?: AbortSignal): Promise<string[]> {
+  if (cachedAllModelIds && cachedAllModelIds.size > 0) {
+    return Array.from(cachedAllModelIds);
+  }
+  const { apiKey } = getVisionEnv();
+  if (!apiKey) {
+    return [];
+  }
+
+  try {
+    const res = await fetch(`${FIREWORKS_MODELS_URL}?limit=200`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn(`[scan] GET /inference/v1/models HTTP ${res.status}:`, errText.slice(0, 200));
+      return [];
+    }
+
+    const data = (await res.json()) as {
+      data?: Array<{ id?: string; name?: string }>;
+      models?: Array<{ id?: string; name?: string }>;
+    };
+    const rawList = Array.isArray(data.data)
+      ? data.data
+      : Array.isArray(data.models)
+        ? data.models
+        : [];
+
+    const allIds = new Set<string>();
+    for (const item of rawList) {
+      const rawId = (item.id ?? item.name ?? "").trim();
+      if (!rawId) continue;
+      const fullId =
+        rawId.startsWith("accounts/") || rawId === "auto" || rawId.startsWith("firerouter/")
+          ? rawId
+          : `accounts/fireworks/models/${rawId}`;
+      allIds.add(fullId);
+    }
+
+    if (allIds.size > 0) {
+      cachedAllModelIds = allIds;
+    }
+    return Array.from(allIds);
+  } catch (err: unknown) {
+    console.warn(
+      "[scan] GET /inference/v1/models failed (keeping full chain):",
+      err instanceof Error ? err.message : String(err),
+    );
+    return [];
+  }
+}
+
+/**
+ * Builds the ordered, deduplicated vision model chain for the current scan:
+ * 1. Session winner (if one already succeeded this session)
+ * 2. VITE_VISION_MODEL (if set)
+ * 3. VISION_MODEL_CHAIN
+ * Filtered against GET /inference/v1/models (unless the list call failed).
+ */
+export async function resolveVisionModelChain(signal?: AbortSignal): Promise<string[]> {
+  const { model: envModel } = getVisionEnv();
+  const ordered: string[] = [];
+  const pushUnique = (id: string | null | undefined) => {
+    const clean = (id ?? "").trim();
+    if (clean && !ordered.includes(clean)) {
+      ordered.push(clean);
+    }
+  };
+
+  if (sessionWinnerModel) {
+    pushUnique(sessionWinnerModel);
+  }
+  if (envModel) {
+    pushUnique(envModel);
+  }
+  for (const m of VISION_MODEL_CHAIN) {
+    pushUnique(m);
+  }
+
+  const catalogIds = await listVisionModels(signal);
+  if (catalogIds.length > 0) {
+    const catalogSet = new Set(catalogIds);
+    const filtered = ordered.filter((id) => catalogSet.has(id));
+    if (filtered.length > 0) {
+      console.log("[scan] Chain after filtering:", filtered);
+      return filtered;
+    }
+  }
+
+  console.log("[scan] Chain (unfiltered fallback):", ordered);
+  return ordered;
 }
 
 /**
  * Client-side image downscaler: resizes an uploaded image File to <= maxSide px on its longest side
- * and encodes as JPEG (quality 0.85) before base64 serialization.
+ * and encodes as JPEG (quality 0.85). Automatically steps down further if base64 exceeds ~2 MB.
  */
 export async function downscaleImageFile(
   file: File,
   maxSide = 1280,
   quality = 0.85,
-): Promise<{ base64: string; mime: string; previewUrl: string }> {
+): Promise<{ base64: string; mime: string; previewUrl: string; sizeKb: number }> {
   const objectUrl = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image();
       el.onload = () => resolve(el);
-      el.onerror = () => reject(new ScanError("parse", "Could not decode the selected image file."));
+      el.onerror = () =>
+        reject(new ScanError("parse", `Could not decode image file "${file.name}".`));
       el.src = objectUrl;
     });
 
     const srcW = img.naturalWidth || img.width || 1;
     const srcH = img.naturalHeight || img.height || 1;
-    const scale = Math.min(1, maxSide / Math.max(srcW, srcH));
-    const dstW = Math.max(1, Math.round(srcW * scale));
-    const dstH = Math.max(1, Math.round(srcH * scale));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = dstW;
-    canvas.height = dstH;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw new ScanError("parse", "Canvas 2D context unavailable for image preparation.");
-    }
-    ctx.drawImage(img, 0, 0, dstW, dstH);
-
     const mime = "image/jpeg";
-    const dataUrl = canvas.toDataURL(mime, quality);
-    const commaIdx = dataUrl.indexOf(",");
-    const base64 = commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl;
-    if (!base64) {
-      throw new ScanError("empty", "Encoded image payload was empty.");
+
+    const attempts: Array<{ side: number; q: number }> = [
+      { side: maxSide, q: quality },
+      { side: 960, q: 0.75 },
+      { side: 640, q: 0.65 },
+    ];
+
+    let lastBase64 = "";
+    let lastDataUrl = "";
+
+    for (const attempt of attempts) {
+      const scale = Math.min(1, attempt.side / Math.max(srcW, srcH));
+      const dstW = Math.max(1, Math.round(srcW * scale));
+      const dstH = Math.max(1, Math.round(srcH * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = dstW;
+      canvas.height = dstH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new ScanError("parse", "Canvas 2D context unavailable for image preparation.");
+      }
+      ctx.drawImage(img, 0, 0, dstW, dstH);
+
+      const dataUrl = canvas.toDataURL(mime, attempt.q);
+      const commaIdx = dataUrl.indexOf(",");
+      const base64 = commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+      if (!base64) {
+        throw new ScanError("empty", "Encoded image payload was empty.");
+      }
+
+      lastBase64 = base64;
+      lastDataUrl = dataUrl;
+      if (base64.length <= MAX_BASE64_BYTES) {
+        break;
+      }
     }
-    return { base64, mime, previewUrl: dataUrl };
+
+    const sizeKb = Math.round((lastBase64.length * 0.75) / 1024);
+    if (lastBase64.length > MAX_BASE64_BYTES) {
+      throw new ScanError(
+        "image_too_large",
+        `image too large (${sizeKb} KB after downscaling; max ~2048 KB).`,
+      );
+    }
+
+    return { base64: lastBase64, mime, previewUrl: lastDataUrl, sizeKb };
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
@@ -140,7 +337,10 @@ function extractJsonObjectString(rawText: string): string {
 
   const start = withoutFences.indexOf("{");
   if (start === -1) {
-    throw new ScanError("parse", "Vision response did not contain a JSON object.");
+    throw new ScanError(
+      "parse",
+      `invalid JSON from model: response did not contain a JSON object (${withoutFences.slice(0, 120)})`,
+    );
   }
 
   let depth = 0;
@@ -172,7 +372,7 @@ function extractJsonObjectString(rawText: string): string {
     }
   }
 
-  throw new ScanError("parse", "Vision response contained an unterminated JSON object.");
+  throw new ScanError("parse", "invalid JSON from model: unterminated JSON object.");
 }
 
 /**
@@ -180,26 +380,29 @@ function extractJsonObjectString(rawText: string): string {
  */
 export function parseAndValidateScanResult(rawText: string): ScanResult {
   if (!rawText || rawText.trim().length === 0) {
-    throw new ScanError("empty", "Vision API returned an empty response.");
+    throw new ScanError("empty", "invalid JSON from model: empty content");
   }
 
   const jsonSlice = extractJsonObjectString(rawText);
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonSlice);
-  } catch {
-    throw new ScanError("parse", "Vision response could not be parsed as valid JSON.");
+  } catch (err: unknown) {
+    throw new ScanError(
+      "parse",
+      `invalid JSON from model: ${err instanceof Error ? err.message : "JSON.parse failed"}`,
+    );
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new ScanError("parse", "Vision JSON root must be an object.");
+    throw new ScanError("parse", "invalid JSON from model: root must be a JSON object.");
   }
 
   const record = parsed as Record<string, unknown>;
   if (!Array.isArray(record.components) || !Array.isArray(record.connections)) {
     throw new ScanError(
       "parse",
-      "Vision JSON is missing required `components` or `connections` arrays.",
+      "invalid JSON from model: missing required `components` or `connections` arrays.",
     );
   }
 
@@ -228,56 +431,81 @@ export function parseAndValidateScanResult(rawText: string): ScanResult {
     }
   }
 
-  if (components.length === 0 && connections.length === 0) {
-    throw new ScanError("empty", "No breadboard components or wire connections were detected.");
-  }
-
   return { components, connections };
 }
 
+interface ModelAttemptParams {
+  model: string;
+  maxTokens: number;
+  includeResponseFormat: boolean;
+  includeReasoningEffort: boolean;
+  timeoutMs: number;
+}
+
 /**
- * Calls Fireworks AI Llama Vision (or configured proxy URL) to inspect a physical breadboard photo.
+ * Calls Fireworks AI Vision across `VISION_MODEL_CHAIN` (or configured proxy URL)
+ * to inspect a physical breadboard photo, automatically falling back on model errors.
  */
 export async function analyzePhysicalCircuit(
   base64Image: string,
   mime: string,
   signal?: AbortSignal,
+  onProgress?: (update: ScanProgressUpdate) => void,
 ): Promise<ScanResult> {
-  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
-  const proxyUrl = (env.VITE_VISION_PROXY_URL ?? "").trim();
-  const apiKey = (env.VITE_FIREWORKS_API_KEY ?? "").trim();
-  const model = (env.VITE_VISION_MODEL ?? "").trim() || DEFAULT_VISION_MODEL;
+  const { apiKey, proxyUrl } = getVisionEnv();
 
   if (!proxyUrl && !apiKey) {
     throw new ScanError(
       "unconfigured",
-      "Vision API not configured. Set VITE_FIREWORKS_API_KEY or VITE_VISION_PROXY_URL, or use Demo mode.",
+      "Vision API not configured: missing VITE_FIREWORKS_API_KEY and VITE_VISION_PROXY_URL.",
     );
   }
 
-  const endpoint = proxyUrl || FIREWORKS_CHAT_URL;
-  const cleanBase64 = base64Image.startsWith("data:")
+  const rawBase64 = base64Image.startsWith("data:")
+    ? base64Image.slice(base64Image.indexOf(",") + 1)
+    : base64Image;
+  const approxKb = Math.round((rawBase64.length * 0.75) / 1024);
+  if (rawBase64.length > MAX_BASE64_BYTES) {
+    throw new ScanError(
+      "image_too_large",
+      `image too large (${approxKb} KB exceeds ~2048 KB limit).`,
+    );
+  }
+
+  const cleanDataUrl = base64Image.startsWith("data:")
     ? base64Image
     : `data:${mime || "image/jpeg"};base64,${base64Image}`;
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (apiKey) {
-    headers.Authorization = `Bearer ${apiKey}`;
-  }
+  const chain = await resolveVisionModelChain(signal);
+  const primaryEndpoint = proxyUrl || FIREWORKS_CHAT_URL;
+  const failures: Array<{ model: string; reason: string }> = [];
 
-  let response: Response;
-  try {
-    response = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      signal,
-      body: JSON.stringify({
-        model,
+  const executePost = async (
+    params: ModelAttemptParams,
+  ): Promise<{ response: Response; bodyText: string }> => {
+    const attemptController = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      attemptController.abort();
+    }, params.timeoutMs);
+
+    const onCallerAbort = () => attemptController.abort();
+    if (signal) {
+      if (signal.aborted) {
+        clearTimeout(timer);
+        throw new DOMException("Scan aborted", "AbortError");
+      }
+      signal.addEventListener("abort", onCallerAbort, { once: true });
+    }
+
+    const buildBody = () =>
+      JSON.stringify({
+        model: params.model,
         temperature: 0,
-        max_tokens: 1024,
-        response_format: { type: "json_object" },
+        max_tokens: params.maxTokens,
+        ...(params.includeReasoningEffort ? { reasoning_effort: "low" } : {}),
+        ...(params.includeResponseFormat ? { response_format: { type: "json_object" } } : {}),
         messages: [
           {
             role: "system",
@@ -292,57 +520,259 @@ export async function analyzePhysicalCircuit(
               },
               {
                 type: "image_url",
-                image_url: { url: cleanBase64 },
+                image_url: { url: cleanDataUrl },
               },
             ],
           },
         ],
-      }),
-    });
-  } catch (err: unknown) {
-    if (err instanceof DOMException && err.name === "AbortError") {
-      throw err;
-    }
-    throw new ScanError(
-      "network",
-      err instanceof Error ? `Network failure: ${err.message}` : "Network request to Vision API failed.",
-    );
-  }
+      });
 
-  if (!response.ok) {
-    let detail = "";
+    const doFetch = async (url: string) => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (apiKey) {
+        headers.Authorization = `Bearer ${apiKey}`;
+      }
+      console.log("[scan] Request start:", {
+        model: params.model,
+        maxTokens: params.maxTokens,
+        reasoningEffort: params.includeReasoningEffort ? "low" : undefined,
+        responseFormat: params.includeResponseFormat,
+        timeoutMs: params.timeoutMs,
+      });
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        signal: attemptController.signal,
+        body: buildBody(),
+      });
+      const bodyText = await response.text();
+      console.log("[scan] Response status:", { model: params.model, status: response.status });
+      return { response, bodyText };
+    };
+
     try {
-      const errBody = await response.text();
-      detail = errBody.slice(0, 160);
-    } catch {
-      // ignore body read error
+      return await doFetch(primaryEndpoint);
+    } catch (err: unknown) {
+      if (signal?.aborted) {
+        throw new DOMException("Scan aborted", "AbortError");
+      }
+      if (timedOut) {
+        throw new ScanError("timeout", "timeout");
+      }
+      if (primaryEndpoint !== proxyUrl && proxyUrl) {
+        console.warn("[scan] Direct request failed (network/CORS), retrying via proxy:", proxyUrl);
+        try {
+          return await doFetch(proxyUrl);
+        } catch {
+          throw new ScanError("network", "network/CORS");
+        }
+      }
+      throw new ScanError("network", "network/CORS");
+    } finally {
+      clearTimeout(timer);
+      if (signal) {
+        signal.removeEventListener("abort", onCallerAbort);
+      }
     }
-    throw new ScanError(
-      "http",
-      `Vision API HTTP ${response.status}${detail ? `: ${detail}` : ""}`,
-      response.status,
-    );
+  };
+
+  for (let idx = 0; idx < chain.length; idx++) {
+    const model = chain[idx]!;
+    const shortName = shortModelName(model);
+    const isMuse = model.includes("muse-spark");
+    const timeoutMs = isMuse ? MUSE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+    const prevModel = idx > 0 ? chain[idx - 1]! : null;
+
+    const progressLabel =
+      idx === 0
+        ? isMuse
+          ? "Analyzing with Muse Spark…"
+          : `Analyzing with ${shortName}…`
+        : `${friendlyModelDisplay(prevModel!)} unavailable, trying ${
+            shortName.startsWith("qwen") ? "Qwen" : friendlyModelDisplay(model)
+          }…`;
+
+    onProgress?.({
+      model,
+      shortName,
+      label: progressLabel,
+      isFallback: idx > 0,
+    });
+
+    const modelStartMs = performance.now();
+    let params: ModelAttemptParams = {
+      model,
+      maxTokens: isMuse ? 4096 : 2048,
+      includeResponseFormat: true,
+      includeReasoningEffort: isMuse,
+      timeoutMs,
+    };
+
+    try {
+      let { response, bodyText } = await executePost(params);
+
+      // Stop immediately on 401 (bad API key) — do NOT move on to other models
+      if (response.status === 401) {
+        throw new ScanError("http", "Invalid API key", 401);
+      }
+
+      // On 400 mentioning reasoning_effort or response_format, retry the same model once without that param
+      if (
+        response.status === 400 &&
+        /reasoning_effort|response_format|json_object|response format|unrecognized|extra_forbidden/i.test(
+          bodyText,
+        )
+      ) {
+        const dropReasoning = /reasoning_effort/i.test(bodyText);
+        const dropFormat = /response_format|json_object|response format/i.test(bodyText);
+        params = {
+          ...params,
+          includeReasoningEffort: dropReasoning ? false : params.includeReasoningEffort && !dropFormat ? false : params.includeReasoningEffort,
+          includeResponseFormat: dropFormat ? false : params.includeResponseFormat && !dropReasoning ? false : params.includeResponseFormat,
+        };
+        console.warn("[scan] Retrying 400 without unsupported param:", params);
+        const retry400 = await executePost(params);
+        response = retry400.response;
+        bodyText = retry400.bodyText;
+        if (response.status === 401) {
+          throw new ScanError("http", "Invalid API key", 401);
+        }
+      }
+
+      // On 429 or 5xx, retry the same model once before moving on
+      if (response.status === 429 || response.status >= 500) {
+        console.warn(`[scan] HTTP ${response.status} on ${shortName}; retrying once...`);
+        const retry5xx = await executePost(params);
+        response = retry5xx.response;
+        bodyText = retry5xx.bodyText;
+        if (response.status === 401) {
+          throw new ScanError("http", "Invalid API key", 401);
+        }
+      }
+
+      if (!response.ok) {
+        failures.push({
+          model: shortName,
+          reason: `${response.status}`,
+        });
+        console.warn(
+          `[scan] Model ${shortName} failed with HTTP ${response.status}:`,
+          bodyText.slice(0, 200),
+        );
+        continue;
+      }
+
+      const parseCompletionPayload = (rawBody: string): {
+        content: string;
+        finishReason: string;
+        usage: unknown;
+        isDirectSchema: boolean;
+      } => {
+        let payload: unknown;
+        try {
+          payload = JSON.parse(rawBody);
+        } catch {
+          throw new ScanError("parse", "invalid JSON");
+        }
+        const record = payload as Record<string, unknown>;
+        if (Array.isArray(record.components) && Array.isArray(record.connections)) {
+          return {
+            content: rawBody,
+            finishReason: "stop",
+            usage: record.usage ?? null,
+            isDirectSchema: true,
+          };
+        }
+        const choices = Array.isArray(record.choices) ? record.choices : [];
+        const firstChoice = (choices[0] as Record<string, unknown> | undefined) ?? {};
+        const finishReason =
+          typeof firstChoice.finish_reason === "string" ? firstChoice.finish_reason : "";
+        const message = (firstChoice.message as Record<string, unknown> | undefined) ?? {};
+        const content = typeof message.content === "string" ? message.content : "";
+        return {
+          content,
+          finishReason,
+          usage: record.usage ?? null,
+          isDirectSchema: false,
+        };
+      };
+
+      let extracted = parseCompletionPayload(bodyText);
+      console.log("[scan] Model output:", {
+        model: shortName,
+        finishReason: extracted.finishReason,
+        usage: extracted.usage,
+        rawPreview: extracted.content.slice(0, 500),
+      });
+
+      // Muse Spark retry once with max_tokens: 8192 if finish_reason === "length" or content is empty
+      if (isMuse && (extracted.finishReason === "length" || !extracted.content.trim())) {
+        console.warn(
+          `[scan] Muse Spark finish_reason="${extracted.finishReason}" or empty content; retrying once with max_tokens: 8192`,
+        );
+        const retry8k = await executePost({
+          ...params,
+          maxTokens: 8192,
+        });
+        if (retry8k.response.status === 401) {
+          throw new ScanError("http", "Invalid API key", 401);
+        }
+        if (retry8k.response.ok) {
+          extracted = parseCompletionPayload(retry8k.bodyText);
+          console.log("[scan] Muse Spark 8192-token retry output:", {
+            finishReason: extracted.finishReason,
+            usage: extracted.usage,
+            rawPreview: extracted.content.slice(0, 500),
+          });
+        }
+      }
+
+      if (!extracted.content.trim()) {
+        failures.push({ model: shortName, reason: "empty content" });
+        console.warn(`[scan] Model ${shortName} returned empty content; moving to next model.`);
+        continue;
+      }
+
+      const scanResult = parseAndValidateScanResult(extracted.content);
+      const elapsedSec = Number(((performance.now() - modelStartMs) / 1000).toFixed(1));
+      sessionWinnerModel = model;
+      console.log(`[scan] Winner model: ${shortName} (${elapsedSec}s)`, scanResult);
+
+      return {
+        ...scanResult,
+        modelUsed: model,
+        modelShortName: shortName,
+        elapsedSec,
+      };
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw err;
+      }
+      if (err instanceof ScanError && err.status === 401) {
+        throw err;
+      }
+      const reason =
+        err instanceof ScanError
+          ? err.kind === "timeout"
+            ? "timeout"
+            : err.kind === "parse"
+              ? "invalid JSON"
+              : err.kind === "empty"
+                ? "empty content"
+                : err.message
+          : "error";
+      failures.push({ model: shortName, reason });
+      console.warn(`[scan] Model ${shortName} failed (${reason}); trying next in chain...`);
+    }
   }
 
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    throw new ScanError("parse", "Vision API response was not valid JSON.");
-  }
-
-  const record = payload as Record<string, unknown>;
-  // Support direct { components, connections } from custom proxy OR OpenAI/Fireworks choices[0].message.content
-  if (Array.isArray(record.components) && Array.isArray(record.connections)) {
-    return parseAndValidateScanResult(JSON.stringify(record));
-  }
-
-  const choices = Array.isArray(record.choices) ? record.choices : [];
-  const firstChoice = (choices[0] as Record<string, unknown> | undefined) ?? {};
-  const message = (firstChoice.message as Record<string, unknown> | undefined) ?? {};
-  const content = typeof message.content === "string" ? message.content : "";
-
-  return parseAndValidateScanResult(content);
+  const summary =
+    failures.length > 0
+      ? failures.map((f) => `${f.model}: ${f.reason}`).join(" · ")
+      : "All vision models in chain failed.";
+  throw new ScanError("http", summary);
 }
 
 /**

@@ -205,10 +205,10 @@ export default function App() {
       {/* ========================================================================= */}
       {/* TOP HEADER BAR (Clean V2 Design + Promoted Hero Actions)                  */}
       {/* ========================================================================= */}
-      <header className="border-b border-slate-800 bg-[#0b0f17] shrink-0 z-30">
-        {/* Top Row: Brand + V2 Pill + Quiet Attribution + Neutral Status Chip + Hero Actions */}
-        <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80">
-          <div className="flex flex-wrap items-center gap-3 min-w-0">
+      <header className="border-b border-white/10 bg-[#0b1019] shrink-0 z-30">
+        {/* Top Row: Brand + Muse Badge + Routing Pill + Hero Actions + GitHub Star */}
+        <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-3 border-b border-white/5">
+          <div className="flex flex-wrap items-center gap-2.5 min-w-0">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg border border-slate-700 bg-slate-900 flex items-center justify-center text-[#06b6d4]">
                 <Cpu className="w-3.5 h-3.5" />
@@ -223,9 +223,9 @@ export default function App() {
 
             <span
               title="Powered by Meta Muse Spark verifiable synthesis and SAM 3.1 breadboard vision"
-              className="hidden md:inline-block text-[11px] text-slate-400"
+              className="hidden md:inline-block px-2 py-0.5 rounded text-[10px] border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-300 font-medium"
             >
-              Built with Muse Spark · SAM 3.1
+              MUSE SPARK + SAM 3.1 TWIN
             </span>
 
             <button
@@ -244,8 +244,14 @@ export default function App() {
             </button>
           </div>
 
-          {/* Right Action Area: Promoted Hero Actions + GitHub Star + Compact View/Oscilloscope Switch */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Right Action Area: Promoted Hero Actions + GitHub Star */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {agentStatusMsg && (
+              <span className="hidden lg:inline-block text-[10px] px-2.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 animate-pulse">
+                {agentStatusMsg}
+              </span>
+            )}
+
             {/* Hero Action 1: Auto-verify & Repair (Primary Filled Button) */}
             <button
               type="button"
@@ -276,31 +282,6 @@ export default function App() {
             <PhysicalVerifier expected={expectedScan} theme={theme} mode="trigger" />
 
             <GitHubStarButton />
-
-            {/* Compact low-weight Oscilloscope switch */}
-            <button
-              type="button"
-              onClick={() =>
-                setActiveMainTab(activeMainTab === "simulate" ? "studio" : "simulate")
-              }
-              title="Toggle RKF45 Oscilloscope Simulation View"
-              className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-800 hover:border-slate-700 text-[11px] text-slate-400 hover:text-slate-200 transition cursor-pointer"
-            >
-              <span>Oscilloscope</span>
-              <span
-                className={`w-6 h-3.5 rounded-full p-0.5 flex items-center transition-colors ${
-                  activeMainTab === "simulate"
-                    ? "bg-[#06b6d4]/30 justify-end"
-                    : "bg-slate-800 justify-start"
-                }`}
-              >
-                <span
-                  className={`w-2.5 h-2.5 rounded-full ${
-                    activeMainTab === "simulate" ? "bg-[#06b6d4]" : "bg-slate-400"
-                  }`}
-                />
-              </span>
-            </button>
           </div>
         </div>
 
@@ -395,12 +376,6 @@ export default function App() {
               )}
             </div>
           </div>
-
-          {agentStatusMsg && (
-            <span className="hidden lg:inline-block text-[11px] text-slate-400 truncate max-w-xs">
-              {agentStatusMsg}
-            </span>
-          )}
         </div>
       </header>
 
@@ -515,7 +490,6 @@ export default function App() {
                   setDebouncedSource(code);
                 }}
               />
-              <PhysicalVerifier expected={expectedScan} theme={theme} mode="hud" />
             </div>
           </div>
         )}
@@ -534,9 +508,10 @@ export default function App() {
                 setDebouncedSource(code);
               }}
             />
-            <PhysicalVerifier expected={expectedScan} theme={theme} mode="hud" />
           </div>
         )}
+
+        <PhysicalVerifier expected={expectedScan} theme={theme} mode="hud" />
 
         {activeMainTab === "pcb" && (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

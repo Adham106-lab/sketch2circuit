@@ -20,11 +20,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   analyzePhysicalCircuit,
   downscaleImageFile,
+  getVisionEnv,
   isVisionConfigured,
   mockScan,
   ScanError,
   type ScanResult,
   type ScanVerificationReport,
+  VISION_MODEL_CHAIN,
   verifyScan,
 } from "../lib/physicalScan.js";
 
@@ -46,6 +48,9 @@ interface SharedScanState {
   mockMode: boolean;
   previewUrl: string | null;
   fileName: string | null;
+  scanningLabel: string;
+  modelShortName: string | null;
+  elapsedSec: number | null;
   report: ScanVerificationReport | null;
   found: ScanResult | null;
   errorMsg: string | null;
@@ -68,6 +73,9 @@ let sharedState: SharedScanState = {
   mockMode: getInitialDemoMode(),
   previewUrl: null,
   fileName: null,
+  scanningLabel: "Analyzing with Muse Spark…",
+  modelShortName: null,
+  elapsedSec: null,
   report: null,
   found: null,
   errorMsg: null,
@@ -161,10 +169,25 @@ export function PhysicalVerifier({
       activeAbortController = controller;
 
       const useMock = forceMock ?? sharedState.mockMode;
+      const { apiKey, model: cleanModel, proxyUrl: cleanProxy } = getVisionEnv();
+      const hasApiKey = Boolean(apiKey);
+      const modelEnv = cleanModel || VISION_MODEL_CHAIN[0];
+      const proxyUrlEnv = cleanProxy || "(none — direct Fireworks API)";
+
+      console.group("[scan]");
+      console.log("[scan] Env check:", {
+        hasApiKey,
+        model: modelEnv,
+        proxyUrl: proxyUrlEnv,
+        mockMode: useMock,
+      });
 
       setState({
         status: "scanning",
         fileName: file ? file.name : "demo-breadboard.jpg",
+        scanningLabel: useMock ? "Analyzing with Demo Twin…" : "Analyzing with Muse Spark…",
+        modelShortName: null,
+        elapsedSec: null,
         report: null,
         found: null,
         errorMsg: null,
@@ -181,6 +204,7 @@ export function PhysicalVerifier({
           const prepared = await downscaleImageFile(file, 1280, 0.85);
           base64 = prepared.base64;
           mime = prepared.mime;
+          console.log(`[scan] Image downscaled: ${prepared.sizeKb} KB (${file.name})`);
           setState({ previewUrl: prepared.previewUrl });
         } else {
           setState({ previewUrl: null });
@@ -188,29 +212,48 @@ export function PhysicalVerifier({
 
         let scanResult: ScanResult;
         if (useMock) {
+          console.log("[scan] Running deterministic mockScan (1.5s)...");
+          const t0 = performance.now();
           scanResult = await mockScan(expectedRef.current, controller.signal);
+          scanResult.modelShortName = "demo-twin";
+          scanResult.elapsedSec = Number(((performance.now() - t0) / 1000).toFixed(1));
+          console.log("[scan] Mock scan result:", scanResult);
         } else {
           if (!isVisionConfigured()) {
             throw new ScanError(
               "unconfigured",
-              "Vision API not configured. Set VITE_FIREWORKS_API_KEY or VITE_VISION_PROXY_URL, or switch to Demo mode.",
+              "Vision API not configured: missing VITE_FIREWORKS_API_KEY and VITE_VISION_PROXY_URL.",
             );
           }
-          scanResult = await analyzePhysicalCircuit(base64, mime, controller.signal);
+          scanResult = await analyzePhysicalCircuit(
+            base64,
+            mime,
+            controller.signal,
+            (progress) => {
+              setState({
+                scanningLabel: progress.label,
+                modelShortName: progress.shortName,
+              });
+            },
+          );
         }
 
         if (controller.signal.aborted) return;
 
         const verification = verifyScan(expectedRef.current, scanResult);
+        console.log("[scan] Verification report:", verification);
         setState({
           status: "done",
           found: scanResult,
           report: verification,
+          modelShortName: scanResult.modelShortName ?? "muse-spark-open",
+          elapsedSec: scanResult.elapsedSec ?? null,
           errorMsg: null,
           errorKind: null,
         });
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") {
+          console.warn("[scan] Scan aborted by user or new scan request.");
           return;
         }
         const kind = err instanceof ScanError ? err.kind : "network";
@@ -218,13 +261,16 @@ export function PhysicalVerifier({
           err instanceof Error
             ? err.message
             : "Unexpected error while analyzing the breadboard image.";
+        console.error("[scan] Scan failed:", { kind, message });
         setState({
           status: "error",
           errorKind: kind,
           errorMsg: message,
           report: null,
+          collapsed: false,
         });
       } finally {
+        console.groupEnd();
         if (activeAbortController === controller) {
           activeAbortController = null;
         }
@@ -234,20 +280,60 @@ export function PhysicalVerifier({
   );
 
   const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Shift+click secretly toggles deterministic Demo / Mock mode
+    const { apiKey, proxyUrl } = getVisionEnv();
+    console.log("[scan] Scan Breadboard button clicked:", {
+      shiftKey: e.shiftKey,
+      mockMode: state.mockMode,
+      hasApiKey: Boolean(apiKey),
+      hasProxyUrl: Boolean(proxyUrl),
+      fileInputReady: Boolean(fileInputRef.current),
+    });
+
+    // Shift+click toggles deterministic Demo / Mock mode and runs immediately if no file needed
     if (e.shiftKey) {
       e.preventDefault();
       const nextMock = !state.mockMode;
       setState({ mockMode: nextMock });
+      if (nextMock) {
+        void runVerification(null, true);
+      }
       return;
     }
+
     if (state.status === "scanning") return;
-    fileInputRef.current?.click();
+
+    // If Vision API is not configured and not in Demo mode, immediately show the "Vision API not configured" HUD
+    if (!isVisionConfigured() && !state.mockMode) {
+      setState({
+        status: "error",
+        errorKind: "unconfigured",
+        errorMsg:
+          "Vision API not configured: missing VITE_FIREWORKS_API_KEY and VITE_VISION_PROXY_URL. Set VITE_FIREWORKS_API_KEY in .env or click 'Verify with Demo Twin'.",
+        report: null,
+        collapsed: false,
+      });
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+      fileInputRef.current.click();
+    } else {
+      setState({
+        status: "error",
+        errorKind: "parse",
+        errorMsg: "File input element ref was not mounted.",
+        collapsed: false,
+      });
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0] ?? null;
     e.target.value = "";
+    console.log(
+      "[scan] File input onChange fired:",
+      file ? { name: file.name, sizeBytes: file.size, type: file.type } : "no file selected",
+    );
     if (!file) return;
     void runVerification(file);
   };
@@ -272,9 +358,8 @@ export function PhysicalVerifier({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileChange}
-        className="hidden"
+        className="sr-only"
         aria-label="Upload or capture breadboard photo"
       />
       <button
@@ -375,7 +460,7 @@ export function PhysicalVerifier({
 
               <span className="font-semibold text-xs truncate">
                 {state.status === "scanning"
-                  ? "Scanning Physical Circuit…"
+                  ? state.scanningLabel
                   : state.status === "done" && state.report?.passed
                     ? "Physical Twin Verified"
                     : state.status === "done"
@@ -440,7 +525,7 @@ export function PhysicalVerifier({
                     <div className={`text-[10px] ${subtleText}`}>
                       {state.mockMode
                         ? "Simulated SAM 3.1 + Vision graph"
-                        : "Llama 3.2 90B Vision · 1280px JPEG"}
+                        : `${state.modelShortName ?? "muse-spark-open"} · 1280px JPEG`}
                     </div>
                   </div>
                 </div>
@@ -449,9 +534,7 @@ export function PhysicalVerifier({
               {/* Scanning state */}
               {state.status === "scanning" && (
                 <div className="space-y-1.5">
-                  <p className={subtleText}>
-                    Extracting breadboard components, resistor bands, and jumper endpoints…
-                  </p>
+                  <p className={subtleText}>{state.scanningLabel}</p>
                   <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
                     <div className="h-full w-2/3 bg-[#06b6d4] rounded-full animate-pulse" />
                   </div>
@@ -460,7 +543,7 @@ export function PhysicalVerifier({
 
               {/* Done: PASS */}
               {state.status === "done" && state.report && state.report.passed && (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div className="space-y-1">
@@ -473,12 +556,18 @@ export function PhysicalVerifier({
                       </p>
                     </div>
                   </div>
+                  {state.modelShortName && (
+                    <div className={`text-[10px] font-mono ${subtleText}`}>
+                      Model: {state.modelShortName}
+                      {state.elapsedSec !== null ? ` · ${state.elapsedSec}s` : ""}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Done: FAIL */}
               {state.status === "done" && state.report && !state.report.passed && (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="p-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-200 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-rose-300">Mismatch detected</span>
@@ -503,6 +592,12 @@ export function PhysicalVerifier({
                       </button>
                     )}
                   </div>
+                  {state.modelShortName && (
+                    <div className={`text-[10px] font-mono ${subtleText}`}>
+                      Model: {state.modelShortName}
+                      {state.elapsedSec !== null ? ` · ${state.elapsedSec}s` : ""}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -515,7 +610,7 @@ export function PhysicalVerifier({
                         ? "Vision API not configured"
                         : "Could not complete vision scan"}
                     </div>
-                    <p className={`text-[11px] leading-relaxed ${subtleText}`}>
+                    <p className={`text-[11px] leading-relaxed break-words font-mono ${subtleText}`}>
                       {state.errorMsg ?? "Check your network connection or API configuration."}
                     </p>
                   </div>
@@ -527,7 +622,12 @@ export function PhysicalVerifier({
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                        fileInputRef.current.click();
+                      }
+                    }}
                     className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer ${
                       isDark
                         ? "border-slate-700 bg-slate-800/90 hover:bg-slate-700 text-slate-200"
@@ -570,9 +670,8 @@ export function PhysicalVerifier({
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handleFileChange}
-          className="hidden"
+          className="sr-only"
           aria-label="Upload or capture breadboard photo"
         />
         {renderHudOverlay()}
