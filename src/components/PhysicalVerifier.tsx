@@ -25,14 +25,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { type GeneratedSketchResult, generateSketch } from "../lib/codegen.js";
 import {
   analyzePhysicalCircuit,
+  clearUserSessionKey,
   downscaleImageFile,
   explainSketchWithMuseSpark,
+  getUserSessionKey,
   getVisionEnv,
-  isVisionConfigured,
   mockScan,
   ScanError,
+  type ScanPhase,
   type ScanResult,
   type ScanVerificationReport,
+  setUserSessionKey,
   VISION_MODEL_CHAIN,
   verifyScan,
 } from "../lib/physicalScan.js";
@@ -57,14 +60,20 @@ interface SharedScanState {
   mockMode: boolean;
   previewUrl: string | null;
   fileName: string | null;
-  scanningLabel: string;
+  scanPhase: ScanPhase;
+  longWait: boolean;
   modelShortName: string | null;
   elapsedSec: number | null;
   report: ScanVerificationReport | null;
   found: ScanResult | null;
   errorMsg: string | null;
+  errorDetails: string | null;
   errorKind: string | null;
+  errorStatus: number | null;
   collapsed: boolean;
+  detailsExpanded: boolean;
+  keyDisclosureOpen: boolean;
+  hasSavedUserKey: boolean;
   showAllErrors: boolean;
   detectedExpanded: boolean;
   excludedComponents: number[];
@@ -91,14 +100,20 @@ let sharedState: SharedScanState = {
   mockMode: getInitialDemoMode(),
   previewUrl: null,
   fileName: null,
-  scanningLabel: "Analyzing with Muse Spark…",
+  scanPhase: "reading",
+  longWait: false,
   modelShortName: null,
   elapsedSec: null,
   report: null,
   found: null,
   errorMsg: null,
+  errorDetails: null,
   errorKind: null,
+  errorStatus: null,
   collapsed: false,
+  detailsExpanded: false,
+  keyDisclosureOpen: false,
+  hasSavedUserKey: Boolean(getUserSessionKey()),
   showAllErrors: false,
   detectedExpanded: false,
   excludedComponents: [],
@@ -133,6 +148,14 @@ function useSharedScanState(): [SharedScanState, (patch: Partial<SharedScanState
 }
 
 let activeAbortController: AbortController | null = null;
+let longWaitTimerId: ReturnType<typeof setTimeout> | null = null;
+
+function clearLongWaitTimer() {
+  if (longWaitTimerId !== null) {
+    clearTimeout(longWaitTimerId);
+    longWaitTimerId = null;
+  }
+}
 
 export function PhysicalVerifier({
   expected,
@@ -142,12 +165,12 @@ export function PhysicalVerifier({
   onSendToEditor,
 }: PhysicalVerifierProps) {
   const [state, setState] = useSharedScanState();
+  const [userKeyDraft, setUserKeyDraft] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const expectedRef = useRef<ScanResult>(expected);
   expectedRef.current = expected;
 
   const isDark = theme === "dark";
-  const visionConfigured = isVisionConfigured();
 
   // Re-verify automatically if the user edits the sketch while a scan result is open
   useEffect(() => {
@@ -157,40 +180,57 @@ export function PhysicalVerifier({
     }
   }, [expected, state.status, state.found, setState]);
 
-  // Escape key dismisses the HUD overlay
+  const handleCancelOrDismiss = useCallback(() => {
+    clearLongWaitTimer();
+    if (activeAbortController) {
+      activeAbortController.abort();
+      activeAbortController = null;
+    }
+    setState({
+      status: "idle",
+      longWait: false,
+      report: null,
+      found: null,
+      errorMsg: null,
+      errorDetails: null,
+      errorKind: null,
+      errorStatus: null,
+      detailsExpanded: false,
+      generatedSketch: null,
+      deterministicCode: null,
+      explaining: false,
+      explainStatusMsg: null,
+    });
+  }, [setState]);
+
+  // Escape key cancels in-flight scan or dismisses the HUD overlay
   useEffect(() => {
     if (mode === "trigger") return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && sharedState.status !== "idle") {
-        if (activeAbortController) {
-          activeAbortController.abort();
-          activeAbortController = null;
-        }
-        setState({
-          status: "idle",
-          report: null,
-          found: null,
-          errorMsg: null,
-          errorKind: null,
-        });
+        handleCancelOrDismiss();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [mode, setState]);
+  }, [mode, handleCancelOrDismiss]);
 
   // Abort in-flight scan only when the last mounted instance unmounts
   useEffect(() => {
     return () => {
-      if (listeners.size === 0 && activeAbortController) {
-        activeAbortController.abort();
-        activeAbortController = null;
+      if (listeners.size === 0) {
+        clearLongWaitTimer();
+        if (activeAbortController) {
+          activeAbortController.abort();
+          activeAbortController = null;
+        }
       }
     };
   }, []);
 
   const runVerification = useCallback(
     async (file: File | null, forceMock?: boolean) => {
+      clearLongWaitTimer();
       if (activeAbortController) {
         activeAbortController.abort();
       }
@@ -198,30 +238,36 @@ export function PhysicalVerifier({
       activeAbortController = controller;
 
       const useMock = forceMock ?? sharedState.mockMode;
-      const { apiKey, model: cleanModel, proxyUrl: cleanProxy } = getVisionEnv();
+      const { endpoint, usesProxy, apiKey, model: cleanModel } = getVisionEnv();
       const hasApiKey = Boolean(apiKey);
+      const hasUserKey = Boolean(getUserSessionKey());
       const modelEnv = cleanModel || VISION_MODEL_CHAIN[0];
-      const proxyUrlEnv = cleanProxy || "(none — direct Fireworks API)";
 
       console.group("[scan]");
       console.log("[scan] Env check:", {
-        hasApiKey,
+        endpoint,
+        usesProxy,
+        hasDevApiKey: hasApiKey,
+        hasUserSessionKey: hasUserKey,
         model: modelEnv,
-        proxyUrl: proxyUrlEnv,
         mockMode: useMock,
       });
 
       setState({
         status: "scanning",
         fileName: file ? file.name : "demo-breadboard.jpg",
-        scanningLabel: useMock ? "Analyzing with Demo Twin…" : "Analyzing with Muse Spark…",
+        scanPhase: file ? "preparing" : "reading",
+        longWait: false,
         modelShortName: null,
         elapsedSec: null,
         report: null,
         found: null,
         errorMsg: null,
+        errorDetails: null,
         errorKind: null,
+        errorStatus: null,
         collapsed: false,
+        detailsExpanded: false,
         showAllErrors: false,
         detectedExpanded: false,
         excludedComponents: [],
@@ -234,12 +280,20 @@ export function PhysicalVerifier({
         sentToEditor: false,
       });
 
+      longWaitTimerId = setTimeout(() => {
+        if (sharedState.status === "scanning") {
+          setState({ longWait: true });
+        }
+      }, 8000);
+
       try {
         let base64 = "";
         let mime = "image/jpeg";
 
         if (file) {
+          setState({ scanPhase: "preparing" });
           const prepared = await downscaleImageFile(file, 1280, 0.85);
+          if (controller.signal.aborted) return;
           base64 = prepared.base64;
           mime = prepared.mime;
           console.log(`[scan] Image downscaled: ${prepared.sizeKb} KB (${file.name})`);
@@ -250,6 +304,7 @@ export function PhysicalVerifier({
 
         let scanResult: ScanResult;
         if (useMock) {
+          setState({ scanPhase: "reading" });
           console.log("[scan] Running deterministic mockScan (1.5s)...");
           const t0 = performance.now();
           scanResult = await mockScan(expectedRef.current, controller.signal);
@@ -257,55 +312,76 @@ export function PhysicalVerifier({
           scanResult.elapsedSec = Number(((performance.now() - t0) / 1000).toFixed(1));
           console.log("[scan] Mock scan result:", scanResult);
         } else {
-          if (!isVisionConfigured()) {
-            throw new ScanError(
-              "unconfigured",
-              "Vision API not configured: missing VITE_FIREWORKS_API_KEY and VITE_VISION_PROXY_URL.",
-            );
-          }
           scanResult = await analyzePhysicalCircuit(
             base64,
             mime,
             controller.signal,
-            (progress) => {
-              setState({
-                scanningLabel: progress.label,
-                modelShortName: progress.shortName,
-              });
+            (phase) => {
+              setState({ scanPhase: phase });
             },
           );
         }
 
         if (controller.signal.aborted) return;
 
+        setState({ scanPhase: "checking" });
         const verification = verifyScan(expectedRef.current, scanResult);
         console.log("[scan] Verification report:", verification);
+        clearLongWaitTimer();
         setState({
           status: "done",
+          longWait: false,
           found: scanResult,
           report: verification,
           modelShortName: scanResult.modelShortName ?? "muse-spark-open",
           elapsedSec: scanResult.elapsedSec ?? null,
           errorMsg: null,
+          errorDetails: null,
           errorKind: null,
+          errorStatus: null,
         });
       } catch (err: unknown) {
+        clearLongWaitTimer();
         if (err instanceof DOMException && err.name === "AbortError") {
-          console.warn("[scan] Scan aborted by user or new scan request.");
+          console.warn("[scan] Scan cancelled by user.");
+          if (activeAbortController === controller) {
+            setState({ status: "idle", longWait: false });
+          }
           return;
         }
         const kind = err instanceof ScanError ? err.kind : "network";
+        const status = err instanceof ScanError ? (err.status ?? null) : null;
+        const details = err instanceof ScanError ? (err.details ?? null) : null;
         const message =
-          err instanceof Error
-            ? err.message
-            : "Unexpected error while analyzing the breadboard image.";
-        console.error("[scan] Scan failed:", { kind, message });
+          status === 429 || kind === "rate_limit"
+            ? "Demo limit reached. Add your own Fireworks key to keep scanning."
+            : status === 413 || kind === "image_too_large"
+              ? "Image too large, try a smaller photo"
+              : status === 503 || kind === "unconfigured"
+                ? "Scanning is temporarily unavailable. Try Demo Twin."
+                : status === 401
+                  ? "Invalid API key"
+                  : "Couldn't read the circuit. Try a clearer photo or Demo Twin.";
+
+        console.error("[scan] Scan failed:", {
+          kind,
+          status,
+          message,
+          details: details ?? (err instanceof Error ? err.message : String(err)),
+        });
         setState({
           status: "error",
+          longWait: false,
           errorKind: kind,
+          errorStatus: status,
           errorMsg: message,
+          errorDetails:
+            details ?? (err instanceof Error && err.message !== message ? err.message : null),
+          keyDisclosureOpen:
+            status === 429 || kind === "rate_limit" ? true : sharedState.keyDisclosureOpen,
           report: null,
           collapsed: false,
+          detailsExpanded: false,
         });
       } finally {
         console.groupEnd();
@@ -318,12 +394,12 @@ export function PhysicalVerifier({
   );
 
   const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const { apiKey, proxyUrl } = getVisionEnv();
+    const { endpoint, usesProxy } = getVisionEnv();
     console.log("[scan] Scan Breadboard button clicked:", {
       shiftKey: e.shiftKey,
       mockMode: state.mockMode,
-      hasApiKey: Boolean(apiKey),
-      hasProxyUrl: Boolean(proxyUrl),
+      endpoint,
+      usesProxy,
       fileInputReady: Boolean(fileInputRef.current),
     });
 
@@ -340,18 +416,6 @@ export function PhysicalVerifier({
 
     if (state.status === "scanning") return;
 
-    // If Vision API is not configured and not in Demo mode, immediately show the "Vision API not configured" HUD
-    if (!isVisionConfigured() && !state.mockMode) {
-      setState({
-        status: "error",
-        errorKind: "unconfigured",
-        errorMsg:
-          "Vision API not configured: missing VITE_FIREWORKS_API_KEY and VITE_VISION_PROXY_URL. Set VITE_FIREWORKS_API_KEY in .env or click 'Verify with Demo Twin'.",
-        report: null,
-        collapsed: false,
-      });
-    }
-
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
       fileInputRef.current.click();
@@ -359,7 +423,8 @@ export function PhysicalVerifier({
       setState({
         status: "error",
         errorKind: "parse",
-        errorMsg: "File input element ref was not mounted.",
+        errorMsg: "Couldn't read the circuit. Try a clearer photo or Demo Twin.",
+        errorDetails: "File input element ref was not mounted.",
         collapsed: false,
       });
     }
@@ -377,21 +442,21 @@ export function PhysicalVerifier({
   };
 
   const handleDismiss = () => {
-    if (activeAbortController) {
-      activeAbortController.abort();
-      activeAbortController = null;
-    }
-    setState({
-      status: "idle",
-      report: null,
-      found: null,
-      errorMsg: null,
-      errorKind: null,
-      generatedSketch: null,
-      deterministicCode: null,
-      explaining: false,
-      explainStatusMsg: null,
-    });
+    handleCancelOrDismiss();
+  };
+
+  const handleSaveUserKey = () => {
+    const clean = userKeyDraft.trim();
+    if (!clean) return;
+    setUserSessionKey(clean);
+    setUserKeyDraft("");
+    setState({ hasSavedUserKey: true, keyDisclosureOpen: false });
+  };
+
+  const handleRemoveUserKey = () => {
+    clearUserSessionKey();
+    setUserKeyDraft("");
+    setState({ hasSavedUserKey: false });
   };
 
   const getFilteredFound = (): ScanResult | null => {
@@ -538,8 +603,8 @@ export function PhysicalVerifier({
       >
         {state.status === "scanning" ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#06b6d4] shrink-0" />
-            <span>Scanning…</span>
+            <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin text-slate-300 shrink-0" />
+            <span>Thinking…</span>
           </>
         ) : state.status === "done" && state.report ? (
           <>
@@ -624,6 +689,14 @@ export function PhysicalVerifier({
 
     const isLockedForCodegen = state.generatedSketch !== null;
 
+    const phaseSubtext = state.longWait
+      ? "Still thinking… this can take up to a minute"
+      : state.scanPhase === "preparing"
+        ? "Preparing your photo"
+        : state.scanPhase === "checking"
+          ? "Checking against the digital twin"
+          : "Reading the circuit";
+
     return (
       <div
         role="status"
@@ -639,9 +712,9 @@ export function PhysicalVerifier({
               isDark ? "border-slate-800" : "border-slate-200"
             }`}
           >
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 h-5">
               {state.status === "scanning" && (
-                <Loader2 className="w-4 h-4 text-[#06b6d4] animate-spin shrink-0" />
+                <Loader2 className="w-4 h-4 text-slate-300 motion-safe:animate-spin shrink-0" />
               )}
               {state.status === "done" && state.report?.passed && (
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -655,7 +728,7 @@ export function PhysicalVerifier({
 
               <span className="font-semibold text-xs truncate">
                 {state.status === "scanning"
-                  ? state.scanningLabel
+                  ? "Thinking…"
                   : state.status === "done" && state.report?.passed
                     ? "Physical Twin Verified"
                     : state.status === "done"
@@ -707,7 +780,7 @@ export function PhysicalVerifier({
           {/* Card Body */}
           {!state.collapsed && (
             <div className="p-3.5 space-y-3 text-xs overflow-y-auto">
-              {/* Thumbnail + File metadata */}
+              {/* Thumbnail + File metadata (no model names shown here) */}
               {state.previewUrl && (
                 <div className={`flex items-center gap-2.5 p-2 rounded-lg border ${mutedBg}`}>
                   <img
@@ -720,27 +793,39 @@ export function PhysicalVerifier({
                       {state.fileName ?? "breadboard.jpg"}
                     </div>
                     <div className={`text-[10px] ${subtleText}`}>
-                      {state.mockMode
-                        ? "Simulated SAM 3.1 + Vision graph"
-                        : `${state.modelShortName ?? "muse-spark-open"} · 1280px JPEG`}
+                      {state.mockMode ? "Demo Twin · 1280px JPEG" : "1280px JPEG"}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Scanning state */}
+              {/* Calm Thinking state with real phase subtext + Cancel button */}
               {state.status === "scanning" && (
-                <div className="space-y-1.5">
-                  <p className={subtleText}>{state.scanningLabel}</p>
-                  <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                    <div className="h-full w-2/3 bg-[#06b6d4] rounded-full animate-pulse" />
-                  </div>
+                <div className="flex items-center justify-between gap-2 min-h-[24px]">
+                  <p
+                    key={phaseSubtext}
+                    className={`text-[11px] h-5 flex items-center truncate motion-safe:transition-opacity motion-safe:duration-150 ${subtleText}`}
+                  >
+                    {phaseSubtext}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCancelOrDismiss}
+                    aria-label="Cancel breadboard scan"
+                    className={`px-2 py-1 rounded-md border text-[11px] font-medium shrink-0 transition cursor-pointer ${
+                      isDark
+                        ? "border-slate-700 bg-slate-800/90 hover:bg-slate-700 text-slate-200"
+                        : "border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800"
+                    }`}
+                  >
+                    Cancel
+                  </button>
                 </div>
               )}
 
               {/* Done: PASS */}
               {state.status === "done" && state.report && state.report.passed && (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div className="space-y-1">
@@ -753,18 +838,12 @@ export function PhysicalVerifier({
                       </p>
                     </div>
                   </div>
-                  {state.modelShortName && (
-                    <div className={`text-[10px] font-mono ${subtleText}`}>
-                      Model: {state.modelShortName}
-                      {state.elapsedSec !== null ? ` · ${state.elapsedSec}s` : ""}
-                    </div>
-                  )}
                 </div>
               )}
 
               {/* Done: FAIL (Grouped: Components / Wiring / Power) */}
               {state.status === "done" && state.report && !state.report.passed && (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="p-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-200 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-rose-300">Mismatch detected</span>
@@ -776,8 +855,26 @@ export function PhysicalVerifier({
                     {renderErrorGroup("Wiring", state.report.groupedErrors.wiring)}
                     {renderErrorGroup("Power", state.report.groupedErrors.power)}
                   </div>
-                  {state.modelShortName && (
-                    <div className={`text-[10px] font-mono ${subtleText}`}>
+                </div>
+              )}
+
+              {/* Collapsed "Details" row in result HUD for Model & timing */}
+              {state.status === "done" && state.modelShortName && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setState({ detailsExpanded: !state.detailsExpanded })}
+                    className={`inline-flex items-center gap-1 text-[10px] ${subtleText} hover:underline cursor-pointer`}
+                  >
+                    {state.detailsExpanded ? (
+                      <ChevronUp className="w-3 h-3" />
+                    ) : (
+                      <ChevronDown className="w-3 h-3" />
+                    )}
+                    <span>Details</span>
+                  </button>
+                  {state.detailsExpanded && (
+                    <div className={`mt-1 text-[10px] font-mono ${subtleText}`}>
                       Model: {state.modelShortName}
                       {state.elapsedSec !== null ? ` · ${state.elapsedSec}s` : ""}
                     </div>
@@ -1060,19 +1157,121 @@ export function PhysicalVerifier({
                 </div>
               )}
 
-              {/* Error state (API / Parse / Unconfigured) */}
+              {/* Error state (friendly message + collapsed per-model Details) */}
               {state.status === "error" && (
-                <div className="space-y-2.5">
-                  <div className={`p-2.5 rounded-lg border ${mutedBg} space-y-1`}>
+                <div className="space-y-2">
+                  <div className={`p-2.5 rounded-lg border ${mutedBg} space-y-1.5`}>
                     <div className="font-medium text-amber-300">
-                      {!visionConfigured || state.errorKind === "unconfigured"
-                        ? "Vision API not configured"
-                        : "Could not complete vision scan"}
+                      {state.errorStatus === 503 || state.errorKind === "unconfigured"
+                        ? "Server is not configured"
+                        : state.errorStatus === 429 || state.errorKind === "rate_limit"
+                          ? "Demo limit reached"
+                          : state.errorStatus === 413 || state.errorKind === "image_too_large"
+                            ? "Photo too large"
+                            : "Scan issue"}
                     </div>
-                    <p className={`text-[11px] leading-relaxed break-words font-mono ${subtleText}`}>
-                      {state.errorMsg ?? "Check your network connection or API configuration."}
+                    <p className={`text-[11px] leading-relaxed break-words ${subtleText}`}>
+                      {state.errorMsg ??
+                        "Couldn't read the circuit. Try a clearer photo or Demo Twin."}
                     </p>
+                    {state.errorDetails && (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setState({ detailsExpanded: !state.detailsExpanded })}
+                          className={`inline-flex items-center gap-1 text-[10px] ${subtleText} hover:underline cursor-pointer`}
+                        >
+                          {state.detailsExpanded ? (
+                            <ChevronUp className="w-3 h-3" />
+                          ) : (
+                            <ChevronDown className="w-3 h-3" />
+                          )}
+                          <span>Details</span>
+                        </button>
+                        {state.detailsExpanded && (
+                          <div className={`mt-1 text-[10px] font-mono break-words ${subtleText}`}>
+                            {state.errorDetails}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
+                </div>
+              )}
+
+              {/* "Use my own key" disclosure (sessionStorage only) */}
+              {state.status !== "scanning" && (
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setState({ keyDisclosureOpen: !state.keyDisclosureOpen })}
+                      className={`inline-flex items-center gap-1 text-[10px] ${subtleText} hover:underline cursor-pointer`}
+                    >
+                      {state.keyDisclosureOpen ? (
+                        <ChevronUp className="w-3 h-3" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3" />
+                      )}
+                      <span>
+                        {state.hasSavedUserKey ? "Use my own key (saved)" : "Use my own key"}
+                      </span>
+                    </button>
+                    {state.hasSavedUserKey && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveUserKey}
+                        className="text-[10px] text-rose-400 hover:underline cursor-pointer"
+                      >
+                        Remove key
+                      </button>
+                    )}
+                  </div>
+
+                  {state.keyDisclosureOpen && (
+                    <div className={`p-2 rounded-lg border space-y-1.5 ${mutedBg}`}>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="password"
+                          value={userKeyDraft}
+                          onChange={(e) => setUserKeyDraft(e.target.value)}
+                          placeholder="Fireworks API key"
+                          autoComplete="off"
+                          aria-label="Fireworks API key"
+                          className={`flex-1 min-w-0 px-2 py-1 rounded border text-[11px] font-mono focus:outline-none focus:border-[#06b6d4] ${
+                            isDark
+                              ? "bg-slate-950 border-slate-700 text-slate-100"
+                              : "bg-white border-slate-300 text-slate-900"
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveUserKey}
+                          disabled={!userKeyDraft.trim()}
+                          className="px-2.5 py-1 rounded bg-[#06b6d4] hover:bg-cyan-400 disabled:opacity-45 text-slate-950 font-semibold text-[11px] transition cursor-pointer shrink-0"
+                        >
+                          Save
+                        </button>
+                        {state.hasSavedUserKey && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveUserKey}
+                            className={`px-2 py-1 rounded border text-[11px] transition cursor-pointer shrink-0 ${
+                              isDark
+                                ? "border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200"
+                                : "border-slate-300 bg-white hover:bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            Remove key
+                          </button>
+                        )}
+                      </div>
+                      <p className={`text-[10px] leading-snug ${subtleText}`}>
+                        Your key stays in this browser tab and is sent only to our proxy to call
+                        Fireworks.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

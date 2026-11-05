@@ -68,6 +68,11 @@ pnpm test
 pnpm dev
 ```
 
+### Physical Breadboard Vision Scan Configuration
+
+- **Local Development**: Uses `.env` (optional `VITE_VISION_PROXY_URL` or local dev key).
+- **Production (Vercel)**: Set the Vercel environment variable `FIREWORKS_API_KEY` (**no `VITE_` prefix**). The Serverless Function at `api/scan.ts` injects the key server-side so visitors can scan breadboards immediately with zero client-side API keys in the bundle. Visitors can also optionally provide their own temporary session key (`x-user-key`) via the **Use my own key** disclosure in the Scan HUD.
+
 ---
 
 ## Ecosystem Comparison (Doc §16)

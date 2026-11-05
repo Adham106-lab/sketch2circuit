@@ -4,6 +4,8 @@
  * Pure TypeScript logic (zero React dependencies).
  */
 
+import { extractSketchPinSignature } from "./codegen.js";
+
 export type ScanComponentType =
   | "led"
   | "resistor"
@@ -35,12 +37,7 @@ export interface ScanResult {
   elapsedSec?: number;
 }
 
-export interface ScanProgressUpdate {
-  model: string;
-  shortName: string;
-  label: string;
-  isFallback: boolean;
-}
+export type ScanPhase = "preparing" | "reading" | "checking";
 
 export interface GroupedScanErrors {
   components: string[];
@@ -63,18 +60,23 @@ export type ScanErrorKind =
   | "empty"
   | "unconfigured"
   | "timeout"
-  | "image_too_large";
+  | "image_too_large"
+  | "rate_limit";
 
 export class ScanError extends Error {
   public readonly kind: ScanErrorKind;
   public readonly status?: number;
+  public readonly details?: string;
 
-  constructor(kind: ScanErrorKind, message: string, status?: number) {
+  constructor(kind: ScanErrorKind, message: string, status?: number, details?: string) {
     super(message);
     this.name = "ScanError";
     this.kind = kind;
     if (status !== undefined) {
       this.status = status;
+    }
+    if (details !== undefined) {
+      this.details = details;
     }
   }
 }
@@ -91,6 +93,7 @@ const FIREWORKS_CHAT_URL = "https://api.fireworks.ai/inference/v1/chat/completio
 const MAX_BASE64_BYTES = 2 * 1024 * 1024; // ~2 MB limit
 const MUSE_TIMEOUT_MS = 60_000; // 60s for Muse Spark
 const DEFAULT_TIMEOUT_MS = 30_000; // 30s for other models
+const USER_KEY_SESSION_STORAGE = "s2c_fireworks_user_key";
 
 const SYSTEM_PROMPT =
   "Analyze this breadboard image. Identify all electronic components (LEDs, resistors, ultrasonic sensors) and wire connections (e.g., Wire from Pin 13 to Breadboard J15). Return ONLY a valid JSON object with keys `components` and `connections`. No markdown, no explanations.\n\n" +
@@ -102,12 +105,36 @@ export function shortModelName(modelId: string): string {
   return idx >= 0 ? modelId.slice(idx + 1) : modelId;
 }
 
-export function friendlyModelDisplay(modelId: string): string {
-  const short = shortModelName(modelId);
-  if (short.includes("muse-spark")) return "Muse Spark";
-  if (short.startsWith("qwen")) return `Qwen (${short})`;
-  if (short.startsWith("glm")) return `GLM (${short})`;
-  return short;
+export function getUserSessionKey(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return (window.sessionStorage.getItem(USER_KEY_SESSION_STORAGE) ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
+export function setUserSessionKey(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const clean = key.trim();
+    if (clean) {
+      window.sessionStorage.setItem(USER_KEY_SESSION_STORAGE, clean);
+    } else {
+      window.sessionStorage.removeItem(USER_KEY_SESSION_STORAGE);
+    }
+  } catch {
+    // Ignore storage errors in restricted frames
+  }
+}
+
+export function clearUserSessionKey(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(USER_KEY_SESSION_STORAGE);
+  } catch {
+    // Ignore storage errors in restricted frames
+  }
 }
 
 function cleanEnvString(val: string | undefined): string {
@@ -117,13 +144,40 @@ function cleanEnvString(val: string | undefined): string {
   return stripped;
 }
 
-export function getVisionEnv(): { apiKey: string; model: string; proxyUrl: string } {
-  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
-  const rawProxy = cleanEnvString(env.VITE_VISION_PROXY_URL);
+export interface VisionEndpointConfig {
+  endpoint: string;
+  usesProxy: boolean;
+  apiKey: string;
+  model: string;
+  proxyUrl: string;
+}
+
+/**
+ * Resolves the Vision chat endpoint in strict order:
+ * 1. `VITE_VISION_PROXY_URL` if set
+ * 2. `/api/scan` when `import.meta.env.PROD` is true (same-origin Vercel Function)
+ * 3. Direct Fireworks URL with `VITE_FIREWORKS_API_KEY` ONLY in `import.meta.env.DEV`
+ * Never uses the direct URL or a VITE key in production builds.
+ */
+export function getVisionEnv(): VisionEndpointConfig {
+  const env = (import.meta as unknown as { env?: Record<string, unknown> }).env ?? {};
+  const isProd = Boolean(env.PROD);
+  const isDev = Boolean(env.DEV);
+
+  const rawProxy = cleanEnvString(
+    typeof env.VITE_VISION_PROXY_URL === "string" ? env.VITE_VISION_PROXY_URL : undefined,
+  );
   const proxyUrl = /^https?:\/\/|^\/api\//i.test(rawProxy) ? rawProxy : "";
-  const apiKey = cleanEnvString(env.VITE_FIREWORKS_API_KEY);
-  const rawModel = cleanEnvString(env.VITE_VISION_MODEL);
-  // Ignore removed legacy llama-v3p2 env values that may linger in container process.env
+  const devApiKey =
+    isDev && !isProd
+      ? cleanEnvString(
+          typeof env.VITE_FIREWORKS_API_KEY === "string" ? env.VITE_FIREWORKS_API_KEY : undefined,
+        )
+      : "";
+
+  const rawModel = cleanEnvString(
+    typeof env.VITE_VISION_MODEL === "string" ? env.VITE_VISION_MODEL : undefined,
+  );
   const validRawModel = /llama-v3p2/i.test(rawModel) ? "" : rawModel;
   const model =
     validRawModel &&
@@ -132,31 +186,43 @@ export function getVisionEnv(): { apiKey: string; model: string; proxyUrl: strin
     !validRawModel.startsWith("firerouter/")
       ? `accounts/fireworks/models/${validRawModel}`
       : validRawModel;
-  return { apiKey, model, proxyUrl };
+
+  if (proxyUrl) {
+    return { endpoint: proxyUrl, usesProxy: true, apiKey: "", model, proxyUrl };
+  }
+  if (isProd) {
+    return { endpoint: "/api/scan", usesProxy: true, apiKey: "", model, proxyUrl: "/api/scan" };
+  }
+  if (isDev && devApiKey) {
+    return {
+      endpoint: FIREWORKS_CHAT_URL,
+      usesProxy: false,
+      apiKey: devApiKey,
+      model,
+      proxyUrl: "",
+    };
+  }
+  return { endpoint: "/api/scan", usesProxy: true, apiKey: "", model, proxyUrl: "/api/scan" };
 }
 
-/**
- * Checks whether a Vision API endpoint or Fireworks API key is configured.
- */
 export function isVisionConfigured(): boolean {
-  const { apiKey, proxyUrl } = getVisionEnv();
-  return proxyUrl.length > 0 || apiKey.length > 0;
+  return true;
 }
 
 let cachedAllModelIds: Set<string> | null = null;
 let sessionWinnerModel: string | null = null;
 
 /**
- * Queries `GET https://api.fireworks.ai/inference/v1/models` once per session,
+ * Queries `GET https://api.fireworks.ai/inference/v1/models` once per session (dev direct mode only),
  * caches the returned model IDs in memory, and returns the available IDs.
  */
 export async function listVisionModels(signal?: AbortSignal): Promise<string[]> {
+  const { usesProxy, apiKey } = getVisionEnv();
+  if (usesProxy || !apiKey) {
+    return [];
+  }
   if (cachedAllModelIds && cachedAllModelIds.size > 0) {
     return Array.from(cachedAllModelIds);
-  }
-  const { apiKey } = getVisionEnv();
-  if (!apiKey) {
-    return [];
   }
 
   try {
@@ -213,10 +279,10 @@ export async function listVisionModels(signal?: AbortSignal): Promise<string[]> 
  * 1. Session winner (if one already succeeded this session)
  * 2. VITE_VISION_MODEL (if set)
  * 3. VISION_MODEL_CHAIN
- * Filtered against GET /inference/v1/models (unless the list call failed).
+ * Skips GET /models discovery when calling the proxy.
  */
 export async function resolveVisionModelChain(signal?: AbortSignal): Promise<string[]> {
-  const { model: envModel } = getVisionEnv();
+  const { model: envModel, usesProxy } = getVisionEnv();
   const ordered: string[] = [];
   const pushUnique = (id: string | null | undefined) => {
     const clean = (id ?? "").trim();
@@ -233,6 +299,11 @@ export async function resolveVisionModelChain(signal?: AbortSignal): Promise<str
   }
   for (const m of VISION_MODEL_CHAIN) {
     pushUnique(m);
+  }
+
+  if (usesProxy) {
+    console.log("[scan] Proxy mode active — using VISION_MODEL_CHAIN directly:", ordered);
+    return ordered;
   }
 
   const catalogIds = await listVisionModels(signal);
@@ -313,6 +384,8 @@ export async function downscaleImageFile(
     if (lastBase64.length > MAX_BASE64_BYTES) {
       throw new ScanError(
         "image_too_large",
+        "Image too large, try a smaller photo",
+        413,
         `image too large (${sizeKb} KB after downscaling; max ~2048 KB).`,
       );
     }
@@ -469,23 +542,17 @@ interface ModelAttemptParams {
 }
 
 /**
- * Calls Fireworks AI Vision across `VISION_MODEL_CHAIN` (or configured proxy URL)
- * to inspect a physical breadboard photo, automatically falling back on model errors.
+ * Calls the configured proxy (`/api/scan` or `VITE_VISION_PROXY_URL`) or dev Fireworks endpoint
+ * across `VISION_MODEL_CHAIN` to inspect a physical breadboard photo, silently falling back on model errors.
  */
 export async function analyzePhysicalCircuit(
   base64Image: string,
   mime: string,
   signal?: AbortSignal,
-  onProgress?: (update: ScanProgressUpdate) => void,
+  onPhase?: (phase: ScanPhase) => void,
 ): Promise<ScanResult> {
-  const { apiKey, proxyUrl } = getVisionEnv();
-
-  if (!proxyUrl && !apiKey) {
-    throw new ScanError(
-      "unconfigured",
-      "Vision API not configured: missing VITE_FIREWORKS_API_KEY and VITE_VISION_PROXY_URL.",
-    );
-  }
+  const { endpoint, usesProxy, apiKey } = getVisionEnv();
+  const userKey = getUserSessionKey();
 
   const rawBase64 = base64Image.startsWith("data:")
     ? base64Image.slice(base64Image.indexOf(",") + 1)
@@ -494,6 +561,8 @@ export async function analyzePhysicalCircuit(
   if (rawBase64.length > MAX_BASE64_BYTES) {
     throw new ScanError(
       "image_too_large",
+      "Image too large, try a smaller photo",
+      413,
       `image too large (${approxKb} KB exceeds ~2048 KB limit).`,
     );
   }
@@ -502,9 +571,10 @@ export async function analyzePhysicalCircuit(
     ? base64Image
     : `data:${mime || "image/jpeg"};base64,${base64Image}`;
 
+  onPhase?.("reading");
+
   const chain = await resolveVisionModelChain(signal);
-  const primaryEndpoint = proxyUrl || FIREWORKS_CHAT_URL;
-  const failures: Array<{ model: string; reason: string }> = [];
+  const failures: Array<{ model: string; reason: string; status?: number }> = [];
 
   const executePost = async (
     params: ModelAttemptParams,
@@ -557,10 +627,17 @@ export async function analyzePhysicalCircuit(
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (apiKey) {
+      if (usesProxy) {
+        if (userKey) {
+          headers["x-user-key"] = userKey;
+        }
+      } else if (apiKey) {
         headers.Authorization = `Bearer ${apiKey}`;
       }
       console.log("[scan] Request start:", {
+        endpoint: url,
+        usesProxy,
+        hasUserKey: Boolean(userKey),
         model: params.model,
         maxTokens: params.maxTokens,
         reasoningEffort: params.includeReasoningEffort ? "low" : undefined,
@@ -579,21 +656,13 @@ export async function analyzePhysicalCircuit(
     };
 
     try {
-      return await doFetch(primaryEndpoint);
+      return await doFetch(endpoint);
     } catch (err: unknown) {
       if (signal?.aborted) {
         throw new DOMException("Scan aborted", "AbortError");
       }
       if (timedOut) {
         throw new ScanError("timeout", "timeout");
-      }
-      if (primaryEndpoint !== proxyUrl && proxyUrl) {
-        console.warn("[scan] Direct request failed (network/CORS), retrying via proxy:", proxyUrl);
-        try {
-          return await doFetch(proxyUrl);
-        } catch {
-          throw new ScanError("network", "network/CORS");
-        }
       }
       throw new ScanError("network", "network/CORS");
     } finally {
@@ -604,28 +673,37 @@ export async function analyzePhysicalCircuit(
     }
   };
 
+  const checkTerminalProxyError = (status: number, bodyText: string) => {
+    if (status === 401) {
+      throw new ScanError("http", "Invalid API key", 401);
+    }
+    if (status === 413) {
+      throw new ScanError(
+        "image_too_large",
+        "Image too large, try a smaller photo",
+        413,
+        bodyText.slice(0, 200),
+      );
+    }
+    if (status === 503) {
+      throw new ScanError(
+        "unconfigured",
+        "Scanning is temporarily unavailable. Try Demo Twin.",
+        503,
+        bodyText.slice(0, 200),
+      );
+    }
+  };
+
   for (let idx = 0; idx < chain.length; idx++) {
     const model = chain[idx]!;
     const shortName = shortModelName(model);
     const isMuse = model.includes("muse-spark");
     const timeoutMs = isMuse ? MUSE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
-    const prevModel = idx > 0 ? chain[idx - 1]! : null;
 
-    const progressLabel =
-      idx === 0
-        ? isMuse
-          ? "Analyzing with Muse Spark…"
-          : `Analyzing with ${shortName}…`
-        : `${friendlyModelDisplay(prevModel!)} unavailable, trying ${
-            shortName.startsWith("qwen") ? "Qwen" : friendlyModelDisplay(model)
-          }…`;
-
-    onProgress?.({
-      model,
-      shortName,
-      label: progressLabel,
-      isFallback: idx > 0,
-    });
+    if (idx > 0) {
+      console.log(`[scan] Silent fallback to model ${idx + 1}/${chain.length}: ${shortName}`);
+    }
 
     const modelStartMs = performance.now();
     let params: ModelAttemptParams = {
@@ -638,11 +716,7 @@ export async function analyzePhysicalCircuit(
 
     try {
       let { response, bodyText } = await executePost(params);
-
-      // Stop immediately on 401 (bad API key) — do NOT move on to other models
-      if (response.status === 401) {
-        throw new ScanError("http", "Invalid API key", 401);
-      }
+      checkTerminalProxyError(response.status, bodyText);
 
       // On 400 mentioning reasoning_effort or response_format, retry the same model once without that param
       if (
@@ -655,16 +729,22 @@ export async function analyzePhysicalCircuit(
         const dropFormat = /response_format|json_object|response format/i.test(bodyText);
         params = {
           ...params,
-          includeReasoningEffort: dropReasoning ? false : params.includeReasoningEffort && !dropFormat ? false : params.includeReasoningEffort,
-          includeResponseFormat: dropFormat ? false : params.includeResponseFormat && !dropReasoning ? false : params.includeResponseFormat,
+          includeReasoningEffort: dropReasoning
+            ? false
+            : params.includeReasoningEffort && !dropFormat
+              ? false
+              : params.includeReasoningEffort,
+          includeResponseFormat: dropFormat
+            ? false
+            : params.includeResponseFormat && !dropReasoning
+              ? false
+              : params.includeResponseFormat,
         };
         console.warn("[scan] Retrying 400 without unsupported param:", params);
         const retry400 = await executePost(params);
         response = retry400.response;
         bodyText = retry400.bodyText;
-        if (response.status === 401) {
-          throw new ScanError("http", "Invalid API key", 401);
-        }
+        checkTerminalProxyError(response.status, bodyText);
       }
 
       // On 429 or 5xx, retry the same model once before moving on
@@ -673,15 +753,14 @@ export async function analyzePhysicalCircuit(
         const retry5xx = await executePost(params);
         response = retry5xx.response;
         bodyText = retry5xx.bodyText;
-        if (response.status === 401) {
-          throw new ScanError("http", "Invalid API key", 401);
-        }
+        checkTerminalProxyError(response.status, bodyText);
       }
 
       if (!response.ok) {
         failures.push({
           model: shortName,
           reason: `${response.status}`,
+          status: response.status,
         });
         console.warn(
           `[scan] Model ${shortName} failed with HTTP ${response.status}:`,
@@ -742,9 +821,7 @@ export async function analyzePhysicalCircuit(
           ...params,
           maxTokens: 8192,
         });
-        if (retry8k.response.status === 401) {
-          throw new ScanError("http", "Invalid API key", 401);
-        }
+        checkTerminalProxyError(retry8k.response.status, retry8k.bodyText);
         if (retry8k.response.ok) {
           extracted = parseCompletionPayload(retry8k.bodyText);
           console.log("[scan] Muse Spark 8192-token retry output:", {
@@ -776,7 +853,10 @@ export async function analyzePhysicalCircuit(
       if (err instanceof DOMException && err.name === "AbortError") {
         throw err;
       }
-      if (err instanceof ScanError && err.status === 401) {
+      if (
+        err instanceof ScanError &&
+        (err.status === 401 || err.status === 413 || err.status === 503)
+      ) {
         throw err;
       }
       const reason =
@@ -789,7 +869,11 @@ export async function analyzePhysicalCircuit(
                 ? "empty content"
                 : err.message
           : "error";
-      failures.push({ model: shortName, reason });
+      failures.push({
+        model: shortName,
+        reason,
+        ...(err instanceof ScanError && err.status !== undefined ? { status: err.status } : {}),
+      });
       console.warn(`[scan] Model ${shortName} failed (${reason}); trying next in chain...`);
     }
   }
@@ -798,7 +882,22 @@ export async function analyzePhysicalCircuit(
     failures.length > 0
       ? failures.map((f) => `${f.model}: ${f.reason}`).join(" · ")
       : "All vision models in chain failed.";
-  throw new ScanError("http", summary);
+
+  if (failures.some((f) => f.status === 429)) {
+    throw new ScanError(
+      "rate_limit",
+      "Demo limit reached. Add your own Fireworks key to keep scanning.",
+      429,
+      summary,
+    );
+  }
+
+  throw new ScanError(
+    "http",
+    "Couldn't read the circuit. Try a clearer photo or Demo Twin.",
+    undefined,
+    summary,
+  );
 }
 
 /**
@@ -1101,16 +1200,11 @@ export async function explainSketchWithMuseSpark(
   deterministicCode: string,
   externalSignal?: AbortSignal,
 ): Promise<{ code: string; modelShortName: string }> {
-  const { apiKey, proxyUrl } = getVisionEnv();
-  if (!apiKey && !proxyUrl) {
-    throw new ScanError("unconfigured", "Vision API not configured");
-  }
-
-  const { extractSketchPinSignature } = await import("./codegen.js");
+  const { endpoint, usesProxy, apiKey } = getVisionEnv();
+  const userKey = getUserSessionKey();
   const expectedPinSig = extractSketchPinSignature(deterministicCode);
 
   const chain = await resolveVisionModelChain(externalSignal);
-  const endpoint = proxyUrl || FIREWORKS_CHAT_URL;
 
   for (const model of chain) {
     const shortName = shortModelName(model);
@@ -1124,7 +1218,11 @@ export async function explainSketchWithMuseSpark(
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (apiKey) {
+      if (usesProxy) {
+        if (userKey) {
+          headers["x-user-key"] = userKey;
+        }
+      } else if (apiKey) {
         headers.Authorization = `Bearer ${apiKey}`;
       }
 
