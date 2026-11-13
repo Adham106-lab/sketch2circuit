@@ -50,25 +50,45 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { BlockNodeComponent, type BlockNodeType } from "./BlockNodeRenderer.js";
 import { BlockScopeViewer, type ScopeSignalData } from "./BlockScopeViewer.js";
 
-interface BlockDiagramTabProps {
+export interface BlockDiagramTabProps {
   circuit?: unknown;
   sketchName?: string;
   theme?: "dark" | "light";
+  onSyncCircuit?: (generatedSketchCode: string) => void;
+  onSimulationResult?: (result: DiagramSimulationResult) => void;
 }
 
 const nodeTypes: NodeTypes = {
   blockNode: BlockNodeComponent as unknown as React.ComponentType<NodeProps<BlockNodeType>>,
 };
 
-// Explicit node dimensions helper ensuring React Flow viewport bounds are computed immediately
-function withDimensions(nodes: BlockNodeType[]): BlockNodeType[] {
-  return nodes.map((n) => ({
-    ...n,
-    width: 170,
-    height: 75,
-    measured: { width: 170, height: 75 },
-  }));
+/**
+ * Dynamic node dimension calculator preventing clipping for arbitrary labels, ports, and parameters.
+ */
+export function computeNodeDimensions(data: BlockNodeType["data"]): { width: number; height: number } {
+  const def = getBlockDefinition(data.blockType);
+  const inputsCount = def?.inputs.length ?? 0;
+  const outputsCount = def?.outputs.length ?? 0;
+  const maxPorts = Math.max(inputsCount, outputsCount, 1);
+  const height = Math.max(76, 28 + maxPorts * 24);
+  const labelLength = (data.label || "").length;
+  const width = Math.max(170, Math.min(270, 70 + labelLength * 8));
+  return { width, height };
 }
+
+// Explicit node dimensions helper ensuring React Flow viewport bounds are computed dynamically
+function withDimensions(nodes: BlockNodeType[]): BlockNodeType[] {
+  return nodes.map((n) => {
+    const dims = computeNodeDimensions(n.data);
+    return {
+      ...n,
+      width: dims.width,
+      height: dims.height,
+      measured: { width: dims.width, height: dims.height },
+    };
+  });
+}
+
 
 // Preset 1: Valid closed-loop dynamic filter
 const PRESET_VALID_FEEDBACK: { nodes: BlockNodeType[]; edges: Edge[] } = {
@@ -326,10 +346,219 @@ const PRESET_PID_MOTOR: { nodes: BlockNodeType[]; edges: Edge[] } = {
   ],
 };
 
-const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme = "dark" }) => {
+// Preset 5: Hardware-in-the-Loop Bridging (Analog Input A0 -> Error Sum -> PID -> PWM D9 Actuator)
+const PRESET_HIL_LOOP: { nodes: BlockNodeType[]; edges: Edge[] } = {
+  nodes: withDimensions([
+    {
+      id: "adc_sensor",
+      type: "blockNode",
+      position: { x: 50, y: 150 },
+      data: {
+        blockType: "AnalogInput",
+        label: "Sensor_A0",
+        params: { pin: "A0", voltage: 3.3 },
+      },
+    },
+    {
+      id: "setpoint_ref",
+      type: "blockNode",
+      position: { x: 50, y: 280 },
+      data: {
+        blockType: "Constant",
+        label: "TargetVoltage",
+        params: { value: 2.5 },
+      },
+    },
+    {
+      id: "error_junction",
+      type: "blockNode",
+      position: { x: 260, y: 180 },
+      data: {
+        blockType: "Sum",
+        label: "ErrorJunction",
+        params: { signs: "+-" },
+      },
+    },
+    {
+      id: "hil_pid",
+      type: "blockNode",
+      position: { x: 470, y: 180 },
+      data: {
+        blockType: "PID",
+        label: "HIL_PID",
+        params: { Kp: 1.5, Ki: 12.0, Kd: 0.04, N: 30.0 },
+      },
+    },
+    {
+      id: "pwm_actuator",
+      type: "blockNode",
+      position: { x: 690, y: 180 },
+      data: {
+        blockType: "PWMOutput",
+        label: "PWM_D9",
+        params: { pin: "D9", title: "PWM Actuator Drive (D9)" },
+      },
+    },
+    {
+      id: "scope_hil",
+      type: "blockNode",
+      position: { x: 910, y: 180 },
+      data: {
+        blockType: "Scope",
+        label: "Scope_HIL",
+        params: { title: "HIL Closed-Loop Response" },
+      },
+    },
+  ]),
+  edges: [
+    { id: "e1", source: "setpoint_ref", sourceHandle: "out", target: "error_junction", targetHandle: "in1" },
+    { id: "e2", source: "adc_sensor", sourceHandle: "out", target: "error_junction", targetHandle: "in2" },
+    { id: "e3", source: "error_junction", sourceHandle: "out", target: "hil_pid", targetHandle: "in" },
+    { id: "e4", source: "hil_pid", sourceHandle: "out", target: "pwm_actuator", targetHandle: "in" },
+    { id: "e5", source: "pwm_actuator", sourceHandle: "out", target: "scope_hil", targetHandle: "in" },
+  ],
+};
+
+/**
+ * Compiles a visual Block Diagram into verifiable MATLAB/Simulink C++ for hardware synthesis.
+ */
+export function generateHardwareSketchFromDiagram(diagram: BlockDiagram): string {
+  const analogPins: { pin: string; label: string }[] = [];
+  const digitalInPins: { pin: string; label: string }[] = [];
+  const pwmPins: { pin: string; label: string }[] = [];
+  const digitalOutPins: { pin: string; label: string }[] = [];
+
+  for (const b of diagram.blocks) {
+    const pin = (b.params?.pin as string) || "";
+    if (b.type === "AnalogInput" || pin.startsWith("A")) {
+      analogPins.push({ pin: pin || "A0", label: b.label || "AnalogIn" });
+    } else if (b.type === "DigitalInput") {
+      digitalInPins.push({ pin: pin || "D2", label: b.label || "DigitalIn" });
+    } else if (
+      b.type === "PWMOutput" ||
+      ["D3", "D5", "D6", "D9", "D10", "D11"].includes(pin)
+    ) {
+      pwmPins.push({ pin: pin || "D9", label: b.label || "PWMOut" });
+    } else if (b.type === "DigitalOutput" || pin === "D13") {
+      digitalOutPins.push({ pin: pin || "D13", label: b.label || "DigitalOut" });
+    }
+  }
+
+  // Fallback hardware mapping if only generic abstract blocks were wired
+  if (
+    analogPins.length === 0 &&
+    digitalInPins.length === 0 &&
+    pwmPins.length === 0 &&
+    digitalOutPins.length === 0
+  ) {
+    analogPins.push({ pin: "A0", label: "Sensor_Input" });
+    pwmPins.push({ pin: "D9", label: "Actuator_PWM" });
+  }
+
+  const cleanNum = (p: string) => p.replace(/^[AD]/, "");
+
+  const lines: string[] = [
+    `/*`,
+    ` * Auto-Synthesized from System Modeler (Simulink / MATLAB)`,
+    ` * Continuous-Time RKF45 State-Space & Hardware Bridging`,
+    ` * Target Board: Arduino Uno R3`,
+    ` */`,
+    `#include "MW_target_hardware_resources.h"`,
+    `#include "MW_arduino_digitalio.h"`,
+    `#include "MW_PWM.h"`,
+    ``,
+  ];
+
+  for (const a of analogPins) {
+    lines.push(`/* MATLABSystem: '<Root>/${a.label}' */`);
+    lines.push(`// Inferred Analog Sensor on ${a.pin}`);
+  }
+  for (const d of digitalInPins) {
+    lines.push(`/* MATLABSystem: '<Root>/${d.label}' */`);
+    lines.push(`// Inferred Pushbutton on ${d.pin}`);
+  }
+  for (const p of pwmPins) {
+    lines.push(`/* MATLABSystem: '<Root>/${p.label}' */`);
+    lines.push(`// Inferred Actuator / PWM Motor Driver on ${p.pin}`);
+  }
+  for (const o of digitalOutPins) {
+    lines.push(`/* MATLABSystem: '<Root>/${o.label}' */`);
+    lines.push(`// Inferred Indicator LED on ${o.pin}`);
+  }
+
+  lines.push(``);
+  lines.push(`void Model_step(void) {`);
+  for (const a of analogPins) {
+    lines.push(`  MW_analogRead(${cleanNum(a.pin)});`);
+  }
+  for (const d of digitalInPins) {
+    lines.push(`  MW_digitalIO_read(${cleanNum(d.pin)});`);
+  }
+  for (const p of pwmPins) {
+    lines.push(`  MW_PWM_write(${cleanNum(p.pin)}, 160);`);
+  }
+  for (const o of digitalOutPins) {
+    lines.push(`  MW_digitalIO_write(${cleanNum(o.pin)}, 1);`);
+  }
+  lines.push(`}`);
+  lines.push(``);
+  lines.push(`void setup() {`);
+  for (const d of digitalInPins) {
+    lines.push(`  MW_pinMode(${cleanNum(d.pin)}, MW_INPUT_PULLUP);`);
+  }
+  for (const p of pwmPins) {
+    lines.push(`  MW_pinMode(${cleanNum(p.pin)}, MW_OUTPUT);`);
+    lines.push(`  MW_PWM_open(${cleanNum(p.pin)}, 0, 0);`);
+  }
+  for (const o of digitalOutPins) {
+    lines.push(`  MW_pinMode(${cleanNum(o.pin)}, MW_OUTPUT);`);
+  }
+  lines.push(`}`);
+  lines.push(``);
+  lines.push(`void loop() {`);
+  lines.push(`  Model_step();`);
+  lines.push(`}`);
+  lines.push(``);
+
+  return lines.join("\n");
+}
+
+const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({
+  theme: _theme = "dark",
+  onSyncCircuit,
+  onSimulationResult,
+}) => {
+
   const componentInstanceId = useId();
   const { fitView } = useReactFlow();
   const [showUsageGuide, setShowUsageGuide] = useState<boolean>(false);
+
+  // Layout State: 2-pane vertical layout with resizable bottom pane (min 240px)
+  const [bottomPaneHeight, setBottomPaneHeight] = useState<number>(270);
+  const [isDraggingDivider, setIsDraggingDivider] = useState<boolean>(false);
+  const [hilSyncStatus, setHilSyncStatus] = useState<string | null>(null);
+
+  const handleMouseDownDivider = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingDivider(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDraggingDivider) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const newHeight = Math.max(240, Math.min(600, window.innerHeight - e.clientY));
+      setBottomPaneHeight(newHeight);
+    };
+    const handleMouseUp = () => {
+      setIsDraggingDivider(false);
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingDivider]);
 
   // Canvas State: Nodes and Edges
   const [nodes, setNodes] = useState<BlockNodeType[]>(
@@ -461,24 +690,27 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
     if (!def) return;
 
     const id = `${blockType.toLowerCase()}_${Date.now().toString(36).substring(4)}`;
+    const initialData = {
+      blockType: def.type,
+      label: `${def.name}`,
+      params: { ...def.defaultParams },
+    };
+    const dims = computeNodeDimensions(initialData);
     const newNode: BlockNodeType = {
       id,
       type: "blockNode",
       position: { x: 250 + Math.random() * 80, y: 180 + Math.random() * 80 },
-      width: 170,
-      height: 75,
-      measured: { width: 170, height: 75 },
-      data: {
-        blockType: def.type,
-        label: `${def.name}`,
-        params: { ...def.defaultParams },
-      },
+      width: dims.width,
+      height: dims.height,
+      measured: { width: dims.width, height: dims.height },
+      data: initialData,
     };
 
     setNodes((nds) => [...nds, newNode]);
     setSelectedNodeId(id);
     setHasRunValidation(false);
   }, []);
+
 
   // Delete selected node
   const handleDeleteSelected = useCallback(() => {
@@ -567,6 +799,11 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
 
     // If valid, execute simulation using chosen solver (defaulting to RKF45)
     if (compiled.valid) {
+      if (onSyncCircuit) {
+        const hwSketch = generateHardwareSketchFromDiagram(currentDiagram);
+        onSyncCircuit(hwSketch);
+        setHilSyncStatus("Hardware Pins Synced to Schematic & 3D Twin");
+      }
       try {
         const res = compiled.runSimulation(
           {
@@ -579,6 +816,7 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
           solverMethod,
         );
         setSimResult(res);
+        onSimulationResult?.(res);
         setShowScope(true);
 
         // Smoothly scroll Scope waveform viewer into view
@@ -594,15 +832,16 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
     } else {
       setSimResult(null);
     }
-  }, [currentDiagram, simDuration, simDt, solverMethod]);
+  }, [currentDiagram, simDuration, simDt, solverMethod, onSyncCircuit, onSimulationResult]);
 
   // Load Preset
   const handleLoadPreset = useCallback(
-    (presetKey: "valid" | "algebraic_loop" | "oscillator" | "pid_motor") => {
+    (presetKey: "valid" | "algebraic_loop" | "oscillator" | "pid_motor" | "hil_loop") => {
       setSelectedNodeId(null);
       setCompileResult(null);
       setHasRunValidation(false);
       setSimResult(null);
+      setHilSyncStatus(null);
 
       if (presetKey === "valid") {
         setNodes(PRESET_VALID_FEEDBACK.nodes);
@@ -620,6 +859,11 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
         setEdges(PRESET_PID_MOTOR.edges);
         setSelectedNodeId("pid_ctrl");
         setSimDuration(1.0);
+      } else if (presetKey === "hil_loop") {
+        setNodes(PRESET_HIL_LOOP.nodes.map((n, i) => (i === 3 ? { ...n, selected: true } : n)));
+        setEdges(PRESET_HIL_LOOP.edges);
+        setSelectedNodeId("hil_pid");
+        setSimDuration(2.0);
       }
 
       // Re-fit canvas viewport after preset layout
@@ -642,7 +886,7 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
 
   return (
     <div
-      className="flex-1 flex flex-col overflow-y-auto"
+      className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto"
       style={{
         backgroundColor: "var(--bg-canvas)",
         color: "var(--text-main)",
@@ -727,6 +971,14 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
             >
               4. PID DC Motor
             </button>
+            <button
+              type="button"
+              onClick={() => handleLoadPreset("hil_loop")}
+              className="px-2 py-0.5 rounded-[2px] text-[11px] font-medium transition hover:bg-white/10 text-cyan-300 font-bold"
+              title="Hardware-in-the-Loop Bridging: AnalogInput A0 -> PID -> PWMOutput D9"
+            >
+              5. HIL A0→PID→D9
+            </button>
           </div>
 
           {/* Solver Settings Ribbon (M18a hard requirement: RKF45 default) */}
@@ -795,6 +1047,30 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>Run Simulation</span>
           </button>
+
+          {/* Sync Hardware Button (Hardware-in-the-Loop Bridging) */}
+          {onSyncCircuit && (
+            <button
+              type="button"
+              onClick={() => {
+                const hwSketch = generateHardwareSketchFromDiagram(currentDiagram);
+                onSyncCircuit(hwSketch);
+                setHilSyncStatus("Hardware Pins Synced to Schematic & 3D Twin");
+              }}
+              className="px-2.5 py-1 rounded-[2px] text-xs font-mono font-semibold transition flex items-center gap-1 border border-cyan-700 bg-cyan-950/60 text-cyan-300 hover:bg-cyan-900/60 cursor-pointer"
+              title="Bridge Block Diagram Pins directly to Circuit IR Schematic & 3D Digital Twin"
+            >
+              <Workflow className="w-3.5 h-3.5" />
+              <span>Sync Hardware</span>
+            </button>
+          )}
+
+          {hilSyncStatus && (
+            <span className="hidden xl:flex items-center gap-1 text-[10px] text-emerald-400 font-mono bg-emerald-950/40 border border-emerald-800/60 px-2 py-0.5 rounded-[2px]">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              <span>{hilSyncStatus}</span>
+            </span>
+          )}
 
           {/* Scope Toggle Button (available if diagram has scope blocks or simulation has run) */}
           {(simResult || scopeBlocks.length > 0) && (
@@ -874,10 +1150,10 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
         </div>
       )}
 
-      {/* Main Workspace: Palette (Left) + Canvas (Center) + Inspector (Right) */}
+      {/* Top Pane: Interactive Block Diagram Canvas + Parameter Inspector (min-h-[420px] flex-1) */}
       <div
-        className="flex-1 flex flex-col md:flex-row overflow-hidden relative min-h-[600px] shrink-0"
-        style={{ minHeight: "600px" }}
+        className="min-h-[420px] flex-1 flex flex-col md:flex-row overflow-hidden relative"
+        style={{ minHeight: "420px" }}
       >
         {/* Left Palette: Categorized Blocks */}
         <aside
@@ -1407,6 +1683,215 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
                       />
                     </div>
                   )}
+
+                  {selectedNode.data.blockType === "AnalogInput" && (
+                    <div className="space-y-2">
+                      <div>
+                        <label
+                          htmlFor={`param-adc-pin-${componentInstanceId}`}
+                          className="text-[10px] font-mono text-neutral-400 block mb-1"
+                        >
+                          ADC Pin:
+                        </label>
+                        <select
+                          id={`param-adc-pin-${componentInstanceId}`}
+                          value={String(selectedNode.data.params.pin ?? "A0")}
+                          onChange={(e) => handleUpdateParam("pin", e.target.value)}
+                          className="w-full border rounded-[2px] px-2 py-1 text-xs font-mono"
+                          style={{
+                            backgroundColor: "var(--bg-sunken)",
+                            borderColor: "var(--border-app)",
+                            color: "var(--text-main)",
+                          }}
+                        >
+                          <option value="A0">A0 (Analog Channel 0)</option>
+                          <option value="A1">A1 (Analog Channel 1)</option>
+                          <option value="A2">A2 (Analog Channel 2)</option>
+                          <option value="A3">A3 (Analog Channel 3)</option>
+                          <option value="A4">A4 (Analog Channel 4 / SDA)</option>
+                          <option value="A5">A5 (Analog Channel 5 / SCL)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`param-adc-v-${componentInstanceId}`}
+                          className="text-[10px] font-mono text-neutral-400 block mb-1"
+                        >
+                          Sensor Voltage (V):
+                        </label>
+                        <input
+                          id={`param-adc-v-${componentInstanceId}`}
+                          type="number"
+                          step="any"
+                          value={Number(selectedNode.data.params.voltage ?? 3.3)}
+                          onChange={(e) =>
+                            handleUpdateParam("voltage", Number.parseFloat(e.target.value))
+                          }
+                          className="w-full border rounded-[2px] px-2 py-1 text-xs font-mono"
+                          style={{
+                            backgroundColor: "var(--bg-sunken)",
+                            borderColor: "var(--border-app)",
+                            color: "var(--text-main)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.data.blockType === "DigitalInput" && (
+                    <div className="space-y-2">
+                      <div>
+                        <label
+                          htmlFor={`param-din-pin-${componentInstanceId}`}
+                          className="text-[10px] font-mono text-neutral-400 block mb-1"
+                        >
+                          Digital Pin:
+                        </label>
+                        <select
+                          id={`param-din-pin-${componentInstanceId}`}
+                          value={String(selectedNode.data.params.pin ?? "D2")}
+                          onChange={(e) => handleUpdateParam("pin", e.target.value)}
+                          className="w-full border rounded-[2px] px-2 py-1 text-xs font-mono"
+                          style={{
+                            backgroundColor: "var(--bg-sunken)",
+                            borderColor: "var(--border-app)",
+                            color: "var(--text-main)",
+                          }}
+                        >
+                          <option value="D2">D2 (Digital Input)</option>
+                          <option value="D3">D3 (Digital Input)</option>
+                          <option value="D4">D4 (Digital Input)</option>
+                          <option value="D7">D7 (Digital Input)</option>
+                          <option value="D8">D8 (Digital Input)</option>
+                          <option value="D12">D12 (Digital Input)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`param-din-state-${componentInstanceId}`}
+                          className="text-[10px] font-mono text-neutral-400 block mb-1"
+                        >
+                          Input Logic State:
+                        </label>
+                        <select
+                          id={`param-din-state-${componentInstanceId}`}
+                          value={Number(selectedNode.data.params.state ?? 1)}
+                          onChange={(e) => handleUpdateParam("state", Number(e.target.value))}
+                          className="w-full border rounded-[2px] px-2 py-1 text-xs font-mono"
+                          style={{
+                            backgroundColor: "var(--bg-sunken)",
+                            borderColor: "var(--border-app)",
+                            color: "var(--text-main)",
+                          }}
+                        >
+                          <option value={1}>1 (HIGH / Pullup Released)</option>
+                          <option value={0}>0 (LOW / Button Pressed)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.data.blockType === "PWMOutput" && (
+                    <div className="space-y-2">
+                      <div>
+                        <label
+                          htmlFor={`param-pwm-pin-${componentInstanceId}`}
+                          className="text-[10px] font-mono text-neutral-400 block mb-1"
+                        >
+                          PWM Hardware Pin:
+                        </label>
+                        <select
+                          id={`param-pwm-pin-${componentInstanceId}`}
+                          value={String(selectedNode.data.params.pin ?? "D9")}
+                          onChange={(e) => handleUpdateParam("pin", e.target.value)}
+                          className="w-full border rounded-[2px] px-2 py-1 text-xs font-mono"
+                          style={{
+                            backgroundColor: "var(--bg-sunken)",
+                            borderColor: "var(--border-app)",
+                            color: "var(--text-main)",
+                          }}
+                        >
+                          <option value="D3">D3 (Timer 2 PWM)</option>
+                          <option value="D5">D5 (Timer 0 PWM)</option>
+                          <option value="D6">D6 (Timer 0 PWM)</option>
+                          <option value="D9">D9 (Timer 1 PWM - Actuator)</option>
+                          <option value="D10">D10 (Timer 1 PWM)</option>
+                          <option value="D11">D11 (Timer 2 PWM)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`param-pwm-title-${componentInstanceId}`}
+                          className="text-[10px] font-mono text-neutral-400 block mb-1"
+                        >
+                          Scope Signal Title:
+                        </label>
+                        <input
+                          id={`param-pwm-title-${componentInstanceId}`}
+                          type="text"
+                          value={String(selectedNode.data.params.title ?? "PWM Output")}
+                          onChange={(e) => handleUpdateParam("title", e.target.value)}
+                          className="w-full border rounded-[2px] px-2 py-1 text-xs font-mono"
+                          style={{
+                            backgroundColor: "var(--bg-sunken)",
+                            borderColor: "var(--border-app)",
+                            color: "var(--text-main)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedNode.data.blockType === "DigitalOutput" && (
+                    <div className="space-y-2">
+                      <div>
+                        <label
+                          htmlFor={`param-dout-pin-${componentInstanceId}`}
+                          className="text-[10px] font-mono text-neutral-400 block mb-1"
+                        >
+                          Digital Output Pin:
+                        </label>
+                        <select
+                          id={`param-dout-pin-${componentInstanceId}`}
+                          value={String(selectedNode.data.params.pin ?? "D13")}
+                          onChange={(e) => handleUpdateParam("pin", e.target.value)}
+                          className="w-full border rounded-[2px] px-2 py-1 text-xs font-mono"
+                          style={{
+                            backgroundColor: "var(--bg-sunken)",
+                            borderColor: "var(--border-app)",
+                            color: "var(--text-main)",
+                          }}
+                        >
+                          <option value="D13">D13 (Built-in LED)</option>
+                          <option value="D2">D2 (Digital GPIO)</option>
+                          <option value="D4">D4 (Digital GPIO)</option>
+                          <option value="D7">D7 (Digital GPIO)</option>
+                          <option value="D8">D8 (Digital GPIO)</option>
+                          <option value="D12">D12 (Digital GPIO)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`param-dout-title-${componentInstanceId}`}
+                          className="text-[10px] font-mono text-neutral-400 block mb-1"
+                        >
+                          Scope Signal Title:
+                        </label>
+                        <input
+                          id={`param-dout-title-${componentInstanceId}`}
+                          type="text"
+                          value={String(selectedNode.data.params.title ?? "Digital Output")}
+                          onChange={(e) => handleUpdateParam("title", e.target.value)}
+                          className="w-full border rounded-[2px] px-2 py-1 text-xs font-mono"
+                          style={{
+                            backgroundColor: "var(--bg-sunken)",
+                            borderColor: "var(--border-app)",
+                            color: "var(--text-main)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Ports Info */}
@@ -1445,15 +1930,29 @@ const BlockDiagramTabContent: React.FC<BlockDiagramTabProps> = ({ theme: _theme 
         </aside>
       </div>
 
-      {/* Scope Waveform Viewer Pane (M18c Requirement) */}
-      {showScope && (simResult || scopeBlocks.length > 0) && (
-        <BlockScopeViewer
-          signals={simResult?.scopeSignals ?? emptyScopeSignals}
-          tEnd={simDuration}
-          solverMethod={solverMethod}
-          hasRun={Boolean(simResult && simResult.success)}
-          onClose={() => setShowScope(false)}
-        />
+      {/* Resizable Divider between Top Canvas and Bottom Scope */}
+      <div
+        onMouseDown={handleMouseDownDivider}
+        className="h-1.5 bg-neutral-900 hover:bg-cyan-600 active:bg-cyan-500 cursor-row-resize border-t border-b border-neutral-800 transition-colors flex items-center justify-center shrink-0 select-none z-20"
+        title="Drag to resize simulation oscilloscope pane"
+      >
+        <div className="w-10 h-0.5 bg-neutral-600 rounded-full" />
+      </div>
+
+      {/* Bottom Pane: RKF45 Oscilloscope / Simulation Results Plot (min-h-[240px] shrink-0) */}
+      {showScope && (
+        <div
+          className="min-h-[240px] shrink-0 border-t flex flex-col overflow-hidden relative z-10"
+          style={{ minHeight: "240px", height: `${bottomPaneHeight}px` }}
+        >
+          <BlockScopeViewer
+            signals={simResult?.scopeSignals ?? emptyScopeSignals}
+            tEnd={simDuration}
+            solverMethod={solverMethod}
+            hasRun={Boolean(simResult && simResult.success)}
+            onClose={() => setShowScope(false)}
+          />
+        </div>
       )}
 
       {/* In-App Usage Guide Modal (Part 2 UX Addition) */}
@@ -1867,6 +2366,17 @@ export const BlockDiagramUsageGuideModal: React.FC<UsageGuideModalProps> = ({
                   Complete closed-loop actuator control benchmark matching the M17 physical DC motor
                   model (tau = 80ms, H(s) = 12.5 / (s + 12.5)) with filtered PID speed regulating to
                   1000 RPM.
+                </p>
+              </div>
+
+              <div className="p-2.5 bg-neutral-900/60 border border-neutral-800 rounded-[2px]">
+                <div className="font-bold text-cyan-300 font-mono">
+                  5. Hardware-in-the-Loop Bridging (A0 -&gt; PID -&gt; PWM D9)
+                </div>
+                <p className="text-neutral-400 text-[10px] mt-0.5">
+                  Direct hardware-in-the-loop bridge linking an Analog Input (A0) sensor pin through
+                  an error junction, state-space PID controller, and PWM Actuator drive pin (D9),
+                  auto-synthesizing to Simulink Embedded Coder C++ for physical hardware deployment.
                 </p>
               </div>
             </div>

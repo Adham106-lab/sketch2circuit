@@ -13,8 +13,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@s2c/arduino": "workspace:*",
     "@s2c/circuit-json": "workspace:*",
     "@s2c/core": "workspace:*",
-    "@s2c/parts": "workspace:*"
+    "@s2c/parts": "workspace:*",
+    "@s2c/rules": "workspace:*"
   }
 }

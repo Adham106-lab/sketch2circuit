@@ -108,4 +108,52 @@ describe("M13 Three.js 3D Hierarchy Builder", () => {
     });
     expect(totalObjects).toBeGreaterThan(100);
   });
+
+  it("builds smooth CatmullRom TubeGeometry splines and Dupont boots for jumper wires", () => {
+    const fixturePath = path.resolve(
+      __dirname,
+      "../../../fixtures/sketches/user_multi_peripheral.ino",
+    );
+    const userCode = fs.readFileSync(fixturePath, "utf-8");
+    const syn = synthesizeSketch(userCode, { boardId: "ARDUINO_UNO_R3" });
+    const plc = placeCircuit(syn.circuit, ARDUINO_UNO_R3_SHIELD_OUTLINE);
+    const route = routeCircuit(plc.layout, syn.circuit);
+    const scene3d = buildPcbScene3D(route.layout, syn.circuit);
+    const hierarchy = buildThreePcbGroup(scene3d);
+
+    const servoMeshes = hierarchy.componentMeshes.get("SERVO1")!;
+    expect(servoMeshes).toBeDefined();
+
+    // Find the wire spline group
+    const wireGroups = servoMeshes.filter(
+      (m) => m instanceof THREE.Group && m.name.includes("Servo Harness"),
+    );
+    expect(wireGroups.length).toBeGreaterThan(0);
+
+    for (const wg of wireGroups) {
+      // 1. Spline mesh with TubeGeometry
+      const splineMesh = wg.children.find(
+        (c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.TubeGeometry,
+      ) as THREE.Mesh;
+      expect(splineMesh, "Wire has TubeGeometry spline mesh").toBeDefined();
+
+      // 2. Black rectangular Dupont connector boots at the endpoints
+      const boots = wg.children.filter(
+        (c) =>
+          c instanceof THREE.Mesh &&
+          c.geometry instanceof THREE.BoxGeometry &&
+          c.name.includes("Dupont Boot"),
+      );
+      expect(boots.length, "Has start and end Dupont connector boots").toBe(2);
+
+      for (const boot of boots) {
+        const mat = (boot as THREE.Mesh).material as THREE.MeshStandardMaterial;
+        expect(mat.color.getHexString()).toBe("111827");
+        const geom = (boot as THREE.Mesh).geometry as THREE.BoxGeometry;
+        expect(geom.parameters.width).toBeCloseTo(2.54, 1);
+        expect(geom.parameters.height).toBeCloseTo(2.54, 1);
+        expect(geom.parameters.depth).toBeGreaterThan(5);
+      }
+    }
+  });
 });

@@ -397,6 +397,13 @@ export class CircuitBuilder {
   }
 
   /**
+   * Returns a component by ID, or undefined if not registered.
+   */
+  getComponent(id: string): Component | undefined {
+    return this.components.get(id);
+  }
+
+  /**
    * Attaches provenance to a component or net.
    */
   attachProvenance(targetId: string, provenance: Provenance): this {

@@ -118,12 +118,12 @@ export const BlockScopeViewer: React.FC<BlockScopeViewerProps> = ({
       id="block-scope-viewer"
       data-testid="block-scope-viewer"
       className={`border-t shrink-0 flex flex-col transition-all duration-200 select-none ${
-        isExpanded ? "h-[450px]" : "h-[320px]"
+        isExpanded ? "h-[380px]" : "h-full min-h-[240px]"
       }`}
       style={{
         borderColor: "var(--border-strong)",
         backgroundColor: "#080c14",
-        minHeight: isExpanded ? "450px" : "320px",
+        minHeight: isExpanded ? "380px" : "240px",
       }}
     >
       {/* Scope Header Bar */}

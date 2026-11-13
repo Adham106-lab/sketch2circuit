@@ -99,6 +99,16 @@ export const BlockNodeComponent: React.FC<NodeProps<BlockNodeType>> = ({ data, s
         return `T = ${params.delayTime ?? 0.1}s`;
       case "Saturation":
         return `[${params.lowerLimit ?? -1}, ${params.upperLimit ?? 1}]`;
+      case "AnalogInput":
+        return `Pin ${params.pin ?? "A0"} (${params.voltage ?? 3.3}V)`;
+      case "DigitalInput":
+        return `Pin ${params.pin ?? "D2"} (IN)`;
+      case "PWMOutput":
+        return `Pin ${params.pin ?? "D9"} (PWM)`;
+      case "DigitalOutput":
+        return `Pin ${params.pin ?? "D13"} (OUT)`;
+      case "Scope":
+        return (params.title as string) || "Scope Signal";
       default:
         return "";
     }
@@ -106,7 +116,7 @@ export const BlockNodeComponent: React.FC<NodeProps<BlockNodeType>> = ({ data, s
 
   return (
     <div
-      className={`relative min-w-[150px] w-[170px] rounded-[3px] border shadow-md transition-all select-none ${
+      className={`relative min-w-[170px] max-w-[280px] w-auto min-h-[72px] h-auto rounded-[3px] border shadow-md transition-all select-none ${
         isOffending
           ? "border-red-500 ring-2 ring-red-500/50 bg-red-950/40"
           : selected

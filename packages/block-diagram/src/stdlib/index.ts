@@ -7,8 +7,15 @@ import { registerBlock } from "../blocks.js";
 import { PidControllerBlock } from "./composite.js";
 import { DelayBlock, IntegratorBlock, TransferFunctionBlock } from "./dynamics.js";
 import { AbsBlock, GainBlock, ProductBlock, SaturationBlock, SumBlock } from "./math.js";
-import { ScopeBlock } from "./sink.js";
-import { ConstantBlock, RampBlock, SineBlock, StepBlock } from "./sources.js";
+import { DigitalOutputBlock, PwmOutputBlock, ScopeBlock } from "./sink.js";
+import {
+  AnalogInputBlock,
+  ConstantBlock,
+  DigitalInputBlock,
+  RampBlock,
+  SineBlock,
+  StepBlock,
+} from "./sources.js";
 
 export function registerAllStdlibBlocks(): void {
   // Sources
@@ -16,6 +23,8 @@ export function registerAllStdlibBlocks(): void {
   registerBlock(StepBlock);
   registerBlock(RampBlock);
   registerBlock(SineBlock);
+  registerBlock(AnalogInputBlock);
+  registerBlock(DigitalInputBlock);
 
   // Math
   registerBlock(GainBlock);
@@ -34,6 +43,8 @@ export function registerAllStdlibBlocks(): void {
 
   // Sinks
   registerBlock(ScopeBlock);
+  registerBlock(PwmOutputBlock);
+  registerBlock(DigitalOutputBlock);
 }
 
 // Auto-register stdlib blocks upon import
@@ -41,12 +52,16 @@ registerAllStdlibBlocks();
 
 export {
   AbsBlock,
+  AnalogInputBlock,
   ConstantBlock,
   DelayBlock,
+  DigitalInputBlock,
+  DigitalOutputBlock,
   GainBlock,
   IntegratorBlock,
   PidControllerBlock,
   ProductBlock,
+  PwmOutputBlock,
   RampBlock,
   SaturationBlock,
   ScopeBlock,
@@ -55,3 +70,4 @@ export {
   SumBlock,
   TransferFunctionBlock,
 };
+

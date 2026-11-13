@@ -4,5 +4,6 @@
  */
 
 export * from "./ato-generator.js";
+export * from "./ato-parser.js";
 export * from "./part-map.js";
 export * from "./types.js";

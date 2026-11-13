@@ -22,6 +22,7 @@ export interface SimulationTabProps {
   circuit: Circuit;
   sketchName?: string;
   theme?: "dark" | "light";
+  onSimulationResult?: (result: any) => void;
 }
 
 type SimMode = "presets" | "custom_algebraic" | "custom_ode";
@@ -30,6 +31,7 @@ export const SimulationTab: React.FC<SimulationTabProps> = ({
   circuit,
   sketchName = "SynthesizedCircuit",
   theme: _theme = "dark",
+  onSimulationResult,
 }) => {
   const [activeMode, setActiveMode] = useState<SimMode>("presets");
 
@@ -153,6 +155,14 @@ export const SimulationTab: React.FC<SimulationTabProps> = ({
     odeDt,
     odeSolverMethod,
   ]);
+
+  useEffect(() => {
+    if (activeMode === "custom_ode" && customOdeResult.success) {
+      onSimulationResult?.(customOdeResult);
+    } else if (activeMode === "presets" && activePreset) {
+      onSimulationResult?.(activePreset);
+    }
+  }, [activeMode, customOdeResult, activePreset, onSimulationResult]);
 
   // -------------------------------------------------------------
   // Active Data Stream for Chart Renderer

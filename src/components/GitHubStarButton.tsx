@@ -82,23 +82,15 @@ export function GitHubStarButton({ className = "" }: { className?: string }) {
       href={GITHUB_REPO_URL}
       target="_blank"
       rel="noopener noreferrer"
-      title="Star sketch2circuit on GitHub"
-      aria-label="Star sketch2circuit on GitHub"
-      className={`group relative inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-[4px] font-sans text-xs font-semibold
-        border border-amber-500/40 hover:border-amber-400
-        bg-zinc-900/90 hover:bg-zinc-800 text-white
-        transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-amber-500/10
-        active:scale-[0.98] select-none no-underline shrink-0 ${className}`}
+      title="Star Sketch2Circuit V2 on GitHub"
+      aria-label="Star Sketch2Circuit V2 on GitHub"
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-sans text-xs font-medium
+        border border-slate-800 hover:border-slate-700
+        bg-transparent hover:bg-slate-800/60 text-slate-300 hover:text-white
+        transition-colors select-none no-underline shrink-0 ${className}`}
     >
-      {/* Subtle glowing halo on hover */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -inset-px rounded-[4px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-[2px] bg-amber-500/20"
-      />
-
-      {/* GitHub Octocat Icon */}
       <svg
-        className="w-3.5 h-3.5 text-zinc-300 group-hover:text-white transition-colors shrink-0"
+        className="w-3.5 h-3.5 text-slate-400 shrink-0"
         viewBox="0 0 24 24"
         fill="currentColor"
         aria-hidden="true"
@@ -110,33 +102,15 @@ export function GitHubStarButton({ className = "" }: { className?: string }) {
         />
       </svg>
 
-      {/* Amber Star Icon with pulse / scale animation on hover */}
-      <svg
-        className="w-3.5 h-3.5 text-amber-400 fill-amber-400 group-hover:scale-125 group-hover:rotate-12 transition-transform duration-200 shrink-0"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-      </svg>
-
-      {/* Text Label: Responsive ("Star on GitHub" on desktop/tablet, "Star" on small mobile) */}
-      <span className="font-medium tracking-tight">
+      <span>
         <span className="hidden sm:inline">Star on GitHub</span>
         <span className="sm:hidden">Star</span>
       </span>
 
-      {/* Live Star Counter Badge (Gracefully hidden if offline or rate-limited) */}
       {formattedStars !== null && (
         <span
           data-testid="github-stars-badge"
-          className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-semibold
-            bg-amber-500/15 border border-amber-500/30 text-amber-300
-            group-hover:bg-amber-500/25 group-hover:border-amber-400/50 transition-colors"
+          className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-slate-800 text-slate-300"
         >
           {formattedStars}
         </span>

@@ -1,16 +1,16 @@
-# sketch2circuit (`s2c`)
+# Sketch2Circuit V2 (`s2c`)
 
-> **Electronics-as-code toolchain and evidence-based Arduino sketch $\to$ circuit synthesizer with Electrical Rules Checking (ERC).**
+> **Electronics-as-code toolchain and evidence-based Arduino sketch $\to$ circuit synthesizer with Electrical Rules Checking (ERC), 2D Schematic/Breadboard Capture, and 3D Digital Twin.**
 
 [![CI](https://github.com/sketch2circuit/sketch2circuit/actions/workflows/ci.yml/badge.svg)](https://github.com/sketch2circuit/sketch2circuit/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License](https://github.com/sketch2circuit/sketch2circuit/blob/main/LICENSE)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 
 ---
 
-## What is sketch2circuit?
+## What is Sketch2Circuit V2?
 
-`sketch2circuit` bridges the gap between microcontroller software and hardware design through three tightly integrated capabilities sharing one common **Circuit IR (v0.1.0)**:
+`Sketch2Circuit V2` bridges the gap between microcontroller software and hardware design through tightly integrated capabilities sharing one common **Circuit IR (v0.1.0)**:
 
 1. **Electronics-as-Code Framework (TypeScript):** Describe electronic circuits programmatically using a fluent builder API or JSX (`<board>`, `<resistor>`, `<led>`), compiling deterministically into Circuit IR.
 2. **Electrical Rules Checking (ERC) Engine:** Statically analyze circuit schematics to detect physical errors—floating inputs, power shorts, driver contention, missing current-limiting resistors, I2C pull-up absences, and supply budget overruns—complete with quantitative explanations and computable fixes.
@@ -134,6 +134,9 @@ All project constraints, benchmark metrics, and operational rules are strictly t
 - [x] **M12: 2D PCB Layout Workbench** — Dark oscilloscope vector canvas, multi-layer toggles, ratsnest lines, and honest routing status badge.
 - [x] **M13: 3D PCB CAD Viewer** — Pure 3D scene description generator, Three.js WebGL renderer, OrbitControls, interactive View-Cube widget, and GLB export.
 - [x] **M14: Multi-Domain Playground Polish** — Integrated Schematic | PCB | 3D | BOM workbench sharing debounced synthesis, routing/DRC badges, dual themes, and documentation.
+- [x] **M15–M20: Exporters, ODE Simulation & Gerber CAM** — Atopile (`.ato`) exporter, corpus benchmark harness, adaptive RKF45 numerical ODE simulator (`@s2c/sim-engine`), Simulink-style block diagram editor (`@s2c/block-diagram`), and RS-274X Gerber/Excellon CAM archive generator (`@s2c/export-gerber`).
+- [x] **M21: 2D Orthogonal Schematic & Breadboard Companion (`@s2c/circuit2d`)** — Pure circuit normalizer (`buildCircuitModel`), E24 4-band resistor color calculator (`resistorBands`), deterministic 30-column half-size breadboard allocator (`allocateBreadboard`), pure SVG IEC/IEEE symbols (`symbols.tsx`), Manhattan orthogonal router with dedicated per-net vertical channels, hop arcs at wire crossings, true 3+ segment junction dots, and collapsible unused MCU pins (`POWER`, `DIGITAL`, `ANALOG`, `GND`).
+- [x] **M22: Sketch2Circuit V2 Workbench & Hero Actions** — Clean sans-serif UI typography with monospace reserved for code/pins/nets/values, theme-aware high-contrast wire colors (dark GND `#64748b`), non-overlapping 3D callout slots with live net/pin binding, and promoted top-bar **Auto-verify & Repair** (Muse Spark) and **Scan Breadboard** (SAM 3.1) actions.
 
 ---
 

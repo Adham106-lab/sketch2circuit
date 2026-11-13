@@ -11,7 +11,7 @@ import path from "path";
 import { describe, expect, it } from "vitest";
 import { placeCircuit } from "../src/placer.js";
 import { routeCircuit } from "../src/router.js";
-import { buildPcbScene3D } from "../src/scene3d.js";
+import { buildPcbScene3D, eiaColorBands, parseResistanceOhms } from "../src/scene3d.js";
 
 const BLINK_CODE = `
 const int ledPin = 13;
@@ -121,5 +121,84 @@ describe("M13 Pure 3D Scene-Description Generator", () => {
     const parsed = JSON.parse(jsonStr);
     expect(parsed.metadata.componentCount).toBe(16);
     expect(parsed.metadata.traceCount).toBe(routingRes.layout.traces.length);
+  });
+
+  it("calculates accurate 4-band EIA color codes for standard resistors", () => {
+    // 220 Ω -> Red, Red, Brown, Gold
+    expect(eiaColorBands(220)).toEqual(["#dc2626", "#dc2626", "#78350f", "#eab308"]);
+    expect(eiaColorBands("220Ω")).toEqual(["#dc2626", "#dc2626", "#78350f", "#eab308"]);
+
+    // 1 kΩ -> Brown, Black, Red, Gold
+    expect(eiaColorBands(1000)).toEqual(["#78350f", "#111827", "#dc2626", "#eab308"]);
+    expect(eiaColorBands("1k")).toEqual(["#78350f", "#111827", "#dc2626", "#eab308"]);
+
+    // 4.7 kΩ -> Yellow, Violet, Red, Gold
+    expect(eiaColorBands(4700)).toEqual(["#eab308", "#9333ea", "#dc2626", "#eab308"]);
+    expect(eiaColorBands("4k7")).toEqual(["#eab308", "#9333ea", "#dc2626", "#eab308"]);
+
+    // 10 kΩ -> Brown, Black, Orange, Gold
+    expect(eiaColorBands(10000)).toEqual(["#78350f", "#111827", "#ea580c", "#eab308"]);
+    expect(eiaColorBands("10kΩ")).toEqual(["#78350f", "#111827", "#ea580c", "#eab308"]);
+
+    // 22 kΩ -> Red, Red, Orange, Gold
+    expect(eiaColorBands(22000)).toEqual(["#dc2626", "#dc2626", "#ea580c", "#eab308"]);
+    expect(eiaColorBands("22k")).toEqual(["#dc2626", "#dc2626", "#ea580c", "#eab308"]);
+
+    // 330 Ω -> Orange, Orange, Brown, Gold
+    expect(eiaColorBands(330)).toEqual(["#ea580c", "#ea580c", "#78350f", "#eab308"]);
+
+    // 1 MΩ -> Brown, Black, Green, Gold
+    expect(eiaColorBands(1000000)).toEqual(["#78350f", "#111827", "#16a34a", "#eab308"]);
+
+    // Undefined fallback -> default 10k
+    expect(eiaColorBands(undefined)).toEqual(["#78350f", "#111827", "#ea580c", "#eab308"]);
+  });
+
+  it("renders resistor color bands reflecting component.properties.resistance", () => {
+    const syn = synthesizeSketch(BLINK_CODE, { boardId: "ARDUINO_UNO_R3" });
+    const rComp = syn.circuit.components.find((c) => c.id === "R1");
+    if (rComp) {
+      rComp.properties = { ...rComp.properties, resistance: 220 };
+    }
+    const plc = placeCircuit(syn.circuit, ARDUINO_UNO_R3_SHIELD_OUTLINE);
+    const route = routeCircuit(plc.layout, syn.circuit);
+    const scene = buildPcbScene3D(route.layout, syn.circuit);
+
+    const band0 = scene.components.find((c) => c.id === "R1-band-0");
+    const band1 = scene.components.find((c) => c.id === "R1-band-1");
+    const band2 = scene.components.find((c) => c.id === "R1-band-2");
+    const band3 = scene.components.find((c) => c.id === "R1-band-3");
+
+    expect(band0?.material.color).toBe("#dc2626"); // Red (2)
+    expect(band1?.material.color).toBe("#dc2626"); // Red (2)
+    expect(band2?.material.color).toBe("#78350f"); // Brown (x10^1)
+    expect(band3?.material.color).toBe("#eab308"); // Gold (5%)
+  });
+
+  it("builds jumper wire as a smooth tube node instead of 16 individual sphere segments", () => {
+    const fixturePath = path.resolve(
+      __dirname,
+      "../../../fixtures/sketches/user_multi_peripheral.ino",
+    );
+    const userCode = fs.readFileSync(fixturePath, "utf-8");
+    const syn = synthesizeSketch(userCode, { boardId: "ARDUINO_UNO_R3" });
+    const placementRes = placeCircuit(syn.circuit, ARDUINO_UNO_R3_SHIELD_OUTLINE);
+    const routingRes = routeCircuit(placementRes.layout, syn.circuit);
+    const scene = buildPcbScene3D(routingRes.layout, syn.circuit);
+
+    // No old 16-sphere chain
+    const sphereSegs = scene.components.filter((c) => c.id.includes("-seg-") || c.id.includes("-pt-"));
+    expect(sphereSegs.length).toBe(0);
+
+    // Smooth wire tube nodes exist for servo
+    const servoWires = scene.components.filter((c) => c.id.includes("SERVO1-srv-wire-"));
+    expect(servoWires.length).toBeGreaterThan(0);
+    for (const wire of servoWires) {
+      expect(wire.kind).toBe("wire");
+      expect(wire.geometry?.kind).toBe("tube");
+      if (wire.geometry?.kind === "tube") {
+        expect(wire.geometry.path.length).toBeGreaterThan(2);
+      }
+    }
   });
 });

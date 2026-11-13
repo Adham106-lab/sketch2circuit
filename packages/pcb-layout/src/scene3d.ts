@@ -50,9 +50,9 @@ export type Geometry3D =
     }
   | {
       kind: "tube";
-      path: Point[];
+      path: (Point | Vec3)[];
       radius: number;
-      layer: "top" | "bottom";
+      layer?: "top" | "bottom";
     }
   | {
       kind: "sphere";
@@ -62,7 +62,7 @@ export type Geometry3D =
 export interface Scene3DNode {
   id: string;
   name: string;
-  kind: "board" | "trace" | "via" | "pad" | "component" | "pin" | "group";
+  kind: "board" | "trace" | "via" | "pad" | "component" | "pin" | "group" | "wire";
   geometry?: Geometry3D;
   material: Material3D;
   position: Vec3;
@@ -125,6 +125,103 @@ export const PCB_3D_PALETTE = {
   ledBlue: "#3b82f6",
   ledYellow: "#eab308",
 };
+
+export const EIA_DIGIT_COLORS: Record<number, string> = {
+  0: "#111827", // Black
+  1: "#78350f", // Brown
+  2: "#dc2626", // Red
+  3: "#ea580c", // Orange
+  4: "#eab308", // Yellow
+  5: "#16a34a", // Green
+  6: "#2563eb", // Blue
+  7: "#9333ea", // Violet
+  8: "#64748b", // Gray
+  9: "#f8fafc", // White
+};
+
+export const EIA_MULTIPLIER_COLORS: Record<number, string> = {
+  [-2]: "#cbd5e1", // Silver (10^-2)
+  [-1]: "#d97706", // Gold (10^-1)
+  0: "#111827",    // Black (10^0)
+  1: "#78350f",    // Brown (10^1)
+  2: "#dc2626",    // Red (10^2)
+  3: "#ea580c",    // Orange (10^3)
+  4: "#eab308",    // Yellow (10^4)
+  5: "#16a34a",    // Green (10^5)
+  6: "#2563eb",    // Blue (10^6)
+  7: "#9333ea",    // Violet (10^7)
+  8: "#64748b",    // Gray (10^8)
+  9: "#f8fafc",    // White (10^9)
+};
+
+/**
+ * Parses numeric resistance in ohms from a number or string like "220", "10k", "4.7kΩ", "4k7".
+ */
+export function parseResistanceOhms(ohms: number | string | undefined): number {
+  if (ohms === undefined || ohms === null) return 10000;
+  if (typeof ohms === "number") return Number.isFinite(ohms) && ohms > 0 ? ohms : 10000;
+
+  const raw = String(ohms).trim();
+  if (!raw) return 10000;
+
+  // Check R-notation e.g. 4k7, 2R2, 0R1, 1M2
+  const rEmbed = raw.match(/^([0-9]+)([kKMmRrΩ])([0-9]+)?/);
+  if (rEmbed) {
+    const whole = rEmbed[1] ?? "0";
+    const prefix = rEmbed[2]!.toUpperCase();
+    const frac = rEmbed[3] ?? "0";
+    const num = parseFloat(`${whole}.${frac}`);
+    if (prefix === "K") return num * 1e3;
+    if (prefix === "M") return num * 1e6;
+    if (rEmbed[2] === "m") return num * 1e-3;
+    return num;
+  }
+
+  // Standard engineering notation e.g. "10k", "4.7kΩ", "220 ohm", "100"
+  const stdMatch = raw.match(/^([0-9]+(?:\.[0-9]+)?)\s*([kKMm])?(?:[a-zA-ZΩ\s]*)?$/);
+  if (stdMatch) {
+    const base = parseFloat(stdMatch[1]!);
+    const prefix = stdMatch[2];
+    if (prefix === "k" || prefix === "K") return base * 1e3;
+    if (prefix === "M") return base * 1e6;
+    if (prefix === "m") return base * 1e-3;
+    return base;
+  }
+
+  const num = parseFloat(raw);
+  return Number.isFinite(num) && num > 0 ? num : 10000;
+}
+
+/**
+ * Calculates accurate 4-band EIA color rings [band1, band2, multiplier, tolerance]
+ * for a resistor given resistance in ohms.
+ */
+export function eiaColorBands(ohms: number | string | undefined): [string, string, string, string] {
+  const val = parseResistanceOhms(ohms);
+
+  let exp = Math.floor(Math.log10(val));
+  let sig = Math.round(val / Math.pow(10, exp - 1));
+  if (sig >= 100) {
+    sig = Math.round(sig / 10);
+    exp += 1;
+  }
+  if (sig < 10) {
+    sig = 10;
+  }
+
+  const d1 = Math.floor(sig / 10);
+  const d2 = sig % 10;
+  const multExp = exp - 1;
+
+  const band1 = EIA_DIGIT_COLORS[d1] ?? EIA_DIGIT_COLORS[1]!;
+  const band2 = EIA_DIGIT_COLORS[d2] ?? EIA_DIGIT_COLORS[0]!;
+  const band3 =
+    EIA_MULTIPLIER_COLORS[multExp] ??
+    (multExp < 0 ? "#eab308" : EIA_DIGIT_COLORS[0]!);
+  const band4 = "#eab308"; // Standard 5% Gold tolerance band
+
+  return [band1, band2, band3, band4];
+}
 
 function rotateLocalOffset(
   placement: Placement,
@@ -191,53 +288,38 @@ function buildJumperWireNodes(
   endXY: { x: number; y: number; z: number },
   colorHex: string,
 ): Scene3DNode[] {
-  const nodes: Scene3DNode[] = [];
-  const segments = 8;
-  const peakZ = Math.max(startXY.z, endXY.z) + 8.5;
+  const segments = 16;
+  const peakZ = Math.max(startXY.z, endXY.z) + 12.0;
+  const path: Vec3[] = [];
 
-  let prevPt = startXY;
-  for (let i = 1; i <= segments; i++) {
+  for (let i = 0; i <= segments; i++) {
     const t = i / segments;
     const x = startXY.x + (endXY.x - startXY.x) * t;
     const y = startXY.y + (endXY.y - startXY.y) * t;
     // Parabolic arch in Z
     const z =
       (1 - t) * startXY.z + t * endXY.z + 4 * t * (1 - t) * (peakZ - 0.5 * (startXY.z + endXY.z));
-
-    const dx = x - prevPt.x;
-    const dy = y - prevPt.y;
-    const dz = z - prevPt.z;
-    const len = Math.hypot(dx, dy, dz);
-
-    if (len > 0.01) {
-      const midX = (prevPt.x + x) / 2;
-      const midY = (prevPt.y + y) / 2;
-      const midZ = (prevPt.z + z) / 2;
-
-      // Approximate segment with small spheres/cylinders for pure Scene3D compatibility
-      nodes.push({
-        id: `${wireId}-seg-${i}`,
-        name: wireName,
-        kind: "component",
-        geometry: { kind: "sphere", radius: 0.42 },
-        material: { color: colorHex, roughness: 0.4, metalness: 0.1 },
-        position: { x: midX, y: midY, z: midZ },
-        rotation: { x: 0, y: 0, z: 0 },
-      });
-      nodes.push({
-        id: `${wireId}-pt-${i}`,
-        name: wireName,
-        kind: "component",
-        geometry: { kind: "sphere", radius: 0.42 },
-        material: { color: colorHex, roughness: 0.4, metalness: 0.1 },
-        position: { x, y, z },
-        rotation: { x: 0, y: 0, z: 0 },
-      });
-    }
-    prevPt = { x, y, z };
+    path.push({ x, y, z });
   }
 
-  return nodes;
+  return [
+    {
+      id: wireId,
+      name: wireName,
+      kind: "wire",
+      geometry: {
+        kind: "tube",
+        path,
+        radius: 0.42,
+      },
+      material: { color: colorHex, roughness: 0.4, metalness: 0.1 },
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      metadata: {
+        role: "jumper-wire",
+      },
+    },
+  ];
 }
 
 /**
@@ -261,14 +343,23 @@ function buildComponentBodyNodes(
   const compIdLower = componentId.toLowerCase();
   const circuitComp = circuit?.components.find((c) => c.id === componentId);
   const partInfo =
-    `${componentId} ${fp.id} ${circuitComp?.partId ?? ""} ${circuitComp?.kind ?? ""}`.toLowerCase();
+    `${componentId} ${fp.id} ${circuitComp?.partNumber ?? ""} ${circuitComp?.kind ?? ""}`.toLowerCase();
+
+  const isOffBoardModule =
+    partInfo.includes("hc-sr04") ||
+    partInfo.includes("ultrasonic") ||
+    partInfo.includes("sonar") ||
+    partInfo.includes("servo") ||
+    partInfo.includes("sg90") ||
+    compIdLower.startsWith("srv");
 
   // 1. MCU / Arduino Shield Header Pins -> Render clean on-board pin headers at every pad
   if (
-    compIdLower === "u1" ||
-    partInfo.includes("arduino") ||
-    partInfo.includes("mcu") ||
-    b3d.kind === "header"
+    !isOffBoardModule &&
+    (compIdLower === "u1" ||
+      partInfo.includes("arduino") ||
+      partInfo.includes("mcu") ||
+      b3d.kind === "header")
   ) {
     return buildOnBoardHeaderForPads(componentId, fp, placement, boardThickness, "#0f172a");
   }
@@ -553,7 +644,7 @@ function buildComponentBodyNodes(
 
     nodes.push({
       id: `${componentId}-dome`,
-      name: `${componentId} LED 5mm Body`,
+      name: `${componentId} LED 5mm Dome`,
       kind: "component",
       geometry: {
         kind: "cylinder",
@@ -807,7 +898,11 @@ function buildComponentBodyNodes(
         rotation: { x: 0, y: 0, z: rotZRad + Math.PI / 2 },
       });
 
-      const bandColors = ["#ea580c", "#ea580c", "#78350f", "#eab308"];
+      const resVal =
+        circuitComp?.properties?.resistance ??
+        circuitComp?.properties?.resistanceOhms ??
+        circuitComp?.value;
+      const bandColors = eiaColorBands(resVal as number | string | undefined);
       const bandOffsets = [-bodyLen * 0.28, -bodyLen * 0.1, bodyLen * 0.08, bodyLen * 0.28];
 
       for (let bIdx = 0; bIdx < 4; bIdx++) {

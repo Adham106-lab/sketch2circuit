@@ -446,9 +446,9 @@ export function compileBlockDiagram(diagram: BlockDiagram): CompiledBlockDiagram
       }
     }
 
-    // Phase 5: Collect Scope values
+    // Phase 5: Collect Scope & Sink values
     for (const block of diagram.blocks) {
-      if (block.type === "Scope") {
+      if (block.type === "Scope" || block.type === "PWMOutput" || block.type === "DigitalOutput") {
         const inputs = resolveInputs(block.id);
         scopeValues.set(block.id, inputs.in ?? 0.0);
       }
@@ -476,7 +476,9 @@ export function compileBlockDiagram(diagram: BlockDiagram): CompiledBlockDiagram
       };
     }
 
-    const scopes = diagram.blocks.filter((b) => b.type === "Scope");
+    const scopes = diagram.blocks.filter(
+      (b) => b.type === "Scope" || b.type === "PWMOutput" || b.type === "DigitalOutput",
+    );
     const scopeSignals: Record<string, ScopeSignalSeries> = {};
     for (const sc of scopes) {
       scopeSignals[sc.id] = {

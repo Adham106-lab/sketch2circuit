@@ -99,3 +99,48 @@ export const SineBlock: BlockDefinition = {
     return { outputs: { out } };
   },
 };
+
+/**
+ * Hardware-in-the-Loop ADC Analog Input block (maps to A0-A5 pin in Circuit IR).
+ */
+export const AnalogInputBlock: BlockDefinition = {
+  type: "AnalogInput",
+  name: "Analog Input (ADC)",
+  category: "source",
+  description: "Hardware ADC input pin (A0-A5) converting physical sensor voltage to signal.",
+  inputs: [],
+  outputs: [{ id: "out", name: "Out", required: true, description: "ADC voltage level (V)" }],
+  hasDirectFeedthrough: () => false,
+  defaultParams: {
+    pin: "A0",
+    voltage: 3.3,
+  },
+  numStates: () => 0,
+  execute: ({ params }) => {
+    const v = typeof params.voltage === "number" ? params.voltage : 3.3;
+    return { outputs: { out: v } };
+  },
+};
+
+/**
+ * Hardware-in-the-Loop Digital GPIO Input block (maps to D2-D12 pin in Circuit IR).
+ */
+export const DigitalInputBlock: BlockDefinition = {
+  type: "DigitalInput",
+  name: "Digital Input (GPIO)",
+  category: "source",
+  description: "Hardware digital input pin (e.g. D2) reading button or digital logic sensor.",
+  inputs: [],
+  outputs: [{ id: "out", name: "Out", required: true, description: "Digital binary signal (0 or 1)" }],
+  hasDirectFeedthrough: () => false,
+  defaultParams: {
+    pin: "D2",
+    state: 1,
+  },
+  numStates: () => 0,
+  execute: ({ params }) => {
+    const s = typeof params.state === "number" ? (params.state > 0 ? 1 : 0) : 1;
+    return { outputs: { out: s } };
+  },
+};
+

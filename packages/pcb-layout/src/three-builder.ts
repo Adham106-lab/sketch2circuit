@@ -5,7 +5,7 @@
  */
 
 import * as THREE from "three";
-import type { PcbScene3D, Scene3DNode } from "./scene3d.js";
+import type { PcbScene3D, Scene3DNode, Vec3 } from "./scene3d.js";
 
 export interface ThreePcbHierarchy {
   root: THREE.Group;
@@ -95,43 +95,58 @@ export function buildThreeNode(node: Scene3DNode): THREE.Object3D {
       }
 
       case "tube": {
-        // Build connected line/cylinder segments with joint spheres for smooth realistic copper tracks
         const group = new THREE.Group();
         const pts = geom.path;
         const rad = Math.max(0.12, geom.radius);
         const mat = createThreeMaterial(node.material);
 
-        for (let i = 0; i < pts.length - 1; i++) {
-          const p1 = pts[i]!;
-          const p2 = pts[i + 1]!;
-          const dx = p2.x - p1.x;
-          const dy = p2.y - p1.y;
-          const len = Math.hypot(dx, dy);
-          if (len < 0.001) continue;
+        if (pts.length >= 2) {
+          const v3Points: THREE.Vector3[] = [];
+          for (const pt of pts) {
+            const z = "z" in pt && typeof (pt as Vec3).z === "number" ? (pt as Vec3).z : 0;
+            const v = new THREE.Vector3(pt.x, pt.y, z);
+            if (v3Points.length === 0 || v3Points[v3Points.length - 1]!.distanceTo(v) > 0.001) {
+              v3Points.push(v);
+            }
+          }
 
-          // Segment cylinder
-          const cylGeom = new THREE.CylinderGeometry(rad, rad, len, 12);
-          const cylMesh = new THREE.Mesh(cylGeom, mat);
-          cylMesh.position.set((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, 0);
+          if (v3Points.length >= 2) {
+            const curve = new THREE.CatmullRomCurve3(v3Points, false, "catmullrom", 0.5);
+            const tubularSegments = Math.max(20, v3Points.length * 8);
+            const tubeGeom = new THREE.TubeGeometry(curve, tubularSegments, rad, 12, false);
+            const tubeMesh = new THREE.Mesh(tubeGeom, mat);
+            tubeMesh.name = `${node.name} Spline`;
+            group.add(tubeMesh);
 
-          // Rotate cylinder from default Y-axis orientation to segment direction
-          const angle = Math.atan2(dy, dx);
-          cylMesh.rotation.z = angle - Math.PI / 2;
-          group.add(cylMesh);
+            // Black rectangular Dupont connector boots at the endpoints for wire paths
+            const isWire =
+              node.kind === "wire" ||
+              node.metadata?.role === "jumper-wire" ||
+              node.name.toLowerCase().includes("wire") ||
+              node.name.toLowerCase().includes("harness");
 
-          // Joint sphere
-          const sphereGeom = new THREE.SphereGeometry(rad, 10, 10);
-          const sphereMesh = new THREE.Mesh(sphereGeom, mat);
-          sphereMesh.position.set(p1.x, p1.y, 0);
-          group.add(sphereMesh);
-        }
+            if (isWire) {
+              const bootMat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color("#111827"),
+                roughness: 0.55,
+                metalness: 0.1,
+              });
+              const bootGeom = new THREE.BoxGeometry(2.54, 2.54, 10.0);
 
-        if (pts.length > 0) {
-          const lastPt = pts[pts.length - 1]!;
-          const sphereGeom = new THREE.SphereGeometry(rad, 10, 10);
-          const sphereMesh = new THREE.Mesh(sphereGeom, mat);
-          sphereMesh.position.set(lastPt.x, lastPt.y, 0);
-          group.add(sphereMesh);
+              const pStart = v3Points[0]!;
+              const pEnd = v3Points[v3Points.length - 1]!;
+
+              const startBoot = new THREE.Mesh(bootGeom, bootMat);
+              startBoot.name = `${node.name} Dupont Boot Start`;
+              startBoot.position.set(pStart.x, pStart.y, pStart.z);
+              group.add(startBoot);
+
+              const endBoot = new THREE.Mesh(bootGeom, bootMat);
+              endBoot.name = `${node.name} Dupont Boot End`;
+              endBoot.position.set(pEnd.x, pEnd.y, pEnd.z);
+              group.add(endBoot);
+            }
+          }
         }
 
         obj = group;

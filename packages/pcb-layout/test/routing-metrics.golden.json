@@ -5,12 +5,13 @@
     "routedConnections": 3,
     "unroutedConnections": 2,
     "completionRatePercent": 60,
-    "totalTraces": 6,
-    "totalVias": 3,
-    "wirelengthMm": 74.93,
-    "drcErrorCount": 2,
+    "totalTraces": 5,
+    "totalVias": 2,
+    "wirelengthMm": 75.184,
+    "drcErrorCount": 12,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 2
+      "DRC_CLEARANCE_TRACE_PAD": 10,
+      "DRC_VIA_ANNULAR_RING": 2
     }
   },
   "button_pullup": {
@@ -19,12 +20,13 @@
     "routedConnections": 3,
     "unroutedConnections": 4,
     "completionRatePercent": 42.9,
-    "totalTraces": 6,
-    "totalVias": 3,
-    "wirelengthMm": 74.93,
-    "drcErrorCount": 2,
+    "totalTraces": 5,
+    "totalVias": 2,
+    "wirelengthMm": 75.184,
+    "drcErrorCount": 12,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 2
+      "DRC_CLEARANCE_TRACE_PAD": 10,
+      "DRC_VIA_ANNULAR_RING": 2
     }
   },
   "button_pulldown": {
@@ -33,12 +35,13 @@
     "routedConnections": 4,
     "unroutedConnections": 5,
     "completionRatePercent": 44.4,
-    "totalTraces": 8,
-    "totalVias": 4,
+    "totalTraces": 7,
+    "totalVias": 3,
     "wirelengthMm": 83.82,
-    "drcErrorCount": 2,
+    "drcErrorCount": 15,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 2
+      "DRC_CLEARANCE_TRACE_PAD": 12,
+      "DRC_VIA_ANNULAR_RING": 3
     }
   },
   "servo_sweep": {
@@ -47,12 +50,13 @@
     "routedConnections": 4,
     "unroutedConnections": 3,
     "completionRatePercent": 57.1,
-    "totalTraces": 6,
-    "totalVias": 2,
-    "wirelengthMm": 74.93,
-    "drcErrorCount": 3,
+    "totalTraces": 5,
+    "totalVias": 1,
+    "wirelengthMm": 76.2,
+    "drcErrorCount": 16,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 3
+      "DRC_CLEARANCE_TRACE_PAD": 15,
+      "DRC_VIA_ANNULAR_RING": 1
     }
   },
   "hc_sr04": {
@@ -61,12 +65,13 @@
     "routedConnections": 6,
     "unroutedConnections": 0,
     "completionRatePercent": 100,
-    "totalTraces": 10,
-    "totalVias": 4,
-    "wirelengthMm": 166.37,
-    "drcErrorCount": 3,
+    "totalTraces": 9,
+    "totalVias": 3,
+    "wirelengthMm": 168.148,
+    "drcErrorCount": 21,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 3
+      "DRC_CLEARANCE_TRACE_PAD": 18,
+      "DRC_VIA_ANNULAR_RING": 3
     }
   },
   "pot_analog": {
@@ -75,12 +80,13 @@
     "routedConnections": 6,
     "unroutedConnections": 2,
     "completionRatePercent": 75,
-    "totalTraces": 10,
-    "totalVias": 4,
-    "wirelengthMm": 113.03,
-    "drcErrorCount": 6,
+    "totalTraces": 9,
+    "totalVias": 3,
+    "wirelengthMm": 111.76,
+    "drcErrorCount": 14,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 6
+      "DRC_CLEARANCE_TRACE_PAD": 11,
+      "DRC_VIA_ANNULAR_RING": 3
     }
   },
   "piezo_tone": {
@@ -89,13 +95,14 @@
     "routedConnections": 5,
     "unroutedConnections": 0,
     "completionRatePercent": 100,
-    "totalTraces": 10,
-    "totalVias": 5,
-    "wirelengthMm": 123.19,
-    "drcErrorCount": 4,
+    "totalTraces": 9,
+    "totalVias": 4,
+    "wirelengthMm": 123.444,
+    "drcErrorCount": 22,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 2,
-      "DRC_CLEARANCE_VIA_TRACE": 2
+      "DRC_CLEARANCE_TRACE_PAD": 14,
+      "DRC_CLEARANCE_VIA_TRACE": 4,
+      "DRC_VIA_ANNULAR_RING": 4
     }
   },
   "dynamic_loop": {
@@ -104,12 +111,13 @@
     "routedConnections": 2,
     "unroutedConnections": 0,
     "completionRatePercent": 100,
-    "totalTraces": 4,
-    "totalVias": 2,
-    "wirelengthMm": 64.77,
-    "drcErrorCount": 1,
+    "totalTraces": 3,
+    "totalVias": 1,
+    "wirelengthMm": 65.532,
+    "drcErrorCount": 10,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 1
+      "DRC_CLEARANCE_TRACE_PAD": 9,
+      "DRC_VIA_ANNULAR_RING": 1
     }
   },
   "annotated_rgb": {
@@ -118,12 +126,13 @@
     "routedConnections": 4,
     "unroutedConnections": 6,
     "completionRatePercent": 40,
-    "totalTraces": 8,
-    "totalVias": 4,
-    "wirelengthMm": 90.17,
-    "drcErrorCount": 1,
+    "totalTraces": 7,
+    "totalVias": 3,
+    "wirelengthMm": 90.932,
+    "drcErrorCount": 16,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 1
+      "DRC_CLEARANCE_TRACE_PAD": 13,
+      "DRC_VIA_ANNULAR_RING": 3
     }
   },
   "multi_peripheral_benchmark": {
@@ -132,13 +141,14 @@
     "routedConnections": 16,
     "unroutedConnections": 13,
     "completionRatePercent": 55.2,
-    "totalTraces": 28,
-    "totalVias": 12,
-    "wirelengthMm": 266.065,
-    "drcErrorCount": 18,
+    "totalTraces": 26,
+    "totalVias": 10,
+    "wirelengthMm": 264.668,
+    "drcErrorCount": 56,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 17,
-      "DRC_CLEARANCE_VIA_TRACE": 1
+      "DRC_CLEARANCE_TRACE_PAD": 44,
+      "DRC_CLEARANCE_VIA_TRACE": 2,
+      "DRC_VIA_ANNULAR_RING": 10
     }
   },
   "erc_hazards": {
@@ -147,12 +157,13 @@
     "routedConnections": 3,
     "unroutedConnections": 4,
     "completionRatePercent": 42.9,
-    "totalTraces": 6,
-    "totalVias": 3,
-    "wirelengthMm": 73.66,
-    "drcErrorCount": 1,
+    "totalTraces": 5,
+    "totalVias": 2,
+    "wirelengthMm": 74.676,
+    "drcErrorCount": 12,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 1
+      "DRC_CLEARANCE_TRACE_PAD": 10,
+      "DRC_VIA_ANNULAR_RING": 2
     }
   },
   "user_multi_peripheral": {
@@ -161,13 +172,14 @@
     "routedConnections": 16,
     "unroutedConnections": 13,
     "completionRatePercent": 55.2,
-    "totalTraces": 27,
-    "totalVias": 11,
-    "wirelengthMm": 261.62,
-    "drcErrorCount": 15,
+    "totalTraces": 26,
+    "totalVias": 10,
+    "wirelengthMm": 258.064,
+    "drcErrorCount": 59,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 14,
-      "DRC_CLEARANCE_VIA_TRACE": 1
+      "DRC_CLEARANCE_TRACE_PAD": 46,
+      "DRC_CLEARANCE_VIA_TRACE": 3,
+      "DRC_VIA_ANNULAR_RING": 10
     }
   },
   "esp32_board_mismatch": {
@@ -176,12 +188,28 @@
     "routedConnections": 3,
     "unroutedConnections": 2,
     "completionRatePercent": 60,
-    "totalTraces": 6,
-    "totalVias": 3,
-    "wirelengthMm": 73.66,
-    "drcErrorCount": 1,
+    "totalTraces": 5,
+    "totalVias": 2,
+    "wirelengthMm": 74.168,
+    "drcErrorCount": 12,
     "drcErrorsByType": {
-      "DRC_CLEARANCE_TRACE_PAD": 1
+      "DRC_CLEARANCE_TRACE_PAD": 10,
+      "DRC_VIA_ANNULAR_RING": 2
+    }
+  },
+  "simulink_embedded_coder": {
+    "name": "14. MATLAB / Simulink Embedded Coder C++",
+    "totalConnections": 9,
+    "routedConnections": 3,
+    "unroutedConnections": 6,
+    "completionRatePercent": 33.3,
+    "totalTraces": 5,
+    "totalVias": 2,
+    "wirelengthMm": 75.184,
+    "drcErrorCount": 13,
+    "drcErrorsByType": {
+      "DRC_CLEARANCE_TRACE_PAD": 11,
+      "DRC_VIA_ANNULAR_RING": 2
     }
   }
 }

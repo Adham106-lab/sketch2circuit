@@ -319,6 +319,7 @@ export function resolveAtoPart(comp: Component): AtoPartReference {
       };
     }
 
+    case "button":
     case "switch": {
       return {
         componentType: "TactileSwitch",
