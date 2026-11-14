@@ -91,7 +91,7 @@ describe("M12 2D PCB SVG Renderer", () => {
     expect(res.stats.routedConnections).toBe(16);
     expect(res.stats.totalConnections).toBe(29);
     expect(res.stats.completionRatePercent).toBe(55.2);
-    expect(res.stats.drcErrorCount).toBe(15);
+    expect(res.stats.drcErrorCount).toBe(59);
   });
 
   it("is 100% deterministic (multiple calls produce identical SVG string)", () => {

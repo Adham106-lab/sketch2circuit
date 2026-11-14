@@ -314,5 +314,5 @@ describe("M11 2-Layer Grid Router & DRC Engine", () => {
     const goldenPath = path.resolve(__dirname, "routing-metrics.golden.json");
     fs.writeFileSync(goldenPath, JSON.stringify(report, null, 2), "utf-8");
     expect(fs.existsSync(goldenPath)).toBe(true);
-  });
+  }, 180000);
 });

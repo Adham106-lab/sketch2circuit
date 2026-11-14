@@ -11,8 +11,13 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { placeCircuit } from "../src/placer.js";
 import { routeCircuit } from "../src/router.js";
-import { buildPcbScene3D } from "../src/scene3d.js";
-import { buildThreeNode, buildThreePcbGroup } from "../src/three-builder.js";
+import { buildPcbScene3D, eiaColorBands, parseResistanceOhms } from "../src/scene3d.js";
+import {
+  applyResistorColorBands,
+  buildThreeNode,
+  buildThreePcbGroup,
+  disposeThreeHierarchy,
+} from "../src/three-builder.js";
 
 describe("M13 Three.js 3D Hierarchy Builder", () => {
   it("builds Three.js meshes and hierarchy for Blink circuit", () => {
@@ -155,5 +160,106 @@ describe("M13 Three.js 3D Hierarchy Builder", () => {
         expect(geom.parameters.depth).toBeGreaterThan(5);
       }
     }
+  });
+
+  it("correctly parses resistance strings and maps to 4-band EIA color codes with 10k fallback", () => {
+    // 1. 220 and 220R (Red, Red, Brown, Gold)
+    expect(parseResistanceOhms("220")).toBe(220);
+    expect(parseResistanceOhms("220R")).toBe(220);
+    expect(eiaColorBands("220")).toEqual(["#dc2626", "#dc2626", "#78350f", "#eab308"]);
+    expect(eiaColorBands("220R")).toEqual(["#dc2626", "#dc2626", "#78350f", "#eab308"]);
+
+    // 2. 1k (Brown, Black, Red, Gold)
+    expect(parseResistanceOhms("1k")).toBe(1000);
+    expect(eiaColorBands("1k")).toEqual(["#78350f", "#111827", "#dc2626", "#eab308"]);
+
+    // 3. 4.7k (Yellow, Violet, Red, Gold)
+    expect(parseResistanceOhms("4.7k")).toBe(4700);
+    expect(eiaColorBands("4.7k")).toEqual(["#eab308", "#9333ea", "#dc2626", "#eab308"]);
+
+    // 4. 10k (Brown, Black, Orange, Gold)
+    expect(parseResistanceOhms("10k")).toBe(10000);
+    expect(eiaColorBands("10k")).toEqual(["#78350f", "#111827", "#ea580c", "#eab308"]);
+
+    // 5. 1M (Brown, Black, Green, Gold)
+    expect(parseResistanceOhms("1M")).toBe(1000000);
+    expect(eiaColorBands("1M")).toEqual(["#78350f", "#111827", "#16a34a", "#eab308"]);
+
+    // 6. Graceful fallback to 10k (Brown, Black, Orange, Gold) on unparseable / missing values
+    expect(parseResistanceOhms("unparseable")).toBe(10000);
+    expect(parseResistanceOhms(undefined)).toBe(10000);
+    expect(parseResistanceOhms("")).toBe(10000);
+    expect(eiaColorBands("invalid-res")).toEqual(["#78350f", "#111827", "#ea580c", "#eab308"]);
+    expect(eiaColorBands(undefined)).toEqual(["#78350f", "#111827", "#ea580c", "#eab308"]);
+  });
+
+  it("dynamically updates axial resistor color bands via applyResistorColorBands", () => {
+    const blinkCode = `
+      void setup() { pinMode(13, OUTPUT); }
+      void loop() { digitalWrite(13, HIGH); }
+    `;
+    const syn = synthesizeSketch(blinkCode, { boardId: "ARDUINO_UNO_R3" });
+    const plc = placeCircuit(syn.circuit, ARDUINO_UNO_R3_SHIELD_OUTLINE);
+    const route = routeCircuit(plc.layout, syn.circuit);
+    const scene3d = buildPcbScene3D(route.layout, syn.circuit);
+    const hierarchy = buildThreePcbGroup(scene3d);
+
+    const rMeshes = hierarchy.componentMeshes.get("R1");
+    expect(rMeshes).toBeDefined();
+
+    // Dynamically update R1 to 1M (Brown-Black-Green-Gold)
+    applyResistorColorBands(rMeshes!, "1M");
+
+    const band0Mesh = rMeshes!.find((m) => m.name.includes("Band 1")) as THREE.Mesh;
+    const band1Mesh = rMeshes!.find((m) => m.name.includes("Band 2")) as THREE.Mesh;
+    const band2Mesh = rMeshes!.find((m) => m.name.includes("Band 3")) as THREE.Mesh;
+    const band3Mesh = rMeshes!.find((m) => m.name.includes("Band 4")) as THREE.Mesh;
+
+    expect((band0Mesh.material as THREE.MeshStandardMaterial).color.getHexString()).toBe("78350f"); // Brown
+    expect((band1Mesh.material as THREE.MeshStandardMaterial).color.getHexString()).toBe("111827"); // Black
+    expect((band2Mesh.material as THREE.MeshStandardMaterial).color.getHexString()).toBe("16a34a"); // Green
+    expect((band3Mesh.material as THREE.MeshStandardMaterial).color.getHexString()).toBe("eab308"); // Gold
+  });
+
+  it("safely cleans up all Three.js geometries and materials via disposeThreeHierarchy", () => {
+    const blinkCode = `
+      void setup() { pinMode(13, OUTPUT); }
+      void loop() { digitalWrite(13, HIGH); }
+    `;
+    const syn = synthesizeSketch(blinkCode, { boardId: "ARDUINO_UNO_R3" });
+    const plc = placeCircuit(syn.circuit, ARDUINO_UNO_R3_SHIELD_OUTLINE);
+    const route = routeCircuit(plc.layout, syn.circuit);
+    const scene3d = buildPcbScene3D(route.layout, syn.circuit);
+    const hierarchy = buildThreePcbGroup(scene3d);
+
+    let disposedGeometries = 0;
+    let disposedMaterials = 0;
+
+    hierarchy.root.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.geometry) {
+        const origDispose = mesh.geometry.dispose.bind(mesh.geometry);
+        mesh.geometry.dispose = () => {
+          disposedGeometries++;
+          origDispose();
+        };
+      }
+      if (mesh.material) {
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of mats) {
+          const origMatDispose = m.dispose.bind(m);
+          m.dispose = () => {
+            disposedMaterials++;
+            origMatDispose();
+          };
+        }
+      }
+    });
+
+    disposeThreeHierarchy(hierarchy);
+
+    expect(disposedGeometries).toBeGreaterThan(10);
+    expect(disposedMaterials).toBeGreaterThan(10);
+    expect(hierarchy.componentMeshes.size).toBe(0);
   });
 });

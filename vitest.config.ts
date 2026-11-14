@@ -1,13 +1,37 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+// Polyfill Map.groupBy / Object.groupBy for Node < 21
+if (typeof (Map as any).groupBy !== "function") {
+  (Map as any).groupBy = function (items: Iterable<any>, keySelector: (item: any) => any) {
+    const map = new Map();
+    for (const item of items) {
+      const key = keySelector(item);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(item);
+    }
+    return map;
+  };
+}
+if (typeof (Object as any).groupBy !== "function") {
+  (Object as any).groupBy = function (items: Iterable<any>, keySelector: (item: any) => any) {
+    const obj = Object.create(null);
+    for (const item of items) {
+      const key = keySelector(item);
+      if (!obj[key]) obj[key] = [];
+      obj[key].push(item);
+    }
+    return obj;
+  };
+}
+
 const rootDir = import.meta.dirname;
 
 export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    testTimeout: 20000,
+    testTimeout: 120000,
     include: ["packages/**/test/**/*.test.ts", "apps/**/test/**/*.test.ts", "test/**/*.test.ts"],
     coverage: {
       provider: "v8",

@@ -5,7 +5,7 @@
  */
 
 import * as THREE from "three";
-import type { PcbScene3D, Scene3DNode, Vec3 } from "./scene3d.js";
+import { eiaColorBands, type PcbScene3D, type Scene3DNode, type Vec3 } from "./scene3d.js";
 
 export interface ThreePcbHierarchy {
   root: THREE.Group;
@@ -268,4 +268,74 @@ export function buildThreePcbGroup(scene: PcbScene3D): ThreePcbHierarchy {
     componentsGroup,
     componentMeshes,
   };
+}
+
+/**
+ * Updates or applies 4-band EIA color codes to an axial resistor's band meshes.
+ */
+export function applyResistorColorBands(
+  target: THREE.Object3D | THREE.Object3D[],
+  ohms: number | string | undefined,
+): void {
+  const bands = eiaColorBands(ohms);
+  const objects = Array.isArray(target) ? target : [target];
+
+  for (let idx = 0; idx < 4; idx++) {
+    const bandColorHex = bands[idx]!;
+    for (const obj of objects) {
+      obj.traverse((child) => {
+        if (
+          child instanceof THREE.Mesh &&
+          (child.name.includes(`Band ${idx + 1}`) ||
+            child.name.includes(`band-${idx}`) ||
+            child.userData?.bandIndex === idx)
+        ) {
+          if (child.material && "color" in child.material) {
+            (child.material as THREE.MeshStandardMaterial).color.set(bandColorHex);
+          }
+        }
+      });
+    }
+  }
+}
+
+/**
+ * Safely and thoroughly disposes all geometries, materials, and textures
+ * in a Three.js hierarchy or object tree to prevent WebGL memory leaks.
+ */
+export function disposeThreeHierarchy(
+  target: ThreePcbHierarchy | THREE.Object3D | null | undefined,
+): void {
+  if (!target) return;
+  const root = "root" in target ? target.root : target;
+  if (!root || typeof root.traverse !== "function") return;
+
+  root.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (mesh.geometry) {
+      mesh.geometry.dispose();
+    }
+    if (mesh.material) {
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const mat of materials) {
+        if (!mat) continue;
+        for (const key of Object.keys(mat)) {
+          const val = (mat as any)[key];
+          if (
+            val &&
+            typeof val === "object" &&
+            "isTexture" in val &&
+            typeof (val as THREE.Texture).dispose === "function"
+          ) {
+            (val as THREE.Texture).dispose();
+          }
+        }
+        mat.dispose();
+      }
+    }
+  });
+
+  if ("componentMeshes" in target && target.componentMeshes) {
+    target.componentMeshes.clear();
+  }
 }

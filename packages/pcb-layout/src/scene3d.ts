@@ -164,13 +164,16 @@ export function parseResistanceOhms(ohms: number | string | undefined): number {
   const raw = String(ohms).trim();
   if (!raw) return 10000;
 
-  // Check R-notation e.g. 4k7, 2R2, 0R1, 1M2
-  const rEmbed = raw.match(/^([0-9]+)([kKMmRrΩ])([0-9]+)?/);
+  // Check R-notation e.g. 4k7, 2R2, 0R1, 1M2, 220R
+  const rEmbed = raw.match(/^([0-9]+(?:\.[0-9]+)?)\s*([kKMmRrΩ])\s*([0-9]+)?/);
   if (rEmbed) {
     const whole = rEmbed[1] ?? "0";
     const prefix = rEmbed[2]!.toUpperCase();
-    const frac = rEmbed[3] ?? "0";
-    const num = parseFloat(`${whole}.${frac}`);
+    const frac = rEmbed[3];
+    const num =
+      frac !== undefined && !whole.includes(".")
+        ? parseFloat(`${whole}.${frac}`)
+        : parseFloat(whole);
     if (prefix === "K") return num * 1e3;
     if (prefix === "M") return num * 1e6;
     if (rEmbed[2] === "m") return num * 1e-3;
@@ -901,7 +904,10 @@ function buildComponentBodyNodes(
       const resVal =
         circuitComp?.properties?.resistance ??
         circuitComp?.properties?.resistanceOhms ??
-        circuitComp?.value;
+        (circuitComp?.properties as any)?.value ??
+        circuitComp?.value ??
+        (placement as any)?.metadata?.resistance ??
+        (placement as any)?.metadata?.value;
       const bandColors = eiaColorBands(resVal as number | string | undefined);
       const bandOffsets = [-bodyLen * 0.28, -bodyLen * 0.1, bodyLen * 0.08, bodyLen * 0.28];
 
@@ -926,6 +932,12 @@ function buildComponentBodyNodes(
           },
           position: { x: bandPos.x, y: bandPos.y, z: resZ },
           rotation: { x: 0, y: 0, z: rotZRad + Math.PI / 2 },
+          metadata: {
+            role: "resistor-band",
+            bandIndex: bIdx,
+            colorHex: bandColors[bIdx]!,
+            resistanceOhms: parseResistanceOhms(resVal as number | string | undefined),
+          },
         });
       }
     }

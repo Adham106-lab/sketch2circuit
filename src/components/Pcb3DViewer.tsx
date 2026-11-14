@@ -20,8 +20,12 @@ import type { Circuit } from "@s2c/circuit-json";
 import { ARDUINO_UNO_R3_SHIELD_OUTLINE } from "@s2c/footprints";
 import type { PcbLayout } from "@s2c/pcb-json";
 import {
+  applyResistorColorBands,
   buildPcbScene3D,
   buildThreePcbGroup,
+  disposeThreeHierarchy,
+  eiaColorBands,
+  parseResistanceOhms,
   type PcbScene3D,
   placeCircuit,
   routeCircuit,
@@ -455,8 +459,12 @@ function extractCircuitParts(circuit: Circuit): ExtractedPartInfo[] {
     }
 
     const propVal =
-      c.value ??
       c.properties?.resistance ??
+      c.properties?.resistanceOhms ??
+      (c.properties as any)?.value ??
+      c.value ??
+      (c as any)?.metadata?.resistance ??
+      (c as any)?.metadata?.value ??
       c.properties?.capacitance ??
       c.properties?.color ??
       c.properties?.pin ??
@@ -1156,11 +1164,13 @@ function buildIllustrativeTwinScene(
 ): {
   root: THREE.Group;
   animatedLedMeshes: THREE.Mesh[];
+  animatedLedLights: THREE.PointLight[];
   servoHornGroup: THREE.Group | null;
   dynamicCallouts: CalloutDef[];
 } {
   const root = new THREE.Group();
   const animatedLedMeshes: THREE.Mesh[] = [];
+  const animatedLedLights: THREE.PointLight[] = [];
   let servoHornGroup: THREE.Group | null = null;
   const dynamicCallouts: CalloutDef[] = [];
 
@@ -1300,8 +1310,15 @@ function buildIllustrativeTwinScene(
   });
   const builtinLed = new THREE.Mesh(roundedBox(2.4, 1.4, 1.6, 0.2, 2), builtinLedMat);
   builtinLed.position.set(-4, 2.7, -14);
+  builtinLed.name = "Arduino Uno D13 Builtin LED";
+  builtinLed.userData = { id: "D13", kind: "led", label: "Builtin Pin 13 LED" };
   unoGroup.add(builtinLed);
   animatedLedMeshes.push(builtinLed);
+
+  const builtinGlow = new THREE.PointLight(0xf59e0b, 0.6, 16, 2);
+  builtinGlow.position.set(-4, 4.5, -14);
+  unoGroup.add(builtinGlow);
+  animatedLedLights.push(builtinGlow);
 
   const onLed = new THREE.Mesh(
     roundedBox(2.4, 1.4, 1.6, 0.2, 2),
@@ -1376,6 +1393,14 @@ function buildIllustrativeTwinScene(
         if (part.kind === "led") {
           const ledGroup = new THREE.Group();
           ledGroup.position.set(localX, 7.5, localZ);
+          ledGroup.name = `${part.id} LED (${part.label})`;
+          ledGroup.userData = {
+            id: part.id,
+            kind: "led",
+            label: part.label,
+            mcuPins: part.mcuPins,
+            valueText: part.valueText,
+          };
           bbGroup.add(ledGroup);
 
           const ledColors = [0xef4444, 0x22c55e, 0x3b82f6, 0xfacc15];
@@ -1388,17 +1413,34 @@ function buildIllustrativeTwinScene(
           });
           const ledBody = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.6, 4.2, 18), ledMat);
           ledBody.position.set(0, 5.8, 0);
+          ledBody.userData = ledGroup.userData;
           ledGroup.add(ledBody);
           const ledDome = new THREE.Mesh(
             new THREE.SphereGeometry(2.4, 18, 14, 0, Math.PI * 2, 0, Math.PI / 2),
             ledMat,
           );
           ledDome.position.set(0, 7.9, 0);
+          ledDome.userData = ledGroup.userData;
           ledGroup.add(ledDome);
           animatedLedMeshes.push(ledBody, ledDome);
+
+          const ledGlowLight = new THREE.PointLight(ledHex, 0.8, 25, 2);
+          ledGlowLight.position.set(0, 8.5, 0);
+          ledGroup.add(ledGlowLight);
+          animatedLedLights.push(ledGlowLight);
         } else if (part.kind === "resistor" || part.kind === "capacitor") {
           const resGroup = new THREE.Group();
           resGroup.position.set(localX, 9.0, localZ + 3);
+          resGroup.name = `${part.id} ${part.kind === "resistor" ? "Axial Resistor" : "Capacitor"}`;
+          resGroup.userData = {
+            id: part.id,
+            kind: part.kind,
+            label: part.label,
+            mcuPins: part.mcuPins,
+            valueText: part.valueText,
+            resistanceOhms:
+              part.kind === "resistor" ? parseResistanceOhms(part.valueText) : undefined,
+          };
           bbGroup.add(resGroup);
 
           const resBody = new THREE.Mesh(
@@ -1409,7 +1451,35 @@ function buildIllustrativeTwinScene(
             }),
           );
           resBody.rotation.z = Math.PI / 2;
+          resBody.userData = resGroup.userData;
           resGroup.add(resBody);
+
+          if (part.kind === "resistor") {
+            const bands = eiaColorBands(part.valueText);
+            const bandOffsets = [-1.8, -0.6, 0.6, 1.8];
+            bands.forEach((bHexStr, bIdx) => {
+              const bColor = new THREE.Color(bHexStr);
+              const band = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.22, 1.22, 0.55, 16),
+                new THREE.MeshStandardMaterial({
+                  color: bColor,
+                  roughness: 0.25,
+                  metalness: bIdx === 3 ? 0.85 : 0.1,
+                }),
+              );
+              band.name = `${part.id} EIA Color Band ${bIdx + 1}`;
+              band.rotation.z = Math.PI / 2;
+              band.position.x = bandOffsets[bIdx]!;
+              band.userData = {
+                ...resGroup.userData,
+                role: "resistor-band",
+                bandIndex: bIdx,
+                colorHex: bHexStr,
+                noInkOutline: true,
+              };
+              resGroup.add(band);
+            });
+          }
         } else if (part.kind === "button") {
           const btnGroup = new THREE.Group();
           btnGroup.position.set(localX, 7.5, localZ);
@@ -1573,6 +1643,9 @@ function buildIllustrativeTwinScene(
       });
       const ledBody = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.8, 4.5, 20), ledMat);
       ledBody.position.set(0, 6.2, 0);
+      ledGroup.name = "D1 Red 5mm LED";
+      ledGroup.userData = { id: "D1", kind: "led", label: "Red 5mm LED", mcuPins: ["13"] };
+      ledBody.userData = ledGroup.userData;
       ledGroup.add(ledBody);
 
       const ledDome = new THREE.Mesh(
@@ -1580,11 +1653,25 @@ function buildIllustrativeTwinScene(
         ledMat,
       );
       ledDome.position.set(0, 8.4, 0);
+      ledDome.userData = ledGroup.userData;
       ledGroup.add(ledDome);
       animatedLedMeshes.push(ledBody, ledDome);
 
+      const ledGlow = new THREE.PointLight(0xdc2626, 0.8, 25, 2);
+      ledGlow.position.set(0, 9.5, 0);
+      ledGroup.add(ledGlow);
+      animatedLedLights.push(ledGlow);
+
       const resGroup = new THREE.Group();
       resGroup.position.set(-5, 9.2, 4);
+      resGroup.name = "R1 Axial Resistor (220Ω)";
+      resGroup.userData = {
+        id: "R1",
+        kind: "resistor",
+        label: "220Ω Series Resistor",
+        valueText: "220",
+        resistanceOhms: 220,
+      };
       bbGroup.add(resGroup);
 
       const resBody = new THREE.Mesh(
@@ -1592,17 +1679,29 @@ function buildIllustrativeTwinScene(
         new THREE.MeshStandardMaterial({ color: 0xe6d3a7, roughness: 0.5 }),
       );
       resBody.rotation.z = Math.PI / 2;
+      resBody.userData = resGroup.userData;
       resGroup.add(resBody);
 
-      const bandColors = [0xdc2626, 0xdc2626, 0x78350f, 0xd97706];
+      const bandColors = eiaColorBands("220");
       bandColors.forEach((bHex, idx) => {
         const band = new THREE.Mesh(
           new THREE.CylinderGeometry(1.32, 1.32, 0.7, 16),
-          new THREE.MeshBasicMaterial({ color: bHex }),
+          new THREE.MeshStandardMaterial({
+            color: new THREE.Color(bHex),
+            roughness: 0.25,
+            metalness: idx === 3 ? 0.85 : 0.1,
+          }),
         );
+        band.name = `R1 EIA Color Band ${idx + 1}`;
         band.rotation.z = Math.PI / 2;
         band.position.x = -2.1 + idx * 1.35;
-        band.userData.noInkOutline = true;
+        band.userData = {
+          ...resGroup.userData,
+          role: "resistor-band",
+          bandIndex: idx,
+          colorHex: bHex,
+          noInkOutline: true,
+        };
         resGroup.add(band);
       });
 
@@ -1752,7 +1851,7 @@ function buildIllustrativeTwinScene(
 
   addInkOutlines(root, isDarkTheme ? INK_COLOR_DARK : INK_COLOR_LIGHT, 22);
 
-  return { root, animatedLedMeshes, servoHornGroup, dynamicCallouts };
+  return { root, animatedLedMeshes, animatedLedLights, servoHornGroup, dynamicCallouts };
 }
 
 // ============================================================================
@@ -2106,6 +2205,9 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
   const simulationResultRef = useRef(simulationResult);
   simulationResultRef.current = simulationResult;
   const mountRef = useRef<HTMLDivElement>(null);
+  const hudOverlayRef = useRef<HTMLDivElement>(null);
+  const pulseActiveRef = useRef(true);
+  const showCalloutsRef = useRef(true);
 
   // Viewer Mode: "twin" (3D Isometric Twin) | "schematic2d" (Full 2D Wiring Schematic) | "pcb" (2-Layer FR4 Shield)
   const [viewMode, setViewMode] = useState<"twin" | "schematic2d" | "pcb">("twin");
@@ -2117,6 +2219,8 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
   const [isOrthographic, setIsOrthographic] = useState<boolean>(true);
   const [showCallouts, setShowCallouts] = useState<boolean>(true);
   const [pulseActive, setPulseActive] = useState<boolean>(true);
+  pulseActiveRef.current = pulseActive;
+  showCalloutsRef.current = showCallouts;
   const [canvasTheme, setCanvasTheme] = useState<"blueprint" | "obsidian">(
     theme === "dark" ? "obsidian" : "blueprint",
   );
@@ -2292,6 +2396,7 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     scene.add(masterGroup);
 
     let animatedLeds: THREE.Mesh[] = [];
+    let animatedLights: THREE.PointLight[] = [];
     let servoHorn: THREE.Group | null = null;
     let calloutsToProject: CalloutDef[] = activePreset.callouts;
 
@@ -2304,6 +2409,7 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
       );
       masterGroup.add(twin.root);
       animatedLeds = twin.animatedLedMeshes;
+      animatedLights = twin.animatedLedLights;
       servoHorn = twin.servoHornGroup;
       if (activePresetId === "live") {
         calloutsToProject =
@@ -2318,7 +2424,53 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
       addInkOutlines(h.root, isDark ? INK_COLOR_DARK : INK_COLOR_LIGHT, 20);
       hierarchyRef.current = h;
       masterGroup.add(h.root);
+
+      h.root.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          const role = child.userData?.metadata?.role;
+          const nameLower = child.name.toLowerCase();
+          if (role === "led-emitter" || nameLower.includes("led") || nameLower.includes("lens")) {
+            animatedLeds.push(child);
+            const pLight = new THREE.PointLight(
+              (child.material as THREE.MeshStandardMaterial).color,
+              0.8,
+              18,
+              2,
+            );
+            pLight.position.copy(child.position);
+            pLight.position.z += 1.5;
+            child.parent?.add(pLight);
+            animatedLights.push(pLight);
+          }
+        }
+      });
     }
+
+    const raycaster = new THREE.Raycaster();
+    const mousePos = {
+      ndc: new THREE.Vector2(-1000, -1000),
+      screen: { x: 0, y: 0 },
+      active: false,
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      mousePos.screen.x = e.clientX;
+      mousePos.screen.y = e.clientY;
+      mousePos.ndc.x = (x / rect.width) * 2 - 1;
+      mousePos.ndc.y = -(y / rect.height) * 2 + 1;
+      mousePos.active = true;
+    };
+
+    const handlePointerLeave = () => {
+      mousePos.active = false;
+      mousePos.ndc.set(-1000, -1000);
+    };
+
+    container.addEventListener("pointermove", handlePointerMove);
+    container.addEventListener("pointerleave", handlePointerLeave);
 
     const handleResize = () => {
       if (!container) return;
@@ -2425,10 +2577,23 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
+      const isPulseActive = pulseActiveRef.current;
+      const isShowCallouts = showCalloutsRef.current;
 
-      if (pulseActive) {
+      let currentV = 0;
+      let currentI_mA = 0;
+      let activeSolverMethod = "SIM ENGINE";
+      let isSimRunning = false;
+
+      if (isPulseActive) {
         const activeSim = simulationResultRef.current ?? simulationResult;
         if (hasSimWaveformData(activeSim)) {
+          isSimRunning = true;
+          activeSolverMethod =
+            activeSim.method ??
+            activeSim.solution?.method ??
+            (activeSim.scopeSignals ? "BLOCK-DIAGRAM" : "RKF45");
+
           let vLed: number | null = null;
           let vServo: number | null = null;
 
@@ -2468,7 +2633,7 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
             }
           }
 
-          // 2. Inspect ODE solution / point array
+          // 2. Inspect ODE solution / point array (RK4 / RKF45)
           const rawPoints =
             activeSim.solution?.points ??
             (Array.isArray(activeSim.points) ? activeSim.points : null);
@@ -2488,7 +2653,7 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
           if (vLed === null) vLed = 0;
           if (vServo === null) vServo = 0;
 
-          // Map active pin voltage / PWM duty cycle to LED emissiveIntensity
+          // Normalize voltage (0.0 to 1.0)
           let normPwm = 0;
           if (vLed > 5.0) {
             normPwm = Math.max(0, Math.min(1, vLed / 255.0));
@@ -2497,13 +2662,23 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
           } else {
             normPwm = Math.max(0, Math.min(1, vLed));
           }
-          const ledIntensity = 0.12 + normPwm * 1.13;
+
+          currentV = normPwm * 5.0; // Scaled to 0.0-5.0V
+          const vf = 1.9; // Forward drop for standard LED
+          const rLimit = 220; // Standard 220 ohm limiting resistor
+          currentI_mA = currentV > vf ? ((currentV - vf) / rLimit) * 1000 : 0;
+
+          const ledIntensity = 0.08 + normPwm * 1.5;
+          const lightIntensity = normPwm * 2.2;
 
           for (const ledMesh of animatedLeds) {
             const mat = ledMesh.material as THREE.MeshStandardMaterial;
             if (mat && "emissiveIntensity" in mat) {
               mat.emissiveIntensity = ledIntensity;
             }
+          }
+          for (const light of animatedLights) {
+            light.intensity = lightIntensity;
           }
 
           // Map servo horn rotation angle
@@ -2522,24 +2697,108 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
             servoHorn.rotation.y = servoAngle;
           }
         } else {
-          // Fallback sine wave when no simulation has run
+          // Fallback sine wave modulation when no simulation solver result is active
           const blinkOn = Math.sin(elapsed * 4.2) > 0;
+          currentV = blinkOn ? 5.0 : 0.0;
+          currentI_mA = blinkOn ? 14.1 : 0.0;
+          activeSolverMethod = "SINE WAVE";
+
           for (const ledMesh of animatedLeds) {
             const mat = ledMesh.material as THREE.MeshStandardMaterial;
             if (mat && "emissiveIntensity" in mat) {
-              mat.emissiveIntensity = blinkOn ? 1.1 : 0.12;
+              mat.emissiveIntensity = blinkOn ? 1.25 : 0.08;
             }
+          }
+          for (const light of animatedLights) {
+            light.intensity = blinkOn ? 1.8 : 0.0;
           }
           if (servoHorn) {
             servoHorn.rotation.y = Math.sin(elapsed * 2.4) * 0.65;
           }
+        }
+      } else {
+        // Paused state
+        for (const ledMesh of animatedLeds) {
+          const mat = ledMesh.material as THREE.MeshStandardMaterial;
+          if (mat && "emissiveIntensity" in mat) {
+            mat.emissiveIntensity = 0.08;
+          }
+        }
+        for (const light of animatedLights) {
+          light.intensity = 0.0;
+        }
+      }
+
+      // Update real-time HUD telemetry pill & hover tooltip without React re-renders
+      if (hudOverlayRef.current) {
+        let hoveredInfo: { name: string; kind: string; v: number; i: number } | null = null;
+        if (mousePos.active) {
+          raycaster.setFromCamera(mousePos.ndc, camera);
+          const intersects = raycaster.intersectObjects(masterGroup.children, true);
+          if (intersects.length > 0) {
+            let hitObj: THREE.Object3D | null = intersects[0]!.object;
+            while (hitObj && hitObj !== masterGroup) {
+              const u = hitObj.userData;
+              if (u && (u.id || u.kind || u.role)) {
+                const kind =
+                  u.kind ??
+                  (u.role?.includes("led")
+                    ? "led"
+                    : u.role?.includes("resistor")
+                      ? "resistor"
+                      : "component");
+                const name = hitObj.name || u.id || "Component";
+                let v = currentV;
+                let i = currentI_mA;
+                if (kind === "resistor") {
+                  const r = u.resistanceOhms ?? 220;
+                  v = Math.max(0, currentV - 1.9);
+                  i = r > 0 ? (v / r) * 1000 : 0;
+                }
+                hoveredInfo = { name, kind, v, i };
+                break;
+              }
+              hitObj = hitObj.parent;
+            }
+          }
+        }
+
+        if (hoveredInfo) {
+          hudOverlayRef.current.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="font-bold text-white text-xs">${hoveredInfo.name}</span>
+              <span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">${hoveredInfo.kind}</span>
+            </div>
+            <div class="mt-1 flex items-center gap-3 text-xs font-mono">
+              <span class="text-amber-300 font-semibold">V: ${hoveredInfo.v.toFixed(2)} V</span>
+              <span class="text-neutral-500">|</span>
+              <span class="text-cyan-300 font-semibold">I: ${hoveredInfo.i.toFixed(1)} mA</span>
+              <span class="text-neutral-500">|</span>
+              <span class="text-[10px] text-neutral-400 uppercase">${activeSolverMethod}</span>
+            </div>
+          `;
+          hudOverlayRef.current.style.opacity = "1";
+        } else {
+          hudOverlayRef.current.innerHTML = `
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <span class="inline-block w-2 h-2 rounded-full ${isPulseActive && isSimRunning ? "bg-emerald-400" : isPulseActive ? "bg-amber-400" : "bg-neutral-500"} animate-pulse"></span>
+              <span class="font-semibold text-neutral-200">TELEMETRY [${activeSolverMethod}]:</span>
+              <span class="text-amber-300 font-bold">${currentV.toFixed(2)} V</span>
+              <span class="text-neutral-500">·</span>
+              <span class="text-cyan-300 font-bold">${currentI_mA.toFixed(1)} mA</span>
+              <span class="text-neutral-500">·</span>
+              <span class="text-[10px] text-neutral-400">${isPulseActive ? "PLAYING" : "PAUSED"}</span>
+            </div>
+          `;
+          hudOverlayRef.current.style.opacity = "0.95";
         }
       }
 
       controls.update();
       renderer.render(scene, camera);
 
-      if (viewMode === "twin" && showCallouts) {
+      if (viewMode === "twin" && isShowCallouts) {
         const w = renderer.domElement.clientWidth || width;
         const h = renderer.domElement.clientHeight || height;
 
@@ -2639,29 +2898,21 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
+      container.removeEventListener("pointermove", handlePointerMove);
+      container.removeEventListener("pointerleave", handlePointerLeave);
       pmremGenerator.dispose();
       envTex.dispose();
-      const hierarchy = hierarchyRef.current;
-      const disposeTree = (root?: THREE.Object3D | null) => {
-        root?.traverse((child) => {
-          const item = child as {
-            geometry?: THREE.BufferGeometry;
-            material?: THREE.Material | THREE.Material[];
-          };
-          item.geometry?.dispose();
-          if (Array.isArray(item.material)) {
-            item.material.forEach((mat) => mat?.dispose());
-          } else {
-            item.material?.dispose();
-          }
-        });
-      };
-      disposeTree(scene);
-      if (hierarchy?.root) {
-        disposeTree(hierarchy.root);
-      }
+
+      disposeThreeHierarchy(hierarchyRef.current);
+      disposeThreeHierarchy(sceneRootRef.current);
+      disposeThreeHierarchy(scene);
+
+      renderer.forceContextLoss();
       renderer.dispose();
       controls.dispose();
+      if (renderer.domElement.parentElement) {
+        renderer.domElement.parentElement.removeChild(renderer.domElement);
+      }
     };
   }, [
     viewMode,
@@ -2671,8 +2922,6 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
     scene3d,
     isOrthographic,
     canvasTheme,
-    showCallouts,
-    pulseActive,
     obstacleOffsetCm,
   ]);
 
@@ -2869,7 +3118,16 @@ export const Pcb3DViewer: React.FC<Pcb3DViewerProps> = ({
             onSwitchTo3D={() => setViewMode("twin")}
           />
         ) : webglSupported ? (
-          <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+          <>
+            <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+            {viewMode !== "schematic2d" && (
+              <div
+                ref={hudOverlayRef}
+                className="absolute top-3 left-3 z-20 pointer-events-none px-3 py-1.5 rounded-md backdrop-blur-md border border-neutral-700/60 bg-neutral-950/85 text-neutral-200 shadow-xl transition-opacity duration-150 select-none"
+                style={{ opacity: 0 }}
+              />
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
             <Box className="w-12 h-12 text-amber-500 animate-pulse" />
